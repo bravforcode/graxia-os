@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { SafeJsonViewer } from "@/components/admin/SafeJsonViewer";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { getApprovalById, approveApproval, rejectApproval } from "@/lib/admin-api";
 
@@ -36,6 +36,7 @@ export default function ApprovalDetailPage() {
   useEffect(() => {
     if (!id) return;
     loadApproval();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadApproval only depends on id (captured above)
   }, [id]);
 
   async function loadApproval() {

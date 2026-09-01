@@ -374,13 +374,21 @@
 }
 
 @layer components {
-  /* Marquee keyframes (Tailwind only emits when utility used — define directly) */
+  /* Marquee keyframes (Tailwind only emits when utility used — define directly).
+     Seamless loop: the track holds exactly 2 identical copies, so translateX(-50%)
+     lands the 2nd copy where the 1st began (evidence: ryanmulligan.dev/css-marquee,
+     effect-labs infinite marquee). The previous calc(-50% - 1.25rem) overshot by
+     1.25rem and produced a visible seam jump / colour overlap on each loop. */
   @keyframes marquee {
     from { transform: translateX(0); }
-    to { transform: translateX(calc(-50% - 1.25rem)); }
+    to { transform: translateX(-50%); }
   }
   .marquee-band__track {
     animation: marquee var(--marquee-duration, 40s) linear infinite;
+    will-change: transform;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-band__track { animation: none; }
   }
 }
 
@@ -516,5 +524,17 @@
   .lyra-card > * {
     position: relative;
     z-index: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PERF — content-visibility for below-the-fold sections (zero quality loss).
+   Skips layout/paint of offscreen sections; they render normally when scrolled
+   into view. contain-intrinsic-size reserves space to prevent scrollbar jump.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 700px;
   }
 }

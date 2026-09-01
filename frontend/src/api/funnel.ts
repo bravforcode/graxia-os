@@ -171,7 +171,7 @@ export const funnelApi = {
     customer_email?: string;
     success_url: string;
     cancel_url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<FunnelCheckout> => {
     const { data } = await client.post<FunnelCheckout>(`/funnel/products/${productId}/checkout`, payload);
     return data;
@@ -187,7 +187,7 @@ export const funnelApi = {
     customer_email?: string;
     success_url: string;
     cancel_url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<FunnelCheckout> => {
     const { data } = await publicClient.post<FunnelCheckout>(`/funnel/public/products/${productId}/checkout`, payload);
     return data;
@@ -276,7 +276,7 @@ export const funnelApi = {
     medium?: string;
     campaign?: string;
     referrer?: string;
-    metadata_json?: Record<string, any>;
+    metadata_json?: Record<string, unknown>;
   }): Promise<void> => {
     await publicClient.post("/funnel/events", payload);
   },

@@ -371,7 +371,6 @@ export class AIService {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
-      console.log("WebSocket connected");
     };
 
     this.ws.onmessage = (event) => {
@@ -390,7 +389,6 @@ export class AIService {
     };
 
     this.ws.onclose = () => {
-      console.log("WebSocket disconnected");
       this.ws = null;
     };
 

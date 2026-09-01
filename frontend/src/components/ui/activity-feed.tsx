@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, Dot, Radio, ShieldAlert } from 'lucide-react'
 
-import { Panel } from '@/components/ui/Panel'
+import { Panel } from '@/components/ui/panel'
 import { formatRelative } from '@/lib/utils'
 import type { AgentFeedItem } from '@/hooks/useAgentStream'
 

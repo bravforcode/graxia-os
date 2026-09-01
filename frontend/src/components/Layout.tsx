@@ -18,14 +18,8 @@ import {
   Target,
   UserPlus,
   Users,
-    Command,
+  Command,
   TerminalSquare,
-  Gauge,
-  Workflow,
-  ScrollText,
-  Server,
-  HardDrive,
-  Database
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -73,8 +67,6 @@ const navItems = [
 const systemNavItems = [
   { path: '/event-bus', label: 'Event Bus', icon: Activity },
 ]
-
-const adminNavItems: never[] = []
 
 function isActivePath(pathname: string, path: string) {
   return path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)
@@ -151,32 +143,6 @@ export default function Layout() {
       <div className="space-y-1">
         <p className="px-3 text-xs font-medium text-zinc-500 lg:hidden xl:block">System</p>
         {systemNavItems.map((item) => {
-          const Icon = item.icon
-          const active = isActivePath(location.pathname, item.path)
-          return (
-            <AnimatedTooltip key={item.path} content={item.label} side="right">
-              <Link
-                to={item.path}
-                onClick={onClick}
-                className={cn(
-                  'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                  active
-                    ? 'bg-zinc-900 text-white font-medium'
-                    : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
-                )}
-              >
-                <Icon size={16} className={cn('shrink-0')} />
-                <span className="flex-1 lg:hidden xl:block">{item.label}</span>
-              </Link>
-            </AnimatedTooltip>
-          )
-        })}
-      </div>
-
-      {/* Admin section */}
-      <div className="space-y-1">
-        <p className="px-3 text-xs font-medium text-zinc-500 lg:hidden xl:block">Admin</p>
-        {adminNavItems.map((item) => {
           const Icon = item.icon
           const active = isActivePath(location.pathname, item.path)
           return (

@@ -7,7 +7,6 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./i18n/LanguageContext";
 import ExitIntentPopup from "./components/ui/ExitIntentPopup";
-import SocialProofPopup from "./components/ui/SocialProofPopup";
 import LegalPage from "./pages/LegalPage";
 
 const UnifiedDashboard = lazy(() => import("./pages/UnifiedDashboard"));

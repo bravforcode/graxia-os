@@ -46,7 +46,6 @@ export const CommandBar = () => {
 
   const handleSelect = useCallback((item: { type: string; id?: string }) => {
     if (item.type === 'skill') {
-      console.log('Triggering skill:', item.id);
       // Extend here for real skill execution routing
     }
     setIsOpen(false);

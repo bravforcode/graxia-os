@@ -19,7 +19,7 @@ export default function ExitIntentPopup() {
     // Check if already shown this session
     try {
       if (sessionStorage.getItem("ai-factory-exit-popup")) return;
-    } catch {}
+    } catch { /* noop */ }
 
     const handleMouseLeave = (e: MouseEvent) => {
       // Only trigger when mouse leaves from the top edge
@@ -27,7 +27,7 @@ export default function ExitIntentPopup() {
         setShow(true);
         try {
           sessionStorage.setItem("ai-factory-exit-popup", "1");
-        } catch {}
+        } catch { /* noop */ }
         document.removeEventListener("mouseleave", handleMouseLeave);
       }
     };

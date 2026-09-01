@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ScrollText, TerminalSquare, ShieldAlert, AlertTriangle, RefreshCw, Workflow, XCircle } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getRuntimeStatus, listBusinessEvents, listDeadLetters, listTools, type MCPToolDefinition } from "@/lib/admin-api";

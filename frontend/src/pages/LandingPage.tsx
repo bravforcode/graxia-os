@@ -40,7 +40,7 @@ function useInView(options?: IntersectionObserverInit) {
     }, { threshold: 0.1, ...options });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [options]);
 
   return { ref, isInView };
 }
@@ -75,7 +75,7 @@ function AnimatedCounter({ value, suffix = "", prefix = "" }: { value: number; s
 }
 
 /** Lyra-style typewriter (evidence: lyra.marqraft.com hero type span). */
-function Typewriter({ words, locale }: { words: string[]; locale: string }) {
+function Typewriter({ words }: { words: string[] }) {
   const [wordIdx, setWordIdx] = useState(0);
   const [chars, setChars] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -103,7 +103,7 @@ function Typewriter({ words, locale }: { words: string[]; locale: string }) {
   const word = words[wordIdx % words.length];
   return (
     <span className="inline-flex items-baseline">
-      <span className="text-gradient-brand">{word.slice(0, chars)}</span>
+      <span className="text-gradient-brand [filter:drop-shadow(0_1px_2px_rgba(33,29,53,0.22))]">{word.slice(0, chars)}</span>
       <span className="ms-0.5 inline-block w-[3px] self-center h-[0.9em] bg-indigo-400 animate-pulse" aria-hidden="true" />
     </span>
   );
@@ -155,14 +155,23 @@ export default function LandingPage() {
         }}
       />
 
-      {/* Background Effects — lyra violet radial bloom */}
+      {/* Background Effects — lyra violet radial bloom.
+          Static radial gradients only (no filter: blur) — large blur filters are a
+          proven paint/repaint cost (Chrome "Animating a blur", loke.dev "Softness Costs").
+          Purple intensity lowered so the brand-gradient headline keeps contrast. */}
       <div className="fixed inset-0 pointer-events-none">
         <div
           className="absolute inset-x-0 top-0 h-[600px] md:h-[800px]"
-          style={{ background: "radial-gradient(125% 125% at 50% 10%, #f5f4fa 40%, rgba(158,122,255,0.35) 100%)" }}
+          style={{ background: "radial-gradient(125% 125% at 50% 10%, #f5f4fa 40%, rgba(158,122,255,0.16) 100%)" }}
         />
-        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-cyan-500/6 blur-[120px]" />
+        <div
+          className="absolute top-0 start-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(158,122,255,0.12), transparent 70%)" }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(254,139,187,0.09), transparent 70%)" }}
+        />
       </div>
 
       {/* Navigation — lyra floating pill navbar (sticky top-4 rounded-2xl) */}
@@ -234,7 +243,7 @@ export default function LandingPage() {
               {t("hero.title1")}
             </span>
             <br />
-            <Typewriter words={typeWords} locale={locale} />
+            <Typewriter words={typeWords} />
           </h1>
 
           <p className="font-mono text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line tracking-tight" style={{ animationDelay: "0.1s" }}>
@@ -311,7 +320,7 @@ export default function LandingPage() {
                 ].map((item) => (
                   <span key={`${dup}-${item}`} className="flex items-center gap-10 text-sm md:text-base text-slate-400 whitespace-nowrap">
                     {item}
-                    <span className="text-gradient-brand">✦</span>
+                    <span className="text-indigo-400 font-semibold" aria-hidden="true">✦</span>
                   </span>
                 ))}
               </div>
@@ -344,7 +353,7 @@ export default function LandingPage() {
 
       {/* Featured Products */}
       <ScrollReveal delay={100}>
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 cv-auto">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{t("featured.badge")}</span>
@@ -407,7 +416,7 @@ export default function LandingPage() {
 
       {/* Categories Grid */}
       <ScrollReveal delay={100}>
-      <section className="py-20 px-6 bg-slate-900/20">
+      <section className="py-20 px-6 bg-slate-900/20 cv-auto">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">{t("categories.badge")}</span>
@@ -436,7 +445,7 @@ export default function LandingPage() {
 
       {/* Features */}
       <ScrollReveal delay={100}>
-      <section id="features" className="py-20 px-6">
+      <section id="features" className="py-20 px-6 cv-auto">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">{t("features.badge")}</span>
@@ -481,7 +490,7 @@ export default function LandingPage() {
 
       {/* How It Works */}
       <ScrollReveal delay={100}>
-      <section className="py-20 px-6 bg-slate-900/20">
+      <section className="py-20 px-6 bg-slate-900/20 cv-auto">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">{t("howItWorks.badge")}</span>
@@ -514,7 +523,7 @@ export default function LandingPage() {
 
       {/* Testimonials */}
       <ScrollReveal delay={100}>
-      <section id="testimonials" className="py-20 px-6">
+      <section id="testimonials" className="py-20 px-6 cv-auto">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">{t("testimonials.badge")}</span>
@@ -555,7 +564,7 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <ScrollReveal delay={100}>
-      <section id="pricing" className="py-20 px-6 bg-slate-900/20">
+      <section id="pricing" className="py-20 px-6 bg-slate-900/20 cv-auto">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{t("pricing.badge")}</span>
           <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2 mb-4">
@@ -587,7 +596,7 @@ export default function LandingPage() {
 
       {/* FAQ */}
       <ScrollReveal delay={100}>
-      <section id="faq" className="py-20 px-6">
+      <section id="faq" className="py-20 px-6 cv-auto">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("faq.badge")}</span>
@@ -625,7 +634,7 @@ export default function LandingPage() {
 
       {/* Final CTA */}
       <ScrollReveal delay={100}>
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 cv-auto">
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-12 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/20 rounded-[2rem] relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(158,122,255,0.15),transparent_70%)]" />
@@ -650,7 +659,7 @@ export default function LandingPage() {
       </ScrollReveal>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/50 py-12 px-6">
+      <footer className="border-t border-slate-800/50 py-12 px-6 cv-auto">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             <div>

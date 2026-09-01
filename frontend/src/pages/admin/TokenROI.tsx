@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, RefreshCw } from "lucide-react";
-import { MetricCard } from "@/components/admin/MetricCard";
+import { MetricCard } from "@/components/ui/metric-card";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,7 @@ export default function TokenROIPage() {
 
   useEffect(() => {
     void load(DEFAULT_INPUT);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize once on mount with DEFAULT_INPUT
   }, []);
 
   async function load(nextInput: TokenRoiInput = input) {

@@ -5,9 +5,9 @@ import {
   Play, ExternalLink, TerminalSquare, Database
 } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { MetricCard } from "@/components/admin/MetricCard";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 import { getAgentWorkflowStatus, getRuntimeStatus, listTools, runAgentWorkflow, type RuntimeStatus, type WorkflowStatus } from "@/lib/admin-api";
 

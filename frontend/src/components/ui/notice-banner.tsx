@@ -1,23 +1,35 @@
-type NoticeTone = 'info' | 'success' | 'warning' | 'danger';
+import { StatusPill } from '@/components/ui/status-pill'
 
-const noticeStyles: Record<NoticeTone, string> = {
-  info: 'border-sky-500/20 bg-sky-500/5 text-sky-300',
-  success: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-300',
-  warning: 'border-amber-500/20 bg-amber-500/5 text-amber-300',
-  danger: 'border-red-500/20 bg-red-500/5 text-red-300',
-};
+export type NoticeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
-interface NoticeBannerProps {
-  tone?: NoticeTone;
-  msg: string;
+type NoticeBannerProps = {
+  tone: NoticeTone
+  message: string
+  onDismiss?: () => void
 }
 
-export function NoticeBanner({ tone = 'info', msg }: NoticeBannerProps) {
+export function NoticeBanner({ tone, message, onDismiss }: NoticeBannerProps) {
   return (
     <div
-      className={`rounded-[12px] border px-4 py-3 text-sm ${noticeStyles[tone]}`}
+      role={tone === 'danger' ? 'alert' : 'status'}
+      aria-live={tone === 'danger' ? 'assertive' : 'polite'}
+      className="rounded-[24px] border border-[var(--color-border)] bg-[var(--panel-bg)] px-4 py-4 shadow-[var(--shadow-lg)]"
     >
-      {msg}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <StatusPill label={tone} tone={tone} />
+          <div className="text-sm text-[var(--color-text-secondary)]">{message}</div>
+        </div>
+        {onDismiss ? (
+          <button
+            type="button"
+            className="text-sm text-[var(--color-text-tertiary)] transition hover:text-[var(--color-text-primary)]"
+            onClick={onDismiss}
+          >
+            Dismiss
+          </button>
+        ) : null}
+      </div>
     </div>
-  );
+  )
 }

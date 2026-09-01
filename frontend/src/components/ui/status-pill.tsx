@@ -1,23 +1,31 @@
-type Tone = 'success' | 'danger' | 'warning' | 'info';
+import { cn } from '@/lib/utils'
 
-const toneStyles: Record<Tone, string> = {
-  success: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  danger: 'bg-red-500/10 text-red-400 border-red-500/20',
-  warning: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  info: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
-};
+type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info'
 
-interface StatusPillProps {
-  label: string;
-  tone?: Tone;
+const toneClasses: Record<StatusTone, string> = {
+  neutral: 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]',
+  success: 'bg-[rgba(63,185,80,0.16)] text-[var(--color-accent-green)]',
+  warning: 'bg-[rgba(240,136,62,0.16)] text-[var(--color-accent-orange)]',
+  danger: 'bg-[rgba(218,54,51,0.16)] text-[var(--color-accent-red)]',
+  info: 'bg-[rgba(0,212,255,0.16)] text-[var(--color-accent-cyan)]',
 }
 
-export function StatusPill({ label, tone = 'info' }: StatusPillProps) {
+type StatusPillProps = {
+  label: string
+  tone?: StatusTone
+  pulse?: boolean
+}
+
+export function StatusPill({ label, tone = 'neutral', pulse = false }: StatusPillProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${toneStyles[tone]}`}
+      className={cn(
+        'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]',
+        toneClasses[tone]
+      )}
     >
+      <span className={cn('h-2 w-2 rounded-full bg-current', pulse ? 'animate-pulse' : '')} />
       {label}
     </span>
-  );
+  )
 }

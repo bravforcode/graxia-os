@@ -15,6 +15,28 @@ const disabledSupabaseClient = {
   },
 } as unknown as SupabaseClient
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : disabledSupabaseClient
+let _client: SupabaseClient | null = null
+
+function getClient(): SupabaseClient {
+  if (!_client) {
+    _client = isSupabaseConfigured
+      ? createClient(supabaseUrl, supabaseAnonKey)
+      : disabledSupabaseClient
+  }
+  return _client
+}
+
+// Lazily initialize the Supabase client on first use so importing this module
+// (e.g. via AuthContext -> App) does not eagerly create the client at load time.
+// The Proxy preserves the exact public API: consumers still import `supabase`
+// and call `.from()`, `.auth`, etc. directly.
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_t, prop, receiver) {
+    const client = getClient()
+    const value = Reflect.get(client, prop, receiver)
+    return typeof value === 'function' ? value.bind(client) : value
+  },
+  set(_t, prop, value, receiver) {
+    return Reflect.set(getClient(), prop, value, receiver)
+  },
+})

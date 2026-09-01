@@ -31,14 +31,12 @@ export function useGraxiaStream() {
     // const token = localStorage.getItem('access_token');
     // if (token) wsUrl += `?token=${token}`;
 
-    console.log('Connecting to Graxia Stream:', wsUrl);
-    
+
     const connect = () => {
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
         setIsConnected(true);
-        console.log('Graxia Stream Connected');
       };
 
       ws.current.onmessage = (event) => {
@@ -52,7 +50,6 @@ export function useGraxiaStream() {
 
       ws.current.onclose = () => {
         setIsConnected(false);
-        console.log('Graxia Stream Disconnected, retrying in 5s...');
         setTimeout(connect, 5000);
       };
 

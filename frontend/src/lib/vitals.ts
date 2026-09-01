@@ -17,7 +17,6 @@ export function initWebVitals() {
     const budget = BUDGETS[name];
     const ok = budget ? value <= budget.threshold : true;
     const label = `${name}: ${budget ? value.toFixed(0) : value.toFixed(3)}${budget.unit} ${ok ? "✅" : "❌ over budget"}`;
-    // eslint-disable-next-line no-console
     console.info(`[CWV] ${label}`);
     if (!ok) document.body.setAttribute("data-cwv-issue", name);
   };

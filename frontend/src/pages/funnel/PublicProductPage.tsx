@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { AxiosError } from "axios";
 import {
   CheckCircle, ArrowRight, Mail, ShieldCheck, Download,
   AlertTriangle, Gift, Star, ChevronDown, Clock, Check, Users,
@@ -55,6 +56,7 @@ export default function PublicProductPage() {
     if (orgId && productSlug) {
       loadProduct();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadProduct only depends on orgId/productSlug
   }, [orgId, productSlug]);
 
   // Countdown timer
@@ -91,9 +93,10 @@ export default function PublicProductPage() {
         product_id: data.id,
         referrer: document.referrer || undefined,
       }).catch(() => {});
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to retrieve public product", err);
-      setErrorMsg(err.response?.data?.detail || "Product not found or currently unavailable.");
+      const detail = err instanceof AxiosError ? err.response?.data?.detail : undefined;
+      setErrorMsg(detail || "Product not found or currently unavailable.");
     } finally {
       setLoading(false);
     }
@@ -132,9 +135,10 @@ export default function PublicProductPage() {
       } else {
         alert(locale === "th" ? "ไม่สามารถเริ่มกระบวนการชำระเงินได้" : "Failed to initiate checkout process.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Checkout failed", err);
-      alert(err.response?.data?.detail || "Checkout session failed.");
+      const detail = err instanceof AxiosError ? err.response?.data?.detail : undefined;
+      alert(detail || "Checkout session failed.");
     } finally {
       setCheckingOut(false);
     }
@@ -161,9 +165,10 @@ export default function PublicProductPage() {
       if (res.delivery_url) {
         setLeadDownloadUrl(res.delivery_url);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Lead capture failed", err);
-      setErrorMsg(err.response?.data?.detail || "Failed to submit.");
+      const detail = err instanceof AxiosError ? err.response?.data?.detail : undefined;
+      setErrorMsg(detail || "Failed to submit.");
     } finally {
       setSubmittingLead(false);
     }

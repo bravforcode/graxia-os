@@ -32,6 +32,7 @@ export default function ProductList() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchData only depends on includeArchived
   }, [includeArchived]);
 
   const fetchData = async () => {

@@ -1,11 +1,14 @@
-interface EmptyStateProps {
-  msg: string;
+type EmptyStateProps = {
+  message: string
 }
 
-export function EmptyState({ msg }: EmptyStateProps) {
+export function EmptyState({ message }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[16px] border border-[var(--color-border)] bg-[var(--panel-bg)] p-12 text-center">
-      <p className="text-sm text-[var(--color-text-secondary)]">{msg}</p>
+    <div
+      role="status"
+      className="rounded-[24px] border border-dashed border-[var(--color-border)] px-4 py-8 text-center text-sm text-[var(--color-text-tertiary)]"
+    >
+      {message}
     </div>
-  );
+  )
 }
