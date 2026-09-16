@@ -57,3 +57,37 @@ def test_staging_backing_resources_are_distinct():
         "graxia-redis",
         "graxia-redis-staging",
     }
+
+
+def test_private_fulfillment_and_checkout_boundaries_are_explicit():
+    config = _render()
+    production = _env_map(_service(config, "graxia-revenue-os"))
+    staging = _env_map(_service(config, "graxia-revenue-os-staging"))
+
+    private_storage_keys = {
+        "REVENUE_OS_PRIVATE_STORAGE_ENDPOINT",
+        "REVENUE_OS_PRIVATE_STORAGE_BUCKET",
+        "REVENUE_OS_PRIVATE_STORAGE_ACCESS_KEY",
+        "REVENUE_OS_PRIVATE_STORAGE_SECRET_KEY",
+        "REVENUE_OS_PRIVATE_STORAGE_REGION",
+    }
+    for env in (production, staging):
+        for key in private_storage_keys | {
+            "REVENUE_OS_DOWNLOAD_SIGNING_SECRET",
+            "REVENUE_OS_PUBLIC_BASE_URL",
+        }:
+            assert env[key]["sync"] is False
+
+    for name in (
+        "graxia-worker-default",
+        "graxia-worker-critical",
+        "graxia-beat",
+        "graxia-revenue-os-staging-worker",
+        "graxia-revenue-os-staging-beat",
+    ):
+        env = _env_map(_service(config, name))
+        assert env["REVENUE_OS_DOWNLOAD_SIGNING_SECRET"]["sync"] is False
+        assert env["REVENUE_OS_PUBLIC_BASE_URL"]["sync"] is False
+
+    assert production["ALLOWED_ORIGINS"]["value"] == "https://graxia-os-funnel.vercel.app"
+    assert staging["ALLOWED_ORIGINS"]["value"] == "https://staging.graxia-os-funnel.vercel.app"
