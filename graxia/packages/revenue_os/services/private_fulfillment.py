@@ -128,4 +128,3 @@ class StaticPrivateObjectResolver:
         if not isinstance(handle, str) or not handle:
             raise PrivateFulfillmentError("private object is unavailable")
         return handle
-

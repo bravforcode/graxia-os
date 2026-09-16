@@ -87,4 +87,3 @@ def test_static_resolver_is_deterministic_without_io():
     assert resolver.resolve("products/prompt-pack.zip", expires_at=200) == (
         "provider-handle-for-test"
     )
-
