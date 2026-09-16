@@ -30,6 +30,14 @@ def _get_test_database_url():
 TEST_DATABASE_URL = _get_test_database_url()
 
 
+@pytest.fixture(autouse=True)
+def safe_fulfillment_environment(monkeypatch):
+    """Provide deterministic local-only fulfillment settings for DB-backed tests."""
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("REVENUE_OS_DOWNLOAD_SIGNING_SECRET", "x" * 48)
+    monkeypatch.setenv("REVENUE_OS_PUBLIC_BASE_URL", "http://testserver")
+
+
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine():
     """Create test database engine."""

@@ -78,6 +78,16 @@ async def seed_db(admin=Depends(require_admin_api_key)) -> dict:
         engine = create_async_engine(DATABASE_URL, pool_pre_ping=True)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            # The Revenue OS SQL migrations are additive and may be applied
+            # after a database already exists. Keep this one compatibility
+            # guard aligned with migration 0012 until the deployment runner
+            # owns the full migration chain.
+            await conn.execute(
+                text(
+                    "ALTER TABLE IF EXISTS revenue_os_products "
+                    "ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb"
+                )
+            )
         await engine.dispose()
     except Exception as exc:
         logger.warning("create_all failed (may already exist): %s", exc)

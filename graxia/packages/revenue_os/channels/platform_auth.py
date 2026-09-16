@@ -48,13 +48,25 @@ class BaseSignedClient:
         return await self._request("POST", path, params=params or {}, json=json)
 
     async def _request(self, method: str, path: str, **kw) -> dict:
+        import json as _json
+
         client = await self._ensure_client()
         if self._rate_budget is not None:
             await self._rate_budget.acquire()  # platform rate budget honored
         params = dict(kw.get("params") or {})
-        signed = self._sign(method, path, params, kw.get("json"))
+        json_body = kw.get("json")
+        signed = self._sign(method, path, params, json_body)
         params.update(signed)
         kw["params"] = params
+        if json_body is not None:
+            # Canonicalize the exact bytes sent over the wire. This keeps
+            # provider signatures and request payloads deterministic.
+            kw.pop("json", None)
+            kw["content"] = _json.dumps(json_body, separators=(",", ":"))
+            kw["headers"] = {
+                "content-type": "application/json",
+                **(kw.get("headers") or {}),
+            }
         if self._extra_headers:
             kw["headers"] = {**(kw.get("headers") or {}), **self._extra_headers}
         for attempt in range(1, MAX_ATTEMPTS + 1):
