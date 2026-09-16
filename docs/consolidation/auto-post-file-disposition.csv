@@ -1,0 +1,35 @@
+donor_path,disposition,target_path,target_status,rationale
+automation/meta_poster.py,adapt,backend/app/content_ops/publishers/facebook.py,planned,Reuse provider behavior behind Graxia approval and receipt contracts
+automation/youtube_pipeline.py,adapt,backend/app/content_ops/publishers/youtube.py,planned,Keep private/unlisted pilot policy and use Graxia worker
+automation/run_daily.py,reject,backend/app/tasks/celery_app.py,existing,Standalone scheduler would duplicate Graxia beat and tenant controls
+backend/api/social.py,adapt,backend/app/api/content_ops.py,planned,Mount routes in Graxia router and dependencies
+backend/api/video_analysis.py,adapt,backend/app/api/video_analysis.py,planned,Reuse endpoint behavior with Graxia auth and tenant scope
+backend/app/integrations/youtube.py,adapt,backend/app/content_ops/publishers/youtube.py,planned,Provider adapter must use Graxia secrets and publish receipt
+backend/app/social/__init__.py,archive-reference,backend/app/content_ops/publishers/__init__.py,planned,Package boundary is replaced by the canonical Graxia package
+backend/app/social/content_hash.py,port,backend/app/content_ops/content_hash.py,planned,Deterministic duplicate protection is portable and provider-neutral
+backend/app/social/facebook_publisher.py,adapt,backend/app/content_ops/publishers/facebook.py,planned,Replace standalone config and auth with Graxia dependencies
+backend/app/social/instagram_publisher.py,adapt,backend/app/content_ops/publishers/instagram.py,planned,Provider call remains dry-run by default
+backend/app/social/linkedin_publisher.py,adapt,backend/app/content_ops/publishers/linkedin.py,planned,Provider call remains dry-run by default
+backend/app/social/pinterest_publisher.py,adapt,backend/app/content_ops/publishers/pinterest.py,planned,Provider call remains dry-run by default
+backend/app/social/publisher.py,adapt,backend/app/content_ops/publishers/base.py,planned,Use one interface for preflight publish lookup and error classification
+backend/app/social/rate_tracker.py,reject,backend/app/services/rate_limit.py,existing,Graxia owns rate budgets and observability
+backend/app/social/threads_publisher.py,adapt,backend/app/content_ops/publishers/threads.py,planned,Provider credentials stay outside request and receipt models
+backend/app/social/tiktok_publisher.py,adapt,backend/app/content_ops/publishers/tiktok.py,planned,Provider call requires approved request and idempotency
+backend/app/social/x_publisher.py,adapt,backend/app/content_ops/publishers/x.py,planned,Provider call requires approved request and idempotency
+backend/app/social/youtube_publisher.py,adapt,backend/app/content_ops/publishers/youtube.py,planned,Use the private pilot contract and safe reconciliation
+backend/models/social.py,adapt,backend/app/models/social.py,planned,Rebase tenant scoped queue models into Graxia metadata
+backend/models/publish_attempt.py,adapt,backend/app/models/publish_attempt.py,planned,Rebase attempt lease and external ID uniqueness
+backend/models/video_analysis.py,adapt,backend/app/models/video_analysis.py,planned,Use Graxia tenant audit and retention fields
+backend/models/video_analysis_run.py,adapt,backend/app/models/video_analysis_run.py,planned,Use immutable result hashes and worker leases
+backend/video_analysis/__init__.py,adapt,backend/app/video_analysis/__init__.py,planned,Move capability under canonical package boundary
+backend/video_analysis/policy.py,port,backend/app/video_analysis/policy.py,planned,Preserve explicit egress and publish blocker policy
+backend/video_analysis/readiness.py,adapt,backend/app/video_analysis/readiness.py,planned,Use Graxia health and evidence reporting
+backend/video_analysis/runs.py,adapt,backend/app/video_analysis/runs.py,planned,Use Graxia persistence and lease ownership
+backend/video_analysis/runtime_probe.py,adapt,backend/app/video_analysis/readiness.py,planned,Merge readiness checks into one Graxia surface
+backend/video_analysis/schemas.py,adapt,backend/app/video_analysis/schemas.py,planned,Validate against the shared JSON schema
+backend/video_analysis/worker_client.py,adapt,backend/app/video_analysis/worker_client.py,planned,Keep authenticated versioned worker boundary
+backend/tasks/content_engine_tasks.py,adapt,backend/app/tasks/content_ops.py,planned,Register work in Graxia Celery app and queue policy
+backend/tasks/publish_reconciliation.py,adapt,backend/app/tasks/content_ops.py,planned,Reconcile ambiguous provider responses safely
+backend/tasks/video_analysis_tasks.py,adapt,backend/app/tasks/video_analysis.py,planned,Use Graxia worker leases and evidence receipts
+frontend/src/tabs/SocialTab.tsx,adapt,frontend/src/features/content-ops/ContentQueue.tsx,planned,Use existing Graxia shell auth and tenant filters
+frontend/src/tabs/VideoAnalysisTab.tsx,adapt,frontend/src/features/content-ops/VideoAnalysis.tsx,planned,Display consent and evidence blockers without raw errors
