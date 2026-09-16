@@ -175,12 +175,103 @@ services:
       - { key: SECRET_KEY, sync: false }
       - { key: ENCRYPTION_KEY, sync: false }
 
+  # ── Revenue OS staging — isolated, test mode, no external side effects ──
+  - type: web
+    name: graxia-revenue-os-staging
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.revenue-os
+    autoDeploy: false
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db-staging
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis-staging
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis-staging
+          property: connectionString
+      - { key: APP_ENV, value: staging }
+      - { key: NO_LIVE_PAYMENT_MODE, value: "true" }
+      - { key: KILL_SWITCH_ALL_EXTERNAL_BETA, value: "true" }
+      - { key: ALLOWED_ORIGINS, value: "https://staging.graxia-os-funnel.vercel.app" }
+      - { key: STRIPE_SECRET_KEY, sync: false }
+      - { key: STRIPE_WEBHOOK_SECRET, sync: false }
+      - { key: ADMIN_API_KEY, sync: false }
+    healthCheckPath: /api/system/readiness
+
+  - type: worker
+    name: graxia-revenue-os-staging-worker
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.revenue-os
+    dockerCommand: celery -A graxia.packages.revenue_os.celery.entrypoint:app worker --loglevel=info --concurrency=2
+    autoDeploy: false
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db-staging
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis-staging
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis-staging
+          property: connectionString
+      - { key: APP_ENV, value: staging }
+      - { key: NO_LIVE_PAYMENT_MODE, value: "true" }
+      - { key: KILL_SWITCH_ALL_EXTERNAL_BETA, value: "true" }
+      - { key: ADMIN_API_KEY, sync: false }
+
+  - type: worker
+    name: graxia-revenue-os-staging-beat
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.revenue-os
+    dockerCommand: celery -A graxia.packages.revenue_os.celery.entrypoint:app beat --loglevel=info
+    autoDeploy: false
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db-staging
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis-staging
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis-staging
+          property: connectionString
+      - { key: APP_ENV, value: staging }
+      - { key: NO_LIVE_PAYMENT_MODE, value: "true" }
+      - { key: KILL_SWITCH_ALL_EXTERNAL_BETA, value: "true" }
+      - { key: ADMIN_API_KEY, sync: false }
+
 databases:
   - name: graxia-db
     databaseName: graxia
     user: graxia
     plan: starter
+  - name: graxia-db-staging
+    databaseName: graxia_staging
+    user: graxia_staging
+    plan: starter
 
 redis:
   - name: graxia-redis
+    plan: starter
+  - name: graxia-redis-staging
     plan: starter
