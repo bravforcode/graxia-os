@@ -54,7 +54,7 @@
     "generated artifacts, logs, screenshots, and reports"
   ],
   "unknowns": [
-    "No history-aware secret scan has been run by this task.",
+    "A bounded redacted history scan ran on 2026-09-17; full history and untracked/ignored candidate review remain required.",
     "No Git bundle or restore verification has been created by this task.",
     "GitHub deployment, webhook, Actions-secret, Pages, and release state remains unverified.",
     "No production, staging, live payment, merge, archive, or delete action was performed."

@@ -48,6 +48,7 @@ class PublishAttempt(Base):
     finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     retryable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     redacted_error_code: Mapped[str | None] = mapped_column(String(64))
+    claim_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

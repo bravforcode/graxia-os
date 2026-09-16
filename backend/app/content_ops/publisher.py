@@ -26,6 +26,20 @@ class PublishAttemptStore(Protocol):
 class AsyncPublishAttemptStore(Protocol):
     """Async persistence seam for the application database."""
 
+    async def claim_async(
+        self,
+        key: tuple[str, str, str],
+        request: PublishRequest,
+    ) -> PublishReceipt | None:
+        """Atomically claim a key; return a safe prior receipt when occupied."""
+
+    async def complete_async(
+        self,
+        key: tuple[str, str, str],
+        receipt: PublishReceipt,
+    ) -> PublishReceipt:
+        """Persist and return the canonical terminal redacted receipt."""
+
     async def get_async(self, key: tuple[str, str, str]) -> PublishReceipt | None:
         """Return a prior durable receipt for an idempotency key."""
 
@@ -67,6 +81,34 @@ class InMemoryPublishAttemptStore:
 
     async def get_async(self, key: tuple[str, str, str]) -> PublishReceipt | None:
         return self.get(key)
+
+    async def claim_async(
+        self,
+        key: tuple[str, str, str],
+        request: PublishRequest,
+    ) -> PublishReceipt | None:
+        prior = self.get(key)
+        if prior is not None:
+            return prior
+        now = _now()
+        self.put(
+            key,
+            _receipt(
+                status="in_progress",
+                error_code="PUBLISH_IN_PROGRESS",
+                started_at=now,
+                finished_at=now,
+            ),
+        )
+        return None
+
+    async def complete_async(
+        self,
+        key: tuple[str, str, str],
+        receipt: PublishReceipt,
+    ) -> PublishReceipt:
+        self.put(key, receipt)
+        return receipt
 
     async def put_async(
         self,
@@ -148,6 +190,23 @@ class ContentOpsPublisher:
             raise TypeError("async publish execution requires an async attempt store")
 
         key = (request.tenant_id, request.provider, request.idempotency_key)
+        claim_async = getattr(self.store, "claim_async", None)
+        complete_async = getattr(self.store, "complete_async", None)
+        if callable(claim_async) and callable(complete_async):
+            prior = await claim_async(key, request)
+            if prior is not None:
+                return prior
+
+            receipt = self._execute_intent(
+                request,
+                adapter=adapter,
+                approval_granted=approval_granted,
+                consent_granted=consent_granted,
+                external_publish_enabled=external_publish_enabled,
+            )
+            completed = await complete_async(key, receipt)
+            return completed or receipt
+
         prior = await get_async(key)
         if prior is not None:
             return prior

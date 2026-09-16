@@ -6,7 +6,11 @@ on:
       - "graxia/packages/revenue_os/**"
       - "graxia/services/revenue_os_api/**"
       - "scripts/revenue_os/**"
+      - "scripts/secret_scan.py"
+      - "scripts/repository_bundle_guard.py"
       - "tests/test_revenue_os_*.py"
+      - "tests/test_secret_scan.py"
+      - "tests/test_repository_bundle_guard.py"
       - "tests/test_ai_factory_catalog_contract.py"
       - "backend/app/content_ops/**"
       - "backend/tests/test_content_ops_*.py"
@@ -19,7 +23,11 @@ on:
       - "graxia/packages/revenue_os/**"
       - "graxia/services/revenue_os_api/**"
       - "scripts/revenue_os/**"
+      - "scripts/secret_scan.py"
+      - "scripts/repository_bundle_guard.py"
       - "tests/test_revenue_os_*.py"
+      - "tests/test_secret_scan.py"
+      - "tests/test_repository_bundle_guard.py"
       - "tests/test_ai_factory_catalog_contract.py"
       - "backend/app/content_ops/**"
       - "backend/tests/test_content_ops_*.py"
@@ -82,6 +90,12 @@ jobs:
           tests/test_revenue_os_staging_preflight.py
           tests/test_revenue_os_render_contract.py
 
+      - name: Run consolidation safety contracts
+        run: >-
+          python -m pytest
+          tests/test_secret_scan.py
+          tests/test_repository_bundle_guard.py
+
       - name: Run private fulfillment and checkout contracts
         run: >-
           python -m pytest
@@ -107,6 +121,8 @@ jobs:
         run: >-
           python -m py_compile
           scripts/revenue_os/evidence_runner.py
+          scripts/secret_scan.py
+          scripts/repository_bundle_guard.py
           scripts/revenue_os/ai_factory_catalog.py
           scripts/revenue_os/staging_preflight.py
           graxia/packages/revenue_os/services/private_fulfillment.py
@@ -117,6 +133,7 @@ jobs:
           backend/app/content_ops/durable_store.py
           backend/app/models/publish_attempt.py
           backend/alembic/versions/022_content_publish_attempts.py
+          backend/alembic/versions/023_publish_claim_expiry.py
 
       - name: Check patch whitespace
         run: git diff --check

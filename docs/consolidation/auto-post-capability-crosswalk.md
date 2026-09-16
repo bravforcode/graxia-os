@@ -6,6 +6,12 @@ Source snapshot: `C:/auto-post` at the preservation point recorded in
 `docs/consolidation/source-manifest.json`. The donor worktree is dirty; this
 crosswalk therefore names behavior and target boundaries without copying files.
 
+The durable attempt store now claims the unique key in a committed transaction
+before an adapter call, returns a redacted in-progress receipt to duplicates,
+and reports expired claims as stale. Focused and adjacent Content Ops tests pass;
+production adapter wiring, reconcile/retry policy, and canary evidence remain
+open by design.
+
 ## Canonical ownership
 
 Graxia OS remains the only owner of identity, tenant isolation, RBAC, approval

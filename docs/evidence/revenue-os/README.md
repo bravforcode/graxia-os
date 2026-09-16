@@ -39,3 +39,24 @@ Do not put API keys, emails, card numbers, raw provider IDs, or raw logs in a
 receipt. A `go` manifest is valid only after every required gate is recorded as
 `passed` against the same source and artifact identity.
 
+## Build a release manifest
+
+After all receipts are written, build the manifest from the receipt directory.
+The command re-validates every receipt and binds it to one source SHA,
+artifact digest, and environment. It defaults to `blocked`; use `--decision go`
+only when every `--required-gate` is `passed`.
+
+```powershell
+python -m scripts.revenue_os.evidence_runner build-manifest `
+  --release-id 2026-09-17-rc1 `
+  --environment staging `
+  --receipt-dir docs/evidence/revenue-os/2026-09-17-rc1/receipts `
+  --output docs/evidence/revenue-os/2026-09-17-rc1/manifest.json `
+  --source-sha <40-lowercase-hex> `
+  --artifact-digest sha256:<64-lowercase-hex> `
+  --required-gate staging-auth `
+  --required-gate staging-checkout
+```
+
+This is an evidence operation only. It does not run gates, deploy, charge,
+publish, or contact a provider.
