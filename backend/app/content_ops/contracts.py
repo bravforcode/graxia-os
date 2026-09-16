@@ -85,7 +85,12 @@ class PublishReceipt(BaseModel):
     redacted_error_code: str | None = Field(default=None, max_length=64)
 
     _attempt_id = field_validator("attempt_id")(_required_id)
-    _external_id = field_validator("external_id")(_required_id)
+    @field_validator("external_id")
+    @classmethod
+    def validate_external_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _required_id(value)
 
     @field_validator("provider_status")
     @classmethod
