@@ -100,6 +100,30 @@ def issue_download_token(
         raise PrivateFulfillmentError("private download token could not be issued") from exc
 
 
+def build_private_fulfillment_url(
+    signer: SignedDownloadService,
+    *,
+    public_base_url: str,
+    app_env: str,
+    entitlement_id: str,
+    product_key: str,
+    metadata: object,
+    ttl_seconds: int = 24 * 60 * 60,
+    now: int | None = None,
+) -> str:
+    """Issue a token and bind it to the application download route."""
+
+    token = issue_download_token(
+        signer,
+        entitlement_id=entitlement_id,
+        product_key=product_key,
+        metadata=metadata,
+        ttl_seconds=ttl_seconds,
+        now=now,
+    )
+    return build_download_url(public_base_url, token, app_env=app_env)
+
+
 class PrivateObjectResolver(Protocol):
     """Provider boundary; implementations must not expose object keys."""
 

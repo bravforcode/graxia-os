@@ -5,6 +5,7 @@ Order fulfillment and entitlement management
 from typing import Optional
 from uuid import UUID
 from datetime import datetime, timedelta
+import os
 import structlog
 
 from sqlalchemy import select
@@ -14,6 +15,11 @@ from ..models import Order, Product, Entitlement, DeliveryEvent
 from ..enums import OrderStatus, DeliveryStatus
 from ..core.db_ops import atomic_operation
 from .email_service import EmailService
+from .private_fulfillment import (
+    PrivateFulfillmentError,
+    build_private_fulfillment_url,
+)
+from .signed_download_service import SignedDownloadService
 
 logger = structlog.get_logger()
 
@@ -107,12 +113,41 @@ class FulfillmentService:
                         body=f"ขอบคุณที่สั่งซื้อ {product.name} — เรากำลังจัดส่งให้เร็วที่สุด",
                     )
                 else:
+                    fulfillment_url = None
+                    environment = os.getenv("APP_ENV", "development").lower()
+                    try:
+                        fulfillment_url = build_private_fulfillment_url(
+                            SignedDownloadService(
+                                os.getenv("REVENUE_OS_DOWNLOAD_SIGNING_SECRET", "")
+                            ),
+                            public_base_url=(
+                                os.getenv("REVENUE_OS_PUBLIC_BASE_URL")
+                                or os.getenv("APP_BASE_URL", "")
+                            ),
+                            app_env=environment,
+                            entitlement_id=str(entitlement.id),
+                            product_key=product.slug,
+                            metadata=product.metadata_,
+                        )
+                    except PrivateFulfillmentError as exc:
+                        if environment in {"staging", "production"}:
+                            raise ValueError(
+                                "private digital fulfillment is not configured"
+                            ) from exc
+                        logger.warning(
+                            "private_digital_fulfillment_not_configured",
+                            product_id=str(product.id),
+                        )
                     email = await EmailService.queue_delivery_email(
                         db=db,
                         order_id=order_id,
                         product_name=product.name,
-                        fulfillment_url=product.fulfillment_url,
-                        fulfillment_instructions=product.fulfillment_instructions,
+                        fulfillment_url=fulfillment_url,
+                        fulfillment_instructions=(
+                            "Your private download link is in this email."
+                            if fulfillment_url
+                            else "Private download delivery is not configured yet."
+                        ),
                     )
                 delivery_event.email_outbox_id = email.id
 

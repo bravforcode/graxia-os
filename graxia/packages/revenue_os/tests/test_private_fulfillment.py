@@ -5,6 +5,7 @@ from ..services.private_fulfillment import (
     PrivateFulfillmentError,
     StaticPrivateObjectResolver,
     build_download_url,
+    build_private_fulfillment_url,
     issue_download_token,
     private_object_key_from_metadata,
     validate_private_object_key,
@@ -70,6 +71,20 @@ def test_issue_download_token_reuses_signed_service():
     payload = signer.verify(token, now=100)
     assert payload["object_key"] == "products/prompt-pack.zip"
     assert payload["entitlement_id"] == "entitlement-1"
+
+
+def test_private_fulfillment_url_binds_token_to_application():
+    url = build_private_fulfillment_url(
+        SignedDownloadService(SECRET),
+        public_base_url="https://app.example.test",
+        app_env="production",
+        entitlement_id="entitlement-1",
+        product_key="prompt-pack",
+        metadata={"private_object_key": "products/prompt-pack.zip"},
+        now=100,
+    )
+    assert url.startswith("https://app.example.test/api/v1/delivery/download/")
+    assert "products/prompt-pack.zip" not in url
 
 
 def test_missing_resolver_fails_closed_without_disclosing_key():

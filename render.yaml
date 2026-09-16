@@ -78,6 +78,13 @@ services:
       - { key: STRIPE_SECRET_KEY, sync: false }
       - { key: STRIPE_WEBHOOK_SECRET, sync: false }
       - { key: ADMIN_API_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_ENDPOINT, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_BUCKET, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_ACCESS_KEY, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_SECRET_KEY, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_REGION, sync: false }
     healthCheckPath: /api/system/readiness
     autoDeploy: true
 
@@ -112,6 +119,8 @@ services:
       - { key: REQUIRE_SUPABASE, value: "false" }
       - { key: SECRET_KEY, sync: false }
       - { key: ENCRYPTION_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
 
   - type: worker
     name: graxia-worker-critical
@@ -143,6 +152,8 @@ services:
       - { key: REQUIRE_SUPABASE, value: "false" }
       - { key: SECRET_KEY, sync: false }
       - { key: ENCRYPTION_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
 
   - type: worker
     name: graxia-beat
@@ -174,6 +185,8 @@ services:
       - { key: REQUIRE_SUPABASE, value: "false" }
       - { key: SECRET_KEY, sync: false }
       - { key: ENCRYPTION_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
 
   # ── Revenue OS staging — isolated, test mode, no external side effects ──
   - type: web
@@ -204,6 +217,13 @@ services:
       - { key: STRIPE_SECRET_KEY, sync: false }
       - { key: STRIPE_WEBHOOK_SECRET, sync: false }
       - { key: ADMIN_API_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_ENDPOINT, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_BUCKET, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_ACCESS_KEY, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_SECRET_KEY, sync: false }
+      - { key: REVENUE_OS_PRIVATE_STORAGE_REGION, sync: false }
     healthCheckPath: /api/system/readiness
 
   - type: worker
@@ -232,6 +252,8 @@ services:
       - { key: NO_LIVE_PAYMENT_MODE, value: "true" }
       - { key: KILL_SWITCH_ALL_EXTERNAL_BETA, value: "true" }
       - { key: ADMIN_API_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
 
   - type: worker
     name: graxia-revenue-os-staging-beat
@@ -259,6 +281,8 @@ services:
       - { key: NO_LIVE_PAYMENT_MODE, value: "true" }
       - { key: KILL_SWITCH_ALL_EXTERNAL_BETA, value: "true" }
       - { key: ADMIN_API_KEY, sync: false }
+      - { key: REVENUE_OS_DOWNLOAD_SIGNING_SECRET, sync: false }
+      - { key: REVENUE_OS_PUBLIC_BASE_URL, sync: false }
 
 databases:
   - name: graxia-db
