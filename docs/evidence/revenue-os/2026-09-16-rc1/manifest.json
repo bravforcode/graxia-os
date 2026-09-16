@@ -1,0 +1,35 @@
+{
+  "release_id": "2026-09-16-rc1",
+  "source_sha": "0000000000000000000000000000000000000000",
+  "artifact_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "environment": "staging",
+  "receipts": [],
+  "required_gates": [
+    "source",
+    "build",
+    "migrations",
+    "backup",
+    "restore",
+    "auth",
+    "webhook",
+    "checkout",
+    "fulfillment",
+    "email",
+    "rollback"
+  ],
+  "gates": {
+    "source": "not-run",
+    "build": "not-run",
+    "migrations": "not-run",
+    "backup": "not-run",
+    "restore": "not-run",
+    "auth": "not-run",
+    "webhook": "not-run",
+    "checkout": "not-run",
+    "fulfillment": "not-run",
+    "email": "not-run",
+    "rollback": "not-run"
+  },
+  "decision": "blocked",
+  "note": "Template only. No release or production readiness claim. Replace zero digests only after real receipts exist."
+}

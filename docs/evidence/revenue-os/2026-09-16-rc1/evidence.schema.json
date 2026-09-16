@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://graxia-os.local/schemas/revenue-os-evidence-v1.json",
+  "title": "Revenue OS redacted release evidence",
+  "type": "object",
+  "required": [
+    "gate",
+    "source_sha",
+    "artifact_digest",
+    "environment",
+    "started_at",
+    "finished_at",
+    "command",
+    "exit_code",
+    "assertions",
+    "safe_ids",
+    "log_sha256",
+    "operator",
+    "result"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "gate": {"type": "string", "minLength": 1},
+    "source_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "artifact_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "environment": {"enum": ["local", "staging", "production"]},
+    "started_at": {"type": "string", "minLength": 1},
+    "finished_at": {"type": "string", "minLength": 1},
+    "command": {"type": "string", "minLength": 1},
+    "exit_code": {"type": "integer"},
+    "assertions": {"type": "object"},
+    "safe_ids": {"type": "object"},
+    "log_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "operator": {"type": "string", "minLength": 1},
+    "result": {"enum": ["passed", "failed", "blocked", "not-run", "skipped"]}
+  }
+}
