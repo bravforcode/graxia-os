@@ -23,6 +23,21 @@ class PublishAttemptStore(Protocol):
         """Persist a redacted receipt before returning it to the caller."""
 
 
+class AsyncPublishAttemptStore(Protocol):
+    """Async persistence seam for the application database."""
+
+    async def get_async(self, key: tuple[str, str, str]) -> PublishReceipt | None:
+        """Return a prior durable receipt for an idempotency key."""
+
+    async def put_async(
+        self,
+        key: tuple[str, str, str],
+        request: PublishRequest,
+        receipt: PublishReceipt,
+    ) -> None:
+        """Persist a request and its redacted receipt atomically."""
+
+
 class PublisherAdapter(Protocol):
     def publish(self, request: PublishRequest) -> "AdapterResult":
         """Perform one provider call only after the orchestrator gates it."""
@@ -49,6 +64,17 @@ class InMemoryPublishAttemptStore:
 
     def put(self, key: tuple[str, str, str], receipt: PublishReceipt) -> None:
         self._receipts[key] = receipt
+
+    async def get_async(self, key: tuple[str, str, str]) -> PublishReceipt | None:
+        return self.get(key)
+
+    async def put_async(
+        self,
+        key: tuple[str, str, str],
+        request: PublishRequest,
+        receipt: PublishReceipt,
+    ) -> None:
+        self.put(key, receipt)
 
 
 def _now() -> datetime:
@@ -95,6 +121,58 @@ class ContentOpsPublisher:
         if prior is not None:
             return prior
 
+        receipt = self._execute_intent(
+            request,
+            adapter=adapter,
+            approval_granted=approval_granted,
+            consent_granted=consent_granted,
+            external_publish_enabled=external_publish_enabled,
+        )
+        self.store.put(key, receipt)
+        return receipt
+
+    async def execute_async(
+        self,
+        request: PublishRequest,
+        *,
+        adapter: PublisherAdapter | None = None,
+        approval_granted: bool = False,
+        consent_granted: bool = False,
+        external_publish_enabled: bool = False,
+    ) -> PublishReceipt:
+        """Execute against the injected async store used by web/worker code."""
+
+        get_async = getattr(self.store, "get_async", None)
+        put_async = getattr(self.store, "put_async", None)
+        if not callable(get_async) or not callable(put_async):
+            raise TypeError("async publish execution requires an async attempt store")
+
+        key = (request.tenant_id, request.provider, request.idempotency_key)
+        prior = await get_async(key)
+        if prior is not None:
+            return prior
+
+        receipt = self._execute_intent(
+            request,
+            adapter=adapter,
+            approval_granted=approval_granted,
+            consent_granted=consent_granted,
+            external_publish_enabled=external_publish_enabled,
+        )
+        await put_async(key, request, receipt)
+        return receipt
+
+    def _execute_intent(
+        self,
+        request: PublishRequest,
+        *,
+        adapter: PublisherAdapter | None,
+        approval_granted: bool,
+        consent_granted: bool,
+        external_publish_enabled: bool,
+    ) -> PublishReceipt:
+        """Apply the safety gates once; callers choose sync or async persistence."""
+
         started_at = _now()
         if request.dry_run:
             receipt = _receipt(
@@ -102,7 +180,6 @@ class ContentOpsPublisher:
                 started_at=started_at,
                 finished_at=_now(),
             )
-            self.store.put(key, receipt)
             return receipt
 
         if not request.live:
@@ -112,7 +189,6 @@ class ContentOpsPublisher:
                 started_at=started_at,
                 finished_at=_now(),
             )
-            self.store.put(key, receipt)
             return receipt
 
         if not approval_granted:
@@ -122,7 +198,6 @@ class ContentOpsPublisher:
                 started_at=started_at,
                 finished_at=_now(),
             )
-            self.store.put(key, receipt)
             return receipt
 
         if not consent_granted:
@@ -132,7 +207,6 @@ class ContentOpsPublisher:
                 started_at=started_at,
                 finished_at=_now(),
             )
-            self.store.put(key, receipt)
             return receipt
 
         if not external_publish_enabled or adapter is None:
@@ -142,7 +216,6 @@ class ContentOpsPublisher:
                 started_at=started_at,
                 finished_at=_now(),
             )
-            self.store.put(key, receipt)
             return receipt
 
         try:
@@ -165,5 +238,4 @@ class ContentOpsPublisher:
                 started_at=started_at,
                 finished_at=_now(),
             )
-        self.store.put(key, receipt)
         return receipt

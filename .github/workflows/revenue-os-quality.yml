@@ -98,6 +98,7 @@ jobs:
           python -m pytest
           backend/tests/test_content_ops_contracts.py
           backend/tests/test_content_ops_publisher.py
+          backend/tests/test_content_ops_durable_store.py
 
       - name: Compile changed Python boundaries
         run: >-
@@ -109,6 +110,9 @@ jobs:
           graxia/services/revenue_os_api/routers/checkout.py
           graxia/services/revenue_os_api/routers/delivery.py
           backend/app/content_ops/publisher.py
+          backend/app/content_ops/durable_store.py
+          backend/app/models/publish_attempt.py
+          backend/alembic/versions/022_content_publish_attempts.py
 
       - name: Check patch whitespace
         run: git diff --check

@@ -39,6 +39,7 @@ from .workflow import (
     PipelineRun,
 )  # Add this
 from .organization import Organization
+from .publish_attempt import PublishAttempt
 from .usage_log import UsageLog
 from .outcome_pattern import OutcomePattern
 from .scoring_weight_history import ScoringWeightHistory
@@ -97,6 +98,7 @@ __all__ = [
     "AgentTask",
     "AgentMessage",
     "Organization",
+    "PublishAttempt",
     "UsageLog",
     "ContentKeyword",
     "ContentArticle",
