@@ -12,6 +12,7 @@ from scripts.revenue_os.ai_factory_catalog import (
     build_product_payloads,
     load_private_object_keys,
     load_storefront_catalog,
+    main,
     upsert_product_payloads,
     validate_private_object_keys,
 )
@@ -125,6 +126,19 @@ async def test_upsert_clears_legacy_public_fulfillment_and_preserves_stripe_id()
     assert existing.stripe_price_id == "price_existing"
     assert existing.metadata_["operator_note"] == "preserve"
     assert existing.metadata_["private_object_key"].startswith("ai-factory/")
+
+
+def test_apply_requires_explicit_environment_and_production_confirmation(tmp_path, monkeypatch):
+    catalog_path = tmp_path / "products.json"
+    keys_path = tmp_path / "private-object-keys.json"
+    catalog_path.write_text(json.dumps(_catalog()), encoding="utf-8-sig")
+    keys_path.write_text(json.dumps(_private_keys()), encoding="utf-8-sig")
+
+    monkeypatch.delenv("APP_ENV", raising=False)
+    assert main(["--catalog", str(catalog_path), "--private-keys", str(keys_path), "--apply"]) == 2
+
+    monkeypatch.setenv("APP_ENV", "production")
+    assert main(["--catalog", str(catalog_path), "--private-keys", str(keys_path), "--apply"]) == 2
 
 
 def load_storefront_catalog_from_mapping(payload: dict):
