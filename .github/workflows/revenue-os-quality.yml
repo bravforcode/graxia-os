@@ -7,6 +7,7 @@ on:
       - "graxia/services/revenue_os_api/**"
       - "scripts/revenue_os/**"
       - "tests/test_revenue_os_*.py"
+      - "tests/test_ai_factory_catalog_contract.py"
       - "backend/app/content_ops/**"
       - "backend/tests/test_content_ops_*.py"
       - "render.yaml"
@@ -19,6 +20,7 @@ on:
       - "graxia/services/revenue_os_api/**"
       - "scripts/revenue_os/**"
       - "tests/test_revenue_os_*.py"
+      - "tests/test_ai_factory_catalog_contract.py"
       - "backend/app/content_ops/**"
       - "backend/tests/test_content_ops_*.py"
       - "render.yaml"
@@ -74,6 +76,7 @@ jobs:
       - name: Run evidence and deployment safety contracts
         run: >-
           python -m pytest
+          tests/test_ai_factory_catalog_contract.py
           tests/test_revenue_os_evidence_schema.py
           tests/test_revenue_os_evidence_runner.py
           tests/test_revenue_os_staging_preflight.py
@@ -104,6 +107,7 @@ jobs:
         run: >-
           python -m py_compile
           scripts/revenue_os/evidence_runner.py
+          scripts/revenue_os/ai_factory_catalog.py
           scripts/revenue_os/staging_preflight.py
           graxia/packages/revenue_os/services/private_fulfillment.py
           graxia/packages/revenue_os/services/private_object_storage.py
