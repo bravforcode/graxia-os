@@ -2,6 +2,7 @@
 
 from .contracts import ContentLifecycle, PublishReceipt, PublishRequest
 from .durable_store import SQLAlchemyPublishAttemptStore
+from .adapters import CallablePublisherAdapter, ProviderAdapterRegistry
 from .publisher import (
     AdapterResult,
     AsyncPublishAttemptStore,
@@ -12,10 +13,12 @@ from .publisher import (
 __all__ = [
     "AdapterResult",
     "AsyncPublishAttemptStore",
+    "CallablePublisherAdapter",
     "ContentLifecycle",
     "ContentOpsPublisher",
     "InMemoryPublishAttemptStore",
     "PublishReceipt",
     "PublishRequest",
+    "ProviderAdapterRegistry",
     "SQLAlchemyPublishAttemptStore",
 ]
