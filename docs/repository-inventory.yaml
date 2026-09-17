@@ -1,10 +1,55 @@
 {
   "version": 1,
   "audit": {
-    "audited_at": "2026-09-16",
-    "source": "read-only GitHub audit",
+    "audited_at": "2026-09-17",
+    "source": "GitHub audit plus guarded archive evidence",
     "external_writes": false,
-    "note": "Re-fetch state before every archive/delete action."
+    "note": "This inventory remains non-authorizing. Archive outcomes below were performed separately only after a remote-head re-fetch, open-PR check, and repository_bundle_guard verification. No repository was deleted.",
+    "bundle_root": "C:/Users/menum/github-cleanup-bundles",
+    "bundle_verifier": "scripts/repository_bundle_guard.py",
+    "cleanup": {
+      "archived_repositories": [
+        "fastwork-promo-automation",
+        "Safescan-ai",
+        "Intersite-Track",
+        "gosoft",
+        "mu-x-harvard",
+        "flashfix-ai",
+        "OBS-rag",
+        "graxia-trade",
+        "enterprise-agent-os",
+        "thaireview-platform",
+        "thailand-flood-monitor",
+        "Solven",
+        "harvest-ecc",
+        "sriracha-coast-watch",
+        "Nasa-hackathon-2026",
+        "climate-web",
+        "auto-post",
+        "jobshield-ai",
+        "prompt-perfected",
+        "NIGHT_SALVAGE"
+      ],
+      "held_repositories": [
+        {
+          "name": "vibescity-live",
+          "reason": "13 open pull requests; archive deferred to preserve active work."
+        },
+        {
+          "name": "revenue-os",
+          "reason": "Open production-candidate pull request #1; archive deferred until reviewed."
+        },
+        {
+          "name": "lotusdis",
+          "reason": "Remote repository is empty and has no restorable Git bundle; deletion deferred."
+        }
+      ],
+      "deleted_repositories": [],
+      "protected_repositories_untouched": [
+        "krisphy",
+        "adminmate-ai"
+      ]
+    }
   },
   "repositories": [
     {"name": "fastwork-promo-automation", "action": "merge-then-archive", "replacement": "graxia-os"},
