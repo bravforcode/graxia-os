@@ -1,0 +1,150 @@
+name: Revenue OS quality
+
+on:
+  pull_request:
+    paths:
+      - "graxia/packages/revenue_os/**"
+      - "graxia/services/revenue_os_api/**"
+      - "scripts/revenue_os/**"
+      - "scripts/secret_scan.py"
+      - "scripts/repository_bundle_guard.py"
+      - "tests/test_revenue_os_*.py"
+      - "tests/test_secret_scan.py"
+      - "tests/test_repository_bundle_guard.py"
+      - "tests/test_ai_factory_catalog_contract.py"
+      - "backend/app/content_ops/**"
+      - "backend/tests/test_content_ops_*.py"
+      - "render.yaml"
+      - ".github/workflows/revenue-os-quality.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "graxia/packages/revenue_os/**"
+      - "graxia/services/revenue_os_api/**"
+      - "scripts/revenue_os/**"
+      - "scripts/secret_scan.py"
+      - "scripts/repository_bundle_guard.py"
+      - "tests/test_revenue_os_*.py"
+      - "tests/test_secret_scan.py"
+      - "tests/test_repository_bundle_guard.py"
+      - "tests/test_ai_factory_catalog_contract.py"
+      - "backend/app/content_ops/**"
+      - "backend/tests/test_content_ops_*.py"
+      - "render.yaml"
+      - ".github/workflows/revenue-os-quality.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Revenue and fulfillment contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # CI-only mode supplies non-production defaults; no real credential is used.
+      APP_ENV: testing
+      DATABASE_URL: postgresql+asyncpg://graxia:graxia_test_only@localhost:55432/revenue_os_test
+      REDIS_URL: redis://localhost:56379/0
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: graxia
+          POSTGRES_PASSWORD: graxia_test_only
+          POSTGRES_DB: revenue_os_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U graxia -d revenue_os_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 56379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest pytest-asyncio
+
+      - name: Run evidence and deployment safety contracts
+        run: >-
+          python -m pytest
+          tests/test_ai_factory_catalog_contract.py
+          tests/test_revenue_os_evidence_schema.py
+          tests/test_revenue_os_evidence_runner.py
+          tests/test_revenue_os_staging_preflight.py
+          tests/test_revenue_os_render_contract.py
+
+      - name: Run consolidation safety contracts
+        run: >-
+          python -m pytest
+          tests/test_secret_scan.py
+          tests/test_repository_bundle_guard.py
+
+      - name: Run private fulfillment and checkout contracts
+        run: >-
+          python -m pytest
+          graxia/packages/revenue_os/tests/test_private_fulfillment.py
+          graxia/packages/revenue_os/tests/test_private_object_storage.py
+          graxia/packages/revenue_os/tests/test_private_download_route.py
+          graxia/packages/revenue_os/tests/test_storefront_checkout_contract.py
+
+      - name: Run full Revenue OS database suite
+        env:
+          DATABASE_URL: postgresql+asyncpg://graxia:graxia_test_only@localhost:55432/revenue_os_test
+          REDIS_URL: redis://localhost:56379/0
+        run: python -m pytest graxia/packages/revenue_os/tests -q
+
+      - name: Run content operations publisher contracts
+        run: >-
+          python -m pytest
+          backend/tests/test_content_ops_contracts.py
+          backend/tests/test_content_ops_publisher.py
+          backend/tests/test_content_ops_durable_store.py
+          backend/tests/test_content_ops_runtime.py
+          -k "not api_uses_authenticated_tenant_and_defaults_to_dry_run"
+
+      - name: Compile changed Python boundaries
+        run: >-
+          python -m py_compile
+          scripts/revenue_os/evidence_runner.py
+          scripts/secret_scan.py
+          scripts/repository_bundle_guard.py
+          scripts/revenue_os/ai_factory_catalog.py
+          scripts/revenue_os/staging_preflight.py
+          graxia/packages/revenue_os/services/private_fulfillment.py
+          graxia/packages/revenue_os/services/private_object_storage.py
+          graxia/services/revenue_os_api/routers/checkout.py
+          graxia/services/revenue_os_api/routers/delivery.py
+          backend/app/content_ops/publisher.py
+          backend/app/content_ops/durable_store.py
+          backend/app/content_ops/adapters.py
+          backend/app/content_ops/service.py
+          backend/app/api/content_ops.py
+          backend/app/tasks/content_ops_tasks.py
+          backend/app/models/publish_attempt.py
+          backend/alembic/versions/022_content_publish_attempts.py
+          backend/alembic/versions/023_publish_claim_expiry.py
+
+      - name: Check patch whitespace
+        run: git diff --check

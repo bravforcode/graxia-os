@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+from urllib.parse import urlsplit
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -18,6 +19,7 @@ from ....packages.revenue_os.enums import ProductStatus
 from ....packages.revenue_os.models import Product, WebhookEvent
 from ....packages.revenue_os.schemas import (
     CheckoutSessionCreate,
+    CheckoutSessionBySlugCreate,
     CheckoutSessionResponse,
     CheckoutWebhookResponse,
     CreateOrderPayload,
@@ -47,6 +49,83 @@ def _get_stripe_secret_key() -> str:
     return key
 
 
+def _validate_checkout_redirect(value: str, *, field: str) -> str:
+    parsed = urlsplit(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise HTTPException(status_code=400, detail=f"{field} must be an absolute URL")
+    if parsed.username or parsed.password or parsed.fragment:
+        raise HTTPException(status_code=400, detail=f"{field} is invalid")
+    if os.getenv("APP_ENV") in {"staging", "production"} and parsed.scheme != "https":
+        raise HTTPException(status_code=400, detail=f"{field} must use HTTPS")
+    allowed = {
+        origin.strip().rstrip("/")
+        for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+        if origin.strip()
+    }
+    if os.getenv("APP_ENV") in {"staging", "production"} and not allowed:
+        raise HTTPException(status_code=503, detail="checkout redirect allowlist is not configured")
+    if allowed and f"{parsed.scheme}://{parsed.netloc}" not in allowed:
+        raise HTTPException(status_code=400, detail=f"{field} origin is not allowed")
+    return value
+
+
+def _checkout_urls(success_url: str | None, cancel_url: str | None) -> tuple[str, str]:
+    success = success_url or os.getenv("REVENUE_OS_CHECKOUT_SUCCESS_URL")
+    cancel = cancel_url or os.getenv("REVENUE_OS_CHECKOUT_CANCEL_URL")
+    if not success or not cancel:
+        raise HTTPException(status_code=400, detail="checkout redirect URLs are not configured")
+    return (
+        _validate_checkout_redirect(success, field="success_url"),
+        _validate_checkout_redirect(cancel, field="cancel_url"),
+    )
+
+
+async def _create_checkout_session_for_product(
+    *,
+    product: Product,
+    mode: str,
+    success_url: str,
+    cancel_url: str,
+    customer_email: str | None = None,
+) -> CheckoutSessionResponse:
+    if product.status != ProductStatus.PUBLISHED:
+        raise HTTPException(status_code=400, detail="Product is not available for purchase")
+    if not product.price_cents or product.price_cents <= 0:
+        raise HTTPException(status_code=400, detail="Product has no price")
+
+    stripe.api_key = _get_stripe_secret_key()
+    try:
+        if product.stripe_price_id:
+            line_items = [{"price": product.stripe_price_id, "quantity": 1}]
+        else:
+            price_data = {
+                "currency": (product.currency or "THB").lower(),
+                "unit_amount": product.price_cents,
+                "product_data": {"name": product.name},
+            }
+            if mode == "subscription":
+                price_data["recurring"] = {"interval": "month"}
+            line_items = [{"price_data": price_data, "quantity": 1}]
+        create_kwargs = {
+            "mode": mode,
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+            "line_items": line_items,
+            "metadata": {"product_id": str(product.id), "mode": mode},
+        }
+        if customer_email:
+            create_kwargs["customer_email"] = customer_email
+        session = stripe_checkout.create(**create_kwargs)
+    except stripe.error.StripeError as exc:
+        logger.error("Stripe checkout session creation failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Payment provider error")
+    checkout_url = getattr(session, "url", None)
+    if not isinstance(checkout_url, str) or not checkout_url.startswith("https://"):
+        logger.error("Payment provider returned an invalid hosted checkout URL")
+        raise HTTPException(status_code=502, detail="Payment provider returned an invalid checkout URL")
+    return CheckoutSessionResponse(session_id=session.id, checkout_url=checkout_url)
+
+
 @router.post(
     "/session",
     response_model=CheckoutSessionResponse,
@@ -73,42 +152,46 @@ async def create_checkout_session(
     product = await db.get(Product, payload.product_id)
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
-    if product.status != ProductStatus.PUBLISHED:
-        raise HTTPException(status_code=400, detail="Product is not available for purchase")
-    if not product.price_cents or product.price_cents <= 0:
-        raise HTTPException(status_code=400, detail="Product has no price")
-
-    stripe.api_key = _get_stripe_secret_key()
-    try:
-        if product.stripe_price_id:
-            line_items = [{"price": product.stripe_price_id, "quantity": 1}]
-        else:
-            price_data = {
-                "currency": (product.currency or "THB").lower(),
-                "unit_amount": product.price_cents,
-                "product_data": {"name": product.name},
-            }
-            if payload.mode == "subscription":
-                price_data["recurring"] = {"interval": "month"}
-            line_items = [{"price_data": price_data, "quantity": 1}]
-
-        session = stripe_checkout.create(
-            mode=payload.mode,
-            success_url=payload.success_url,
-            cancel_url=payload.cancel_url,
-            line_items=line_items,
-            metadata={"product_id": str(product.id), "mode": payload.mode},
-            customer_email=payload.customer_email,
-        )
-    except stripe.error.StripeError as exc:
-        logger.error("Stripe checkout session creation failed: %s", exc)
-        raise HTTPException(status_code=502, detail="Payment provider error")
-
+    session_response = await _create_checkout_session_for_product(
+        product=product,
+        mode=payload.mode,
+        success_url=_validate_checkout_redirect(payload.success_url, field="success_url"),
+        cancel_url=_validate_checkout_redirect(payload.cancel_url, field="cancel_url"),
+        customer_email=payload.customer_email,
+    )
     logger.info(
         "Checkout session created: product_id=%s session_id=%s",
-        product.id, session.id,
+        product.id, session_response.session_id,
     )
-    return CheckoutSessionResponse(session_id=session.id, checkout_url=session.url)
+    return session_response
+
+
+@router.post(
+    "/session/by-slug",
+    response_model=CheckoutSessionResponse,
+    status_code=201,
+    summary="Create storefront checkout session by product slug",
+)
+async def create_checkout_session_by_slug(
+    payload: CheckoutSessionBySlugCreate,
+    db: AsyncSession = Depends(get_db),
+) -> CheckoutSessionResponse:
+    """Create checkout for a thin storefront without trusting client pricing."""
+
+    try:
+        ensure_money_ops_allowed()
+    except MoneyKillSwitchError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    product = await db.scalar(select(Product).where(Product.slug == payload.product_slug))
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    success_url, cancel_url = _checkout_urls(payload.success_url, payload.cancel_url)
+    return await _create_checkout_session_for_product(
+        product=product,
+        mode=payload.mode,
+        success_url=success_url,
+        cancel_url=cancel_url,
+    )
 
 
 @router.post(

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "audit": {
+    "audited_at": "2026-09-16",
+    "source": "read-only GitHub audit",
+    "external_writes": false,
+    "note": "Re-fetch state before every archive/delete action."
+  },
+  "repositories": [
+    {"name": "fastwork-promo-automation", "action": "merge-then-archive", "replacement": "graxia-os"},
+    {"name": "vibescity-live", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "bravforcode", "action": "keep-active", "replacement": "bravforcode"},
+    {"name": "lotusdis", "action": "quarantine-then-delete", "replacement": null},
+    {"name": "Safescan-ai", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "Intersite-Track", "action": "archive", "replacement": "graxia-os"},
+    {"name": "gosoft", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "mu-x-harvard", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "flashfix-ai", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "graxia-os", "action": "keep-active", "replacement": "graxia-os"},
+    {"name": "OBS-rag", "action": "merge-then-archive", "replacement": "graxia-os"},
+    {"name": "thaolai-web", "action": "keep-active", "replacement": "thaolai-web"},
+    {"name": "adminmate-ai", "action": "keep-active", "protected": true, "replacement": "adminmate-ai"},
+    {"name": "krisphy", "action": "keep-active", "protected": true, "replacement": "krisphy"},
+    {"name": "graxia-trade", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "Train-llm", "action": "already-archived", "replacement": "graxia-os"},
+    {"name": "enterprise-agent-os", "action": "merge-then-archive", "replacement": "graxia-os"},
+    {"name": "thaireview-platform", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "thailand-flood-monitor", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "portfolio-production", "action": "keep-active", "replacement": "portfolio-production"},
+    {"name": "ai-factory", "action": "keep-active", "replacement": "ai-factory"},
+    {"name": "Solven", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "harvest-ecc", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "sriracha-coast-watch", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "Nasa-hackathon-2026", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "climate-web", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "auto-post", "action": "merge-then-archive", "replacement": "graxia-os"},
+    {"name": "jobshield-ai", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "prompt-perfected", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "NIGHT_SALVAGE", "action": "archive", "replacement": "portfolio-production"},
+    {"name": "revenue-os", "action": "merge-then-archive", "replacement": "graxia-os"}
+  ]
+}

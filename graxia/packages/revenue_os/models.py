@@ -211,6 +211,8 @@ class Product(Base):
 
     fulfillment_url: Mapped[Optional[str]] = mapped_column(String(1000))
     fulfillment_instructions: Mapped[Optional[str]] = mapped_column(Text)
+    # Relative key for the private object store; never expose a public file URL.
+    metadata_: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
 
     # Phase 2: physical fulfillment (POD/dropship)
     supplier: Mapped[Optional[str]] = mapped_column(String(100))

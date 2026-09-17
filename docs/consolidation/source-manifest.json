@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-09-16",
+  "purpose": "Pre-consolidation preservation record; metadata only",
+  "external_actions_performed": false,
+  "repositories": [
+    {
+      "name": "graxia-os",
+      "path": "C:/Users/menum/graxia os",
+      "branch": "codex/revenue-factory-20260916",
+      "head": "b490c37a6f6ead1dab6373771244a788c19be4d0",
+      "dirty_count": 93,
+      "dirty_state": "dirty",
+      "role": "canonical integration target",
+      "disposition": "keep-active",
+      "notes": [
+        "Existing user changes preserved.",
+        "Implementation branch created from main; no reset or cleanup performed."
+      ]
+    },
+    {
+      "name": "revenue-os",
+      "path": "C:/revenue_os",
+      "branch": "master",
+      "head": "39eb5116e38cbba19db577d945218edb369ffe3f",
+      "dirty_count": 46,
+      "dirty_state": "dirty",
+      "role": "Revenue OS donor and rollback source",
+      "disposition": "preserve-then-selective-import",
+      "notes": [
+        "No files edited by this task.",
+        "Untracked environment backups and generated/runtime files require classification before import."
+      ]
+    },
+    {
+      "name": "auto-post",
+      "path": "C:/auto-post",
+      "branch": "master",
+      "head": "8c1dfa7d4bba3c14ff3fb61260c84621f8884886",
+      "dirty_count": 126,
+      "dirty_state": "dirty",
+      "role": "Content Ops and publishing donor",
+      "disposition": "preserve-then-selective-import",
+      "notes": [
+        "No files edited by this task.",
+        "Standalone OpenWolf/runtime artifacts are not import candidates."
+      ]
+    }
+  ],
+  "known_risk_categories": [
+    "environment files and backups",
+    "virtual environments and dependency caches",
+    "local databases and scheduler state",
+    "provider credentials and OAuth material",
+    "generated artifacts, logs, screenshots, and reports"
+  ],
+  "unknowns": [
+    "A bounded redacted history scan ran on 2026-09-17; full history and untracked/ignored candidate review remain required.",
+    "No Git bundle or restore verification has been created by this task.",
+    "GitHub deployment, webhook, Actions-secret, Pages, and release state remains unverified.",
+    "No production, staging, live payment, merge, archive, or delete action was performed."
+  ]
+}

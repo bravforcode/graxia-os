@@ -7,6 +7,7 @@ from app.api.auth import router as auth_router
 from app.api.calendar import router as calendar_router
 from app.api.cognitive import router as cognitive_router
 from app.api.commands import router as commands_router
+from app.api.content_ops import router as content_ops_router
 from app.api.contacts import router as contacts_router
 from app.api.costs import router as costs_router
 from app.api.drafts import router as drafts_router
@@ -50,6 +51,7 @@ api_router.include_router(agents_router, prefix="/api/v1")
 api_router.include_router(approvals_router, prefix="/api/v1")
 api_router.include_router(calendar_router, prefix="/api/v1")
 api_router.include_router(commands_router, prefix="/api/v1")
+api_router.include_router(content_ops_router, prefix="/api/v1")
 api_router.include_router(opportunities_router, prefix="/api/v1")
 api_router.include_router(contacts_router, prefix="/api/v1")
 api_router.include_router(drafts_router, prefix="/api/v1")

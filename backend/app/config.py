@@ -343,6 +343,11 @@ class Settings(BaseSettings):
     ALLOW_REAL_LLM_CALLS: bool = False
     ALLOW_PRODUCTION_DB: bool = False
 
+    # Content Ops / Auto-Post consolidation.  Both gates are fail-closed;
+    # enabling them alone is insufficient without an injected provider adapter.
+    CONTENT_OPS_EXTERNAL_PUBLISH_ENABLED: bool = False
+    CONTENT_OPS_PROVIDER_ALLOWLIST: str = ""
+
     # Production Readiness Gate
     PRODUCTION_READY: bool = False
 

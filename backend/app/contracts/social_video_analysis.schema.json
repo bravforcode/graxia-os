@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://graxia-os.local/contracts/social-video-analysis.schema.json",
+  "title": "Graxia Social Video Analysis Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "consent", "stages", "result_hash", "lease", "publish_blocked"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cloud_media_egress", "transcript_egress"],
+      "properties": {
+        "cloud_media_egress": {"type": "boolean"},
+        "transcript_egress": {"type": "boolean"},
+        "granted_at": {"type": "string", "format": "date-time"},
+        "granted_by": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "status", "evidence_ref"],
+        "properties": {
+          "stage": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$"},
+          "status": {"enum": ["pending", "complete", "blocked", "failed"]},
+          "evidence_ref": {"type": "string", "pattern": "^safe:[A-Za-z0-9_.:/-]{1,255}$"}
+        }
+      }
+    },
+    "result_hash": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "acquired_at", "expires_at"],
+      "properties": {
+        "owner": {"type": "string", "minLength": 1, "maxLength": 256},
+        "acquired_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "publish_blocked": {"type": "boolean"}
+  }
+}

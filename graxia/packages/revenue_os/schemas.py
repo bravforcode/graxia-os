@@ -328,6 +328,15 @@ class CheckoutSessionCreate(BaseModel):
     mode: Literal["payment", "subscription"] = "payment"
 
 
+class CheckoutSessionBySlugCreate(BaseModel):
+    """Public storefront checkout payload; product identity stays server-side."""
+
+    product_slug: str = Field(..., min_length=1, max_length=255, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    success_url: Optional[str] = Field(None, min_length=1, max_length=2000)
+    cancel_url: Optional[str] = Field(None, min_length=1, max_length=2000)
+    mode: Literal["payment", "subscription"] = "payment"
+
+
 class CheckoutSessionResponse(BaseModel):
     """Stripe Checkout session created — client redirects to checkout_url."""
     session_id: str
