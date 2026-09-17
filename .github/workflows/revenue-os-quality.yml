@@ -42,6 +42,9 @@ jobs:
     name: Revenue and fulfillment contracts
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # CI-only mode supplies non-production defaults; no real credential is used.
+      APP_ENV: testing
     services:
       postgres:
         image: postgres:16-alpine
