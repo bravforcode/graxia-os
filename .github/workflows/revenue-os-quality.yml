@@ -45,6 +45,8 @@ jobs:
     env:
       # CI-only mode supplies non-production defaults; no real credential is used.
       APP_ENV: testing
+      DATABASE_URL: postgresql+asyncpg://graxia:graxia_test_only@localhost:55432/revenue_os_test
+      REDIS_URL: redis://localhost:56379/0
     services:
       postgres:
         image: postgres:16-alpine

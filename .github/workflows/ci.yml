@@ -89,7 +89,8 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql+asyncpg://graxia:graxia@localhost:5432/graxia_os
-      APP_ENV: test
+      APP_ENV: testing
+      REDIS_URL: redis://localhost:6379/0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,7 +105,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt pytest pytest-asyncio
 
       - name: Run Revenue OS tests
         run: python -m pytest graxia/packages/revenue_os/tests -q
