@@ -1,0 +1,45 @@
+{
+  "captured_at_utc": "2026-09-17T20:18:37.2533582Z",
+  "environment": "production",
+  "platform": "Vercel",
+  "application": {
+    "url": "https://graxia-os-funnel.vercel.app",
+    "health_http_status": 200,
+    "checkout_http_status": 200,
+    "checkout_response_contains_stripe_url": true,
+    "checkout_response_contains_session_id": true
+  },
+  "stripe": {
+    "secret_key_authenticated_from_production_env": true,
+    "livemode": true,
+    "webhook_endpoint_url": "https://graxia-os-funnel.vercel.app/api/v1/funnel/webhooks/stripe",
+    "webhook_status": "enabled",
+    "webhook_livemode": true,
+    "webhook_enabled_event_count": 20,
+    "checkout_session_livemode": true,
+    "checkout_session_status_after_create": "open",
+    "checkout_session_payment_status": "unpaid",
+    "checkout_amount_minor": 49900,
+    "checkout_currency": "thb",
+    "safety_action": "expired_without_payment",
+    "checkout_session_status_after_safety_action": "expired",
+    "expired_event_type": "checkout.session.expired",
+    "expired_event_livemode": true,
+    "expired_event_pending_webhooks": 0
+  },
+  "safety": {
+    "charge_created": false,
+    "payment_confirmed": false,
+    "session_id": "redacted",
+    "event_id": "redacted"
+  },
+  "oauth": {
+    "status": "manual_reauthorization_required",
+    "reason": "No Stripe OAuth connector or authorized browser session was available in this run."
+  },
+  "decision": "live_checkout_smoke_passed_no_charge",
+  "limitations": [
+    "This proves live session creation and Stripe event state; it is not a successful paid transaction.",
+    "A real payment must be performed by the account owner before claiming revenue."
+  ]
+}

@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { ContextPackSummary } from "@/components/admin/ContextPackSummary";
 import { SafeJsonViewer } from "@/components/admin/SafeJsonViewer";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { getContextPack, type ContextPack } from "@/lib/admin-api";
 
