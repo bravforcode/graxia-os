@@ -121,6 +121,7 @@ jobs:
           backend/tests/test_content_ops_contracts.py
           backend/tests/test_content_ops_publisher.py
           backend/tests/test_content_ops_durable_store.py
+          backend/tests/test_content_ops_runtime.py
 
       - name: Compile changed Python boundaries
         run: >-
@@ -136,6 +137,10 @@ jobs:
           graxia/services/revenue_os_api/routers/delivery.py
           backend/app/content_ops/publisher.py
           backend/app/content_ops/durable_store.py
+          backend/app/content_ops/adapters.py
+          backend/app/content_ops/service.py
+          backend/app/api/content_ops.py
+          backend/app/tasks/content_ops_tasks.py
           backend/app/models/publish_attempt.py
           backend/alembic/versions/022_content_publish_attempts.py
           backend/alembic/versions/023_publish_claim_expiry.py
