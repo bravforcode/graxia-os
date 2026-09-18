@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { MetricCard } from '@/components/ui/metric-card'
 import { NoticeBanner } from '@/components/ui/notice-banner'
 import { PageHeader } from '@/components/ui/page-header'
-import { Panel } from '@/components/ui/Panel'
+import { Panel } from '@/components/ui/panel'
 import { api, type Opportunity } from '@/lib/api'
 import { formatRelative, getScoreBadgeClass, getStatusBadgeClass } from '@/lib/utils'
 

@@ -1,0 +1,24 @@
+{
+  "captured_at_utc": "2026-09-18T08:45:47Z",
+  "environment": "production",
+  "application_url": "https://graxia-os-funnel.vercel.app",
+  "attempts": [
+    {
+      "operation": "public checkout for published Notion template",
+      "http_status": 504
+    },
+    {
+      "operation": "public checkout for published AI business course",
+      "http_status": 504
+    }
+  ],
+  "stripe_live_readback": {
+    "open_checkout_sessions": 0,
+    "complete_checkout_sessions": 0,
+    "charges": 0
+  },
+  "decision": "paid_fulfillment_blocked_by_production_checkout_timeout",
+  "provider_calls_performed": true,
+  "charge_created": false,
+  "note": "Health remained HTTP 200, but public product/checkout requests exceeded the Vercel function gateway window. Root cause requires provider/runtime logs; no live charge or payment claim is made."
+}

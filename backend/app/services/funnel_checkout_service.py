@@ -33,7 +33,9 @@ class FunnelCheckoutService:
                 DigitalProduct.id == product_id,
                 DigitalProduct.organization_id == organization_id,
                 DigitalProduct.status == "published",
-                DigitalProduct.is_deleted == False,
+                # Older production rows may predate the non-null default and
+                # contain NULL; only an explicit True means deleted.
+                DigitalProduct.is_deleted.is_not(True),
             )
         )
         result = await self.db.execute(stmt)

@@ -4,7 +4,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { WorkflowRunTimeline } from "@/components/admin/WorkflowRunTimeline";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { getAgentWorkflowRun, type WorkflowRunDetail } from "@/lib/admin-api";
 

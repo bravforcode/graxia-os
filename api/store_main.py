@@ -57,6 +57,13 @@ logger = logging.getLogger(__name__)
 _scheduler = None
 
 
+def _should_start_embedded_scheduler() -> bool:
+    """Keep serverless cold starts free of work handled by the cron bridge."""
+    return bool(settings.SCHEDULER_EMBEDDED) and not (
+        os.getenv("VERCEL") or os.getenv("VERCEL_ENV")
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     set_runtime_state(False, "booting", [])
@@ -69,24 +76,27 @@ async def lifespan(app: FastAPI):
         # Best-effort in-process scheduler (Vercel may reclaim instances; the
         # cron-job.org ping is the reliable trigger for automation scans).
         global _scheduler
-        try:
-            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        if _should_start_embedded_scheduler():
+            try:
+                from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-            from app.tasks.funnel_automation_runtime import process_all_due
+                from app.tasks.funnel_automation_runtime import process_all_due
 
-            _scheduler = AsyncIOScheduler(timezone="Asia/Bangkok")
-            _scheduler.add_job(
-                process_all_due,
-                trigger="interval",
-                minutes=15,
-                id="funnel-automation",
-                coalesce=True,
-                max_instances=1,
-            )
-            _scheduler.start()
-            logger.info("Embedded funnel automation scheduler started")
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(f"Embedded scheduler unavailable: {exc}")
+                _scheduler = AsyncIOScheduler(timezone="Asia/Bangkok")
+                _scheduler.add_job(
+                    process_all_due,
+                    trigger="interval",
+                    minutes=15,
+                    id="funnel-automation",
+                    coalesce=True,
+                    max_instances=1,
+                )
+                _scheduler.start()
+                logger.info("Embedded funnel automation scheduler started")
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"Embedded scheduler unavailable: {exc}")
+        else:
+            logger.info("Embedded funnel automation scheduler skipped on Vercel")
 
         set_runtime_state(True, "running", [])
         logger.info("Ai Factory store API started (serverless)")

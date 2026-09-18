@@ -1,10 +1,23 @@
 {
   "version": 1,
   "audit": {
-    "audited_at": "2026-09-17",
-    "source": "GitHub audit plus guarded archive evidence",
+    "audited_at": "2026-09-18T11:10:14Z",
+    "source": "GitHub API read-only snapshot plus guarded archive evidence",
     "external_writes": false,
-    "note": "This inventory remains non-authorizing. Archive outcomes below were performed separately only after a remote-head re-fetch, open-PR check, and repository_bundle_guard verification. No repository was deleted.",
+    "note": "This inventory remains non-authorizing. The live snapshot was re-fetched after the AI Factory merge. Archive outcomes below were performed separately only after a remote-head re-fetch, open-PR check, and repository_bundle_guard verification. No repository was deleted.",
+    "live_snapshot": {
+      "owner": "bravforcode",
+      "repository_count": 31,
+      "active_count": 10,
+      "archived_count": 21,
+      "deleted_count": 0,
+      "protected_repositories_untouched": ["krisphy", "adminmate-ai"],
+      "ai_factory_default_branch_head": "c1d027f9482173cd74673aa5dffd13ff06cf1cfd",
+      "auto_post_archived": true,
+      "revenue_os_archived": false,
+      "revenue_os_open_pull_requests": 1,
+      "vibescity_live_open_pull_requests": 13
+    },
     "bundle_root": "C:/Users/menum/github-cleanup-bundles",
     "bundle_verifier": "scripts/repository_bundle_guard.py",
     "cleanup": {

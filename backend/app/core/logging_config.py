@@ -84,7 +84,17 @@ def redact_sensitive_data(value: Any, *, field_name: str | None = None) -> Any:
     return value
 
 
-LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
+def _default_log_dir() -> Path:
+    """Choose a writable log directory for local and serverless runtimes."""
+    configured = os.getenv("LOG_DIR")
+    if configured:
+        return Path(configured)
+    if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+        return Path("/tmp/graxia-os-logs")
+    return Path(__file__).resolve().parents[2] / "logs"
+
+
+LOG_DIR = _default_log_dir()
 
 
 def _build_file_handler(
@@ -207,7 +217,3 @@ def log_with_context(
     
     log_func = getattr(logger, level.lower())
     log_func(message, extra={"extra": extra})
-
-
-# Create logs directory if it doesn't exist
-os.makedirs(LOG_DIR, exist_ok=True)

@@ -1,0 +1,16 @@
+{
+  "captured_at_utc": "2026-09-18T08:23:39Z",
+  "environment": "local",
+  "command": "python -m pytest graxia/packages/revenue_os/tests -q",
+  "result": "passed",
+  "tests_passed": 390,
+  "warnings": 271,
+  "duration_seconds": 285.91,
+  "provider_calls_performed": false,
+  "services": "disposable PostgreSQL 16 and Redis 7 containers",
+  "cleanup": "containers and compose network removed after run",
+  "limitations": [
+    "This is local donor/control-plane evidence, not staging evidence.",
+    "It does not prove a live paid transaction or customer fulfillment."
+  ]
+}
