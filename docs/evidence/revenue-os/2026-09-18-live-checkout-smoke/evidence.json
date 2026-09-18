@@ -41,6 +41,13 @@
     "verified_at_utc": "2026-09-18T08:18:41Z",
     "verification": "native_codex_mcp_list_reports_auth_oauth"
   },
+  "live_account_readback": {
+    "verified_at_utc": "2026-09-18T08:38:51Z",
+    "complete_checkout_sessions": 0,
+    "open_checkout_sessions": 0,
+    "charges": 0,
+    "verification": "Stripe MCP live read-only account readback"
+  },
   "decision": "live_checkout_smoke_passed_no_charge",
   "limitations": [
     "This proves live session creation and Stripe event state; it is not a successful paid transaction.",
