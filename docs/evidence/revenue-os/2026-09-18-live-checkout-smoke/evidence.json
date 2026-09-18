@@ -34,8 +34,12 @@
     "event_id": "redacted"
   },
   "oauth": {
-    "status": "manual_reauthorization_required",
-    "reason": "No Stripe OAuth connector or authorized browser session was available in this run."
+    "status": "reauthorized",
+    "account": "Ai factory",
+    "environment": "live",
+    "permissions": "read",
+    "verified_at_utc": "2026-09-18T08:18:41Z",
+    "verification": "native_codex_mcp_list_reports_auth_oauth"
   },
   "decision": "live_checkout_smoke_passed_no_charge",
   "limitations": [
