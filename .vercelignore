@@ -1,4 +1,5 @@
 .git
+.worktrees
 .github
 .vercel
 
@@ -9,9 +10,24 @@
 backend/.venv
 backend/venv
 backend/tests
+backend/requirements.txt
 backend/scripts/backup_*
 backend/*.db
 backend/.state
+backend/.cache
+backend/.hypothesis
+backend/.mypy_cache
+backend/.pytest_cache
+backend/.ruff_cache
+
+tests
+.cache
+.hypothesis
+.mypy_cache
+.pytest_cache
+.ruff_cache
+node_modules
+frontend/node_modules
 
 deploy
 config
