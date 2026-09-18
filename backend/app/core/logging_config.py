@@ -217,4 +217,3 @@ def log_with_context(
     
     log_func = getattr(logger, level.lower())
     log_func(message, extra={"extra": extra})
-
