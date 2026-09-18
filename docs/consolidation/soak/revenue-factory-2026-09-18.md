@@ -16,6 +16,7 @@ archive, delete, or external publish.
       without a charge.
 - [x] Live Stripe webhook endpoint is enabled; expired-session event delivered.
 - [x] Stripe MCP OAuth reauthorized for the Live `Ai factory` account.
+- [x] Funnel-specific local suite passed: 20 tests, 2 warnings.
 
 ## Required before donor archive
 
@@ -23,6 +24,8 @@ archive, delete, or external publish.
 - [ ] Staging manifest is `go` with receipts bound to one source/artifact.
 - [ ] One authorized paid-order/fulfillment proof exists, including delivery,
       email, entitlement, refund, and duplicate-webhook behavior.
+- [ ] Production public checkout endpoint returns a Checkout URL without a
+      gateway timeout during the paid-proof attempt.
 - [ ] Fourteen calendar days of production soak have no unresolved critical
       payment or fulfillment incident.
 - [ ] Private recovery bundles and refreshed GitHub inventory are verified.
