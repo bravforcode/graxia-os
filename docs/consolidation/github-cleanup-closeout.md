@@ -15,6 +15,21 @@ Canonical application: [`graxia-os`](https://github.com/bravforcode/graxia-os)
 - `krisphy` and `adminmate-ai` were not modified, archived, renamed, or
   deleted.
 
+## Security gate
+
+Graxia PR #52 is mergeable after the branch was synchronized with `main`, but
+the required GitHub `Secret Scanning` check failed. The check reported a
+verified Telegram bot-token finding in historical repository content. The
+secret value is intentionally not copied into this record.
+
+- No required security check was bypassed.
+- No history rewrite or credential revocation was performed automatically.
+- The exact remediation is to identify the owning bot, revoke/rotate its
+  credential, remove the current-tree occurrence, and then plan any history
+  rewrite with a verified private recovery bundle.
+- The machine-readable redacted receipt is
+  `docs/evidence/revenue-os/2026-09-18-github-security-gate/manifest.json`.
+
 ## Intentional active set
 
 | Repository | Role | Current state | Next action |
@@ -57,6 +72,7 @@ Still intentionally open:
 2. final recovery-bundle/inventory re-check before donor archive;
 3. review of unrelated open PRs in `graxia-os`, `revenue-os`, and
    `vibescity-live`.
+4. remediate the historical Telegram token finding before merging PR #52.
 
 This file is a closeout record, not an authorization to delete repositories or
 to represent an unperformed charge as completed.
