@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "recorded_at_utc": "2026-09-18T11:12:00Z",
+  "decision": "continue_closeout_with_payment_exercise_waived",
+  "authority": "owner_instruction_in_current_task",
+  "scope": {
+    "real_payment": "waived",
+    "staging_payment_exercise": "waived",
+    "production_runtime_verification": "retained",
+    "repository_inventory_and_consolidation": "continue"
+  },
+  "accepted_assumption": "The owner asks the operator to treat the checkout path as operational for planning and handoff.",
+  "explicit_non_claims": [
+    "No live Stripe charge was executed by this closeout.",
+    "No fulfillment, entitlement, email, refund, or duplicate-webhook receipt is fabricated.",
+    "The waiver does not satisfy the fourteen-day production soak gate.",
+    "The waiver does not authorize deletion of any repository."
+  ],
+  "evidence_refs": [
+    "docs/evidence/revenue-os/2026-09-18-production-504-fix/report.json",
+    "docs/evidence/revenue-os/2026-09-18-funnel-test-suite/report.json",
+    "docs/consolidation/soak/revenue-factory-2026-09-18.md"
+  ]
+}

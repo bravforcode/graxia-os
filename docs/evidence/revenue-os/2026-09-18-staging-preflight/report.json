@@ -1,0 +1,29 @@
+{
+  "captured_at_utc": "2026-09-18T08:19:00Z",
+  "environment": "staging",
+  "provider_calls_performed": false,
+  "preflight": {
+    "ok": false,
+    "configured": {
+      "APP_ENV": true,
+      "NO_LIVE_PAYMENT_MODE": false,
+      "KILL_SWITCH_ALL_EXTERNAL_BETA": false,
+      "DATABASE_URL": true,
+      "CELERY_BROKER_URL": true,
+      "CELERY_RESULT_BACKEND": true,
+      "ADMIN_API_KEY": false,
+      "STRIPE_SECRET_KEY": false,
+      "STRIPE_WEBHOOK_SECRET": false
+    },
+    "blockers": [
+      "APP_ENV must be staging",
+      "NO_LIVE_PAYMENT_MODE must be true",
+      "KILL_SWITCH_ALL_EXTERNAL_BETA must be true",
+      "missing ADMIN_API_KEY",
+      "missing STRIPE_SECRET_KEY",
+      "missing STRIPE_WEBHOOK_SECRET"
+    ]
+  },
+  "decision": "blocked",
+  "note": "Redacted local preflight only. No staging provider, database, Stripe, or payment claim is made."
+}

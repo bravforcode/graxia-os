@@ -1,10 +1,68 @@
 {
   "version": 1,
   "audit": {
-    "audited_at": "2026-09-16",
-    "source": "read-only GitHub audit",
+    "audited_at": "2026-09-18T11:10:14Z",
+    "source": "GitHub API read-only snapshot plus guarded archive evidence",
     "external_writes": false,
-    "note": "Re-fetch state before every archive/delete action."
+    "note": "This inventory remains non-authorizing. The live snapshot was re-fetched after the AI Factory merge. Archive outcomes below were performed separately only after a remote-head re-fetch, open-PR check, and repository_bundle_guard verification. No repository was deleted.",
+    "live_snapshot": {
+      "owner": "bravforcode",
+      "repository_count": 31,
+      "active_count": 10,
+      "archived_count": 21,
+      "deleted_count": 0,
+      "protected_repositories_untouched": ["krisphy", "adminmate-ai"],
+      "ai_factory_default_branch_head": "c1d027f9482173cd74673aa5dffd13ff06cf1cfd",
+      "auto_post_archived": true,
+      "revenue_os_archived": false,
+      "revenue_os_open_pull_requests": 1,
+      "vibescity_live_open_pull_requests": 13
+    },
+    "bundle_root": "C:/Users/menum/github-cleanup-bundles",
+    "bundle_verifier": "scripts/repository_bundle_guard.py",
+    "cleanup": {
+      "archived_repositories": [
+        "fastwork-promo-automation",
+        "Safescan-ai",
+        "Intersite-Track",
+        "gosoft",
+        "mu-x-harvard",
+        "flashfix-ai",
+        "OBS-rag",
+        "graxia-trade",
+        "enterprise-agent-os",
+        "thaireview-platform",
+        "thailand-flood-monitor",
+        "Solven",
+        "harvest-ecc",
+        "sriracha-coast-watch",
+        "Nasa-hackathon-2026",
+        "climate-web",
+        "auto-post",
+        "jobshield-ai",
+        "prompt-perfected",
+        "NIGHT_SALVAGE"
+      ],
+      "held_repositories": [
+        {
+          "name": "vibescity-live",
+          "reason": "13 open pull requests; archive deferred to preserve active work."
+        },
+        {
+          "name": "revenue-os",
+          "reason": "Open production-candidate pull request #1; archive deferred until reviewed."
+        },
+        {
+          "name": "lotusdis",
+          "reason": "Remote repository is empty and has no restorable Git bundle; deletion deferred."
+        }
+      ],
+      "deleted_repositories": [],
+      "protected_repositories_untouched": [
+        "krisphy",
+        "adminmate-ai"
+      ]
+    }
   },
   "repositories": [
     {"name": "fastwork-promo-automation", "action": "merge-then-archive", "replacement": "graxia-os"},

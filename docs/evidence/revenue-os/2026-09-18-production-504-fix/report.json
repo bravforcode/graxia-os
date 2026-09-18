@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "verified_at_utc": "2026-09-18T10:59:17Z",
+  "decision": "production_504_fix_deployed_and_verified",
+  "deployment": {
+    "alias": "https://graxia-os-funnel.vercel.app",
+    "deployment_url": "https://graxia-os-funnel-lwmezjfuu-phirawits-projects.vercel.app",
+    "inspection_url": "https://vercel.com/phirawits-projects/graxia-os-funnel/ejdnpZhu2TLS2kbb32HbA8mim78x",
+    "source": "clean runtime tree: api/store_main.py, backend/app, frontend, requirements.txt",
+    "build_status": "success"
+  },
+  "root_cause": {
+    "symptom": "Vercel returned FUNCTION_INVOCATION_FAILED HTTP 500 after clean deployment",
+    "cause": "logging_config.py created backend/logs during import; Vercel function filesystem is read-only",
+    "fix": "Vercel uses /tmp/graxia-os-logs and no import-time mkdir"
+  },
+  "production_verification": [
+    {"route": "/api/v1/system/health", "status": 200, "seconds": 8.41},
+    {"route": "/api/v1/funnel/public/products/{org}/notion-business-template-a9655b", "status": 200, "seconds": 2.83},
+    {"route": "/api/v1/funnel/public/products/{product_id}/checkout", "status": 200, "seconds": 3.56, "checkout_status": "pending"},
+    {"route": "Stripe Checkout page", "status": 200, "seconds": 2.59}
+  ],
+  "stripe_live_readback": {
+    "open_checkout_sessions": 3,
+    "charges": 0,
+    "payment_completed": false
+  },
+  "payment_status": "pending_user_payment_method",
+  "remaining_blocker": "A real card or other live payment method must be entered by the account owner; no payment instrument was available to the agent.",
+  "commits": [
+    "37fd06b1 fix(vercel): skip embedded scheduler on serverless cold start",
+    "e23807f1 build(vercel): exclude non-runtime bundle files",
+    "a45e8a66 fix(vercel): use writable temp logs in serverless runtime"
+  ]
+}

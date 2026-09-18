@@ -1,0 +1,21 @@
+{
+  "captured_at_utc": "2026-09-18T08:43:24Z",
+  "environment": "local",
+  "command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -p pytest_asyncio.plugin -q backend/tests/test_funnel_e2e_flow.py backend/tests/test_funnel_webhook_order.py backend/tests/test_funnel_webhook_delivery.py backend/tests/test_funnel_delivery_email.py",
+  "result": "passed",
+  "tests_collected": 20,
+  "tests_passed": 20,
+  "warnings": 2,
+  "duration_seconds": 101.94,
+  "provider_calls_performed": false,
+  "coverage": [
+    "checkout and buyer journey",
+    "Stripe webhook order creation and idempotency",
+    "delivery access and expired-session handling",
+    "delivery email structure and failure handling"
+  ],
+  "limitations": [
+    "This is local mocked/test-database evidence, not a live paid transaction.",
+    "Production checkout attempts during this run returned HTTP 504 and created no open session."
+  ]
+}

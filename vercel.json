@@ -5,7 +5,8 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/store_main.py": {
-      "maxDuration": 10
+      "maxDuration": 10,
+      "excludeFiles": "{.git/**,.worktrees/**,**/node_modules/**,backend/tests/**,backend/requirements.txt,backend/venv/**,tests/**,**/__pycache__/**,**/.mypy_cache/**,**/.pytest_cache/**,**/.ruff_cache/**,**/*.db,**/*.sqlite,**/*.log}"
     }
   },
   "rewrites": [
