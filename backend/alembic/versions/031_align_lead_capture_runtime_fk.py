@@ -101,7 +101,7 @@ def _replace_fk(bind: sa.Connection, target: str, name: str) -> None:
         return
 
     for foreign_key in lead_magnet_fks:
-        if foreign_key.get("referred_table") == "lead_magnets" and foreign_key.get("name"):
+        if foreign_key.get("name"):
             op.drop_constraint(
                 foreign_key["name"], "lead_captures", type_="foreignkey"
             )
