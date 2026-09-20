@@ -122,7 +122,7 @@ async def capture_lead(
         if raw_token:
             delivery_url = f"/delivery/{raw_token}"
 
-        if payload.marketing_consent:
+        if contact.marketing_consent and not contact.marketing_unsubscribed:
             broker = getattr(settings, "CELERY_BROKER_URL", "") or getattr(settings, "REDIS_URL", "")
             if broker:
                 from app.tasks.funnel_automation_tasks import send_lead_nurture

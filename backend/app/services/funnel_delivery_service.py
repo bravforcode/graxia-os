@@ -23,7 +23,8 @@ class FunnelDeliveryService:
 
     async def grant_delivery_access_for_order(
         self, organization_id: UUID, order_id: UUID, 
-        expires_in_days: int = 30, max_downloads: int = 10
+        expires_in_days: int = 30, max_downloads: int = 10,
+        commit: bool = True,
     ) -> List[Tuple[DeliveryAccess, str]]:
         """
         Grant delivery access for all products in a paid order.
@@ -98,9 +99,12 @@ class FunnelDeliveryService:
                 results.append((access, raw_token))
 
         if results:
-            await self.db.commit()
-            for access, _ in results:
-                await self.db.refresh(access)
+            if commit:
+                await self.db.commit()
+                for access, _ in results:
+                    await self.db.refresh(access)
+            else:
+                await self.db.flush()
         
         return results
 

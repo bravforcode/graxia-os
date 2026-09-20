@@ -7,9 +7,18 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import LeadMagnet, DigitalProduct, DeliveryAsset, FunnelOrder, DeliveryAccess
+from app.models.funnel import (
+    LeadMagnet,
+    DigitalProduct,
+    DeliveryAsset,
+    FunnelOrder,
+    DeliveryAccess,
+    ConversionEvent,
+)
 from app.models.contact import Contact
 from app.models.organization import Organization
+from app.services.funnel_delivery_service import FunnelDeliveryService
+from app.services.lead_magnet_service import LeadMagnetService
 from tests.factories import OrganizationFactory
 
 @pytest.mark.asyncio
@@ -263,6 +272,125 @@ class TestLeadMagnetAPI:
         assert response.status_code == 200
         await db_session.refresh(contact)
         assert contact.marketing_unsubscribed is True
+
+    async def test_public_capture_does_not_resubscribe_unsubscribed_contact(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        org = Organization(
+            id=uuid4(), name="Resubscribe Org", slug="resubscribe-org", status="active"
+        )
+        contact = Contact(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Suppressed Lead",
+            email="suppressed@example.com",
+            contact_type="lead",
+            relationship_strength=1,
+            marketing_consent=False,
+            marketing_unsubscribed=True,
+            marketing_unsubscribed_at=datetime.now(UTC),
+        )
+        lead_magnet = LeadMagnet(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Safe Magnet",
+            slug="safe-magnet",
+            status="published",
+            opt_in_count=0,
+        )
+        db_session.add(org)
+        await db_session.flush()
+        db_session.add_all([contact, lead_magnet])
+        await db_session.commit()
+
+        response = await public_async_client.post(
+            f"/api/v1/public/funnel/lead-magnets/{lead_magnet.slug}/capture",
+            json={
+                "organization_id": str(org.id),
+                "email": contact.email,
+                "marketing_consent": True,
+                "consent_version": "organic-v2",
+            },
+        )
+
+        assert response.status_code == 201, response.text
+        await db_session.refresh(contact)
+        assert contact.marketing_consent is False
+        assert contact.marketing_unsubscribed is True
+
+    async def test_capture_rolls_back_when_delivery_fails(
+        self, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+    ):
+        org = Organization(
+            id=uuid4(), name="Atomic Org", slug="atomic-org", status="active"
+        )
+        organization_id = org.id
+        product = DigitalProduct(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Atomic Product",
+            slug="atomic-product",
+            price_amount=Decimal("0.00"),
+            currency="USD",
+            status="published",
+        )
+        asset = DeliveryAsset(
+            id=uuid4(),
+            product_id=product.id,
+            organization_id=org.id,
+            asset_type="file",
+            title="Atomic File",
+            storage_path="/files/atomic.pdf",
+            is_active=True,
+        )
+        lead_magnet = LeadMagnet(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Atomic Magnet",
+            slug="atomic-magnet",
+            target_product_id=product.id,
+            status="published",
+            opt_in_count=0,
+        )
+        db_session.add(org)
+        await db_session.flush()
+        db_session.add_all([product, asset, lead_magnet])
+        await db_session.commit()
+
+        async def fail_delivery(*args, **kwargs):
+            raise RuntimeError("delivery unavailable")
+
+        monkeypatch.setattr(
+            FunnelDeliveryService,
+            "grant_delivery_access_for_order",
+            fail_delivery,
+        )
+
+        with pytest.raises(RuntimeError, match="delivery unavailable"):
+            await LeadMagnetService(db_session).capture_lead(
+                organization_id=organization_id,
+                slug=lead_magnet.slug,
+                email="atomic@example.com",
+            )
+
+        assert await db_session.scalar(
+            select(Contact).where(
+                Contact.organization_id == organization_id,
+                Contact.email == "atomic@example.com",
+            )
+        ) is None
+        assert await db_session.scalar(
+            select(FunnelOrder).where(
+                FunnelOrder.organization_id == organization_id,
+                FunnelOrder.customer_email == "atomic@example.com",
+            )
+        ) is None
+        assert await db_session.scalar(
+            select(ConversionEvent).where(
+                ConversionEvent.organization_id == organization_id,
+                ConversionEvent.event_type == "lead_capture",
+            )
+        ) is None
 
     async def test_public_capture_lead_idempotent(
         self, public_async_client: AsyncClient, db_session: AsyncSession

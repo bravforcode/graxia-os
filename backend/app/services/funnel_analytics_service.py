@@ -51,6 +51,7 @@ class FunnelAnalyticsService:
         metadata_json: Optional[Dict[str, Any]] = None,
         idempotency_key: Optional[str] = None,
         public: bool = False,
+        commit: bool = True,
     ) -> ConversionEvent:
         """
         Logs a conversion event for tracking funnel analytics.
@@ -168,7 +169,10 @@ class FunnelAnalyticsService:
         )
         self.db.add(event)
         try:
-            await self.db.commit()
+            if commit:
+                await self.db.commit()
+            else:
+                await self.db.flush()
         except IntegrityError:
             await self.db.rollback()
             if idempotency_key:

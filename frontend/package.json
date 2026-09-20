@@ -10,7 +10,7 @@
     "postbuild": "node scripts/generate-route-stubs.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "test": "bunx vitest run --config vitest.config.ts",
+    "test": "vitest run --config vitest.config.ts",
     "test:e2e": "node scripts/run-playwright.mjs",
     "test:e2e:headed": "node scripts/run-playwright.mjs --headed",
     "storybook": "storybook dev -p 6006",

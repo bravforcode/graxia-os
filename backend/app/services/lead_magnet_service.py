@@ -150,12 +150,15 @@ class LeadMagnetService:
             )
             self.db.add(contact)
             await self.db.flush()
-        elif marketing_consent:
+        elif marketing_consent and not public:
+            # Internal/admin callers may record an explicit consent change.
             contact.marketing_consent = True
             contact.marketing_consent_at = datetime.now(timezone.utc)
             contact.consent_version = consent_version
             contact.marketing_unsubscribed = False
             contact.marketing_unsubscribed_at = None
+        # Public capture must never resubscribe an existing contact from an
+        # unchecked email claim. A prior unsubscribe remains authoritative.
 
         # Increment opt-in count
         lm.opt_in_count += 1
@@ -182,49 +185,55 @@ class LeadMagnetService:
                 f"lead_capture:{organization_id}:{email.lower()}:{slug}:{session_id}"
                 if session_id else None
             ),
+            commit=False,
         )
 
-        raw_token = None
-        if lm.target_product_id:
-            # Grant free digital asset delivery access
-            order = FunnelOrder(
-                id=uuid.uuid4(),
-                organization_id=organization_id,
-                contact_id=contact.id,
-                status="paid",
-                subtotal_amount=Decimal("0.00"),
-                total_amount=Decimal("0.00"),
-                currency="USD",
-                customer_email=email,
-                paid_at=datetime.utcnow()
-            )
-            self.db.add(order)
-            await self.db.flush()
+        try:
+            raw_token = None
+            if lm.target_product_id:
+                # Grant free digital asset delivery access
+                order = FunnelOrder(
+                    id=uuid.uuid4(),
+                    organization_id=organization_id,
+                    contact_id=contact.id,
+                    status="paid",
+                    subtotal_amount=Decimal("0.00"),
+                    total_amount=Decimal("0.00"),
+                    currency="USD",
+                    customer_email=email,
+                    paid_at=datetime.utcnow()
+                )
+                self.db.add(order)
+                await self.db.flush()
 
-            item = FunnelOrderItem(
-                id=uuid.uuid4(),
-                organization_id=organization_id,
-                order_id=order.id,
-                product_id=lm.target_product_id,
-                quantity=1,
-                unit_amount=Decimal("0.00"),
-                total_amount=Decimal("0.00"),
-                currency="USD"
-            )
-            self.db.add(item)
-            await self.db.flush()
+                item = FunnelOrderItem(
+                    id=uuid.uuid4(),
+                    organization_id=organization_id,
+                    order_id=order.id,
+                    product_id=lm.target_product_id,
+                    quantity=1,
+                    unit_amount=Decimal("0.00"),
+                    total_amount=Decimal("0.00"),
+                    currency="USD"
+                )
+                self.db.add(item)
+                await self.db.flush()
 
-            # Grant delivery access using FunnelDeliveryService
-            delivery_service = FunnelDeliveryService(self.db)
-            access_grants = await delivery_service.grant_delivery_access_for_order(
-                organization_id=organization_id,
-                order_id=order.id
-            )
-            
-            if access_grants:
-                raw_token = access_grants[0][1]
+                # Keep delivery and capture in the same transaction.
+                delivery_service = FunnelDeliveryService(self.db)
+                access_grants = await delivery_service.grant_delivery_access_for_order(
+                    organization_id=organization_id,
+                    order_id=order.id,
+                    commit=False,
+                )
 
-        await self.db.commit()
+                if access_grants:
+                    raw_token = access_grants[0][1]
+
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
         await self.db.refresh(contact)
 
         return contact, raw_token

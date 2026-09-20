@@ -45,6 +45,12 @@ def _copy_referenced_magnets(
     description_column = "promise" if reverse else "description"
     target_title_column = "title" if reverse else "name"
     target_description_column = "description" if reverse else "promise"
+    status_expression = (
+        "CASE WHEN source.status = 'published' THEN 'active' "
+        "ELSE source.status END"
+        if reverse
+        else "source.status"
+    )
     bind.execute(
         sa.text(
             f"""
@@ -52,7 +58,8 @@ def _copy_referenced_magnets(
                 (id, organization_id, slug, {target_title_column},
                  {target_description_column}, status)
             SELECT source.id, source.organization_id, source.slug,
-                   source.{title_column}, source.{description_column}, source.status
+                   source.{title_column}, source.{description_column},
+                   {status_expression}
             FROM {source} AS source
             JOIN (
                 SELECT DISTINCT lead_magnet_id
