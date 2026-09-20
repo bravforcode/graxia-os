@@ -130,35 +130,37 @@ class FunnelOrderService:
         checkout_session.status = "completed"
         checkout_session.completed_at = datetime.now()
 
-        await self.db.commit()
-        await self.db.refresh(order)
-
         attribution = checkout_session.metadata_json or {}
-        await FunnelAnalyticsService(self.db).log_event(
-            organization_id=organization_id,
-            event_type="purchase",
-            product_id=product_id,
-            order_id=order.id,
-            session_id=attribution.get("session_id"),
-            source=attribution.get("source"),
-            medium=attribution.get("medium"),
-            campaign=attribution.get("campaign"),
-            referrer=attribution.get("referrer"),
-            first_touch=attribution.get("first_touch"),
-            last_touch=attribution.get("last_touch"),
-            landing_path=attribution.get("landing_path"),
-            content_id=attribution.get("content_id"),
-            referral_code=attribution.get("referral_code"),
-            metadata_json={
-                key: attribution[key]
-                for key in (
-                    "content_id", "plan", "channel", "locale",
-                    "landing_path", "referral_code",
-                )
-                if key in attribution
-            },
-            idempotency_key=f"purchase:{order.id}",
-        )
+        try:
+            await FunnelAnalyticsService(self.db).log_event(
+                organization_id=organization_id,
+                event_type="purchase",
+                product_id=product_id,
+                order_id=order.id,
+                session_id=attribution.get("session_id"),
+                source=attribution.get("source"),
+                medium=attribution.get("medium"),
+                campaign=attribution.get("campaign"),
+                referrer=attribution.get("referrer"),
+                first_touch=attribution.get("first_touch"),
+                last_touch=attribution.get("last_touch"),
+                landing_path=attribution.get("landing_path"),
+                content_id=attribution.get("content_id"),
+                referral_code=attribution.get("referral_code"),
+                metadata_json={
+                    key: attribution[key]
+                    for key in (
+                        "content_id", "plan", "channel", "locale",
+                        "landing_path", "referral_code",
+                    )
+                    if key in attribution
+                },
+                idempotency_key=f"purchase:{order.id}",
+                commit=False,
+            )
+        except Exception:
+            await self.db.rollback()
+            raise
 
         referral_code = attribution.get("referral_code")
         referral_session_id = attribution.get("session_id")
@@ -170,6 +172,7 @@ class FunnelOrderService:
                     session_id=str(referral_session_id),
                     order_id=order.id,
                     conversion_key=f"order:{order.id}",
+                    commit=False,
                 )
             except ReferralError as exc:
                 logger.info(
@@ -180,10 +183,15 @@ class FunnelOrderService:
 
         # ── GRANT DELIVERY ACCESS ──
         # Grant access immediately after successful payment/order creation
-        delivery_accesses = await self.delivery_service.grant_delivery_access_for_order(
-            organization_id=organization_id,
-            order_id=order.id
-        )
+        try:
+            delivery_accesses = await self.delivery_service.grant_delivery_access_for_order(
+                organization_id=organization_id,
+                order_id=order.id,
+                commit=False,
+            )
+        except Exception:
+            await self.db.rollback()
+            raise
 
         # ── EMAIL CUSTOMER SECURE LINKS ──
         try:
@@ -232,6 +240,8 @@ class FunnelOrderService:
         except Exception as e:
             logger.error(f"[AUTOMATION] Failed to schedule review/cross-sell for order {order.id}: {e}")
 
+        await self.db.commit()
+        await self.db.refresh(order)
         logger.info(f"Order {order.id} created, delivery granted, automation triggered from Stripe session {stripe_session_id}")
         return order
 

@@ -60,6 +60,7 @@ jobs:
           tests/test_revenue_bridge.py
           tests/test_content_batch_orchestration.py
           tests/test_lead_magnet_api.py
+          tests/test_growth_migrations.py
           -q
 
   frontend-growth:

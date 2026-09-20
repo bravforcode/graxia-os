@@ -273,6 +273,7 @@ class ReferralService:
         conversion_key: str,
         verified_order_id: UUID,
         verified_amount: Decimal | None = None,
+        commit: bool = True,
     ) -> ReferralConversion:
         if not settings.REFERRAL_LOOP_ENABLED:
             raise ReferralEligibilityError("Referral loop is disabled")
@@ -389,11 +390,17 @@ class ReferralService:
         )
         self.db.add(conversion)
         try:
-            await self.db.commit()
+            if commit:
+                await self.db.commit()
+            else:
+                async with self.db.begin_nested():
+                    await self.db.flush()
         except IntegrityError as exc:
-            await self.db.rollback()
+            if commit:
+                await self.db.rollback()
             raise ReferralEligibilityError("Referral reward already recorded") from exc
-        await self.db.refresh(conversion)
+        if commit:
+            await self.db.refresh(conversion)
         return conversion
 
     async def record_conversion_for_order(
@@ -404,6 +411,7 @@ class ReferralService:
         session_id: str,
         order_id: UUID,
         conversion_key: str,
+        commit: bool = True,
     ) -> ReferralConversion:
         record = await self.db.scalar(
             select(ReferralCode).where(
@@ -420,6 +428,7 @@ class ReferralService:
             session_id=session_id,
             conversion_key=conversion_key,
             verified_order_id=order_id,
+            commit=commit,
         )
 
     async def analytics(self, organization_id: UUID) -> list[dict[str, object]]:

@@ -10,8 +10,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.contact import Contact
-from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, DeliveryAccess, DeliveryAsset
+from app.models.funnel import (
+    ConversionEvent,
+    DigitalProduct,
+    FunnelCheckoutSession,
+    FunnelOrder,
+    DeliveryAccess,
+    DeliveryAsset,
+)
 from app.services.automation_email_service import AutomationEmailService
+from app.services.funnel_delivery_service import FunnelDeliveryService
+from app.services.funnel_order_service import FunnelOrderService
 from tests.factories import OrganizationFactory
 
 @pytest.fixture
@@ -298,3 +307,64 @@ class TestFunnelWebhookDelivery:
         with pytest.raises(IntegrityError):
             await db_session.commit()
         await db_session.rollback()
+
+    async def test_paid_order_rolls_back_when_delivery_fails(
+        self, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Atomic Paid Product",
+            slug="atomic-paid-product",
+            price_amount=Decimal("100.00"),
+            currency="THB",
+            status="published",
+        )
+        checkout = FunnelCheckoutSession(
+            id=uuid4(),
+            organization_id=org.id,
+            product_id=product.id,
+            status="pending",
+            amount=Decimal("100.00"),
+            currency="THB",
+            customer_email="atomic-paid@example.com",
+            metadata_json={"session_id": "atomic-session"},
+        )
+        db_session.add_all([product, checkout])
+        await db_session.commit()
+
+        session_data = {
+            "id": "cs_atomic_paid",
+            "payment_intent": "pi_atomic_paid",
+            "customer_details": {"email": "atomic-paid@example.com"},
+            "metadata": {
+                "organization_id": str(org.id),
+                "product_id": str(product.id),
+                "funnel_checkout_session_id": str(checkout.id),
+            },
+        }
+
+        with patch.object(
+            FunnelDeliveryService,
+            "grant_delivery_access_for_order",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("delivery unavailable"),
+        ):
+            with pytest.raises(RuntimeError, match="delivery unavailable"):
+                await FunnelOrderService(db_session).create_order_from_checkout_completed(
+                    session_data
+                )
+
+        assert await db_session.scalar(
+            select(FunnelOrder).where(
+                FunnelOrder.stripe_session_id == "cs_atomic_paid"
+            )
+        ) is None
+        assert await db_session.scalar(
+            select(ConversionEvent).where(
+                ConversionEvent.event_type == "purchase"
+            )
+        ) is None
+        await db_session.refresh(checkout)
+        assert checkout.status == "pending"
