@@ -19,6 +19,8 @@ const FRONTEND_URL =
   Deno.env.get("FRONTEND_URL") ??
   "https://bravforcode.github.io/graxia";
 const FRONTEND_ORIGIN = new URL(FRONTEND_URL).origin;
+const REFERRAL_BONUS_PATH = "/free/prompt-pack-lite";
+const REFERRAL_CODE_TTL_SECONDS = 90 * 24 * 60 * 60;
 const encoder = new TextEncoder();
 
 class HttpError extends Error {
@@ -195,6 +197,96 @@ function boundedString(value: unknown, max = 200): string {
 
 async function digestText(value: string): Promise<string> {
   return hex(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
+}
+
+function base64UrlEncode(value: string): string {
+  return btoa(value)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function base64UrlDecode(value: string): string {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(
+    Math.ceil(value.length / 4) * 4,
+    "=",
+  );
+  return atob(padded);
+}
+
+async function hmacHex(value: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(SUPABASE_SERVICE_ROLE_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  return hex(await crypto.subtle.sign("HMAC", key, encoder.encode(value)));
+}
+
+type ReferralPayload = {
+  v: 1;
+  access_id: string;
+  organization_id: string;
+  expires_at: number;
+  nonce: string;
+};
+
+async function issueReferralCode(
+  accessId: string,
+  organizationId: string,
+): Promise<string> {
+  requireConfig();
+  const payload: ReferralPayload = {
+    v: 1,
+    access_id: accessId,
+    organization_id: organizationId,
+    expires_at: Math.floor(Date.now() / 1000) + REFERRAL_CODE_TTL_SECONDS,
+    nonce: crypto.randomUUID(),
+  };
+  const encoded = base64UrlEncode(JSON.stringify(payload));
+  const signature = await hmacHex(`referral:${encoded}`);
+  return `r1.${encoded}.${signature}`;
+}
+
+async function resolveReferralCode(
+  code: string,
+  organizationId: string,
+): Promise<{ code: string; source_email: string | null } | null> {
+  if (!/^r1\.[A-Za-z0-9_-]+\.[a-f0-9]{64}$/.test(code)) return null;
+  const [, encoded, signature] = code.split(".");
+  const expected = await hmacHex(`referral:${encoded}`);
+  if (!constantTimeEqual(signature, expected)) return null;
+
+  let payload: ReferralPayload;
+  try {
+    payload = JSON.parse(base64UrlDecode(encoded)) as ReferralPayload;
+  } catch {
+    return null;
+  }
+  if (
+    payload.v !== 1 ||
+    payload.organization_id !== organizationId ||
+    !payload.access_id ||
+    !Number.isFinite(payload.expires_at) ||
+    payload.expires_at <= Math.floor(Date.now() / 1000)
+  ) return null;
+
+  const accesses = (await supabaseRequest(
+    `delivery_accesses?id=eq.${encodeURIComponent(payload.access_id)}&organization_id=eq.${encodeURIComponent(organizationId)}&status=eq.active&select=id,order_id&limit=1`,
+  )) as JsonObject[];
+  const access = accesses[0];
+  if (!access?.id || !access.order_id) return null;
+  const orders = (await supabaseRequest(
+    `funnel_orders?id=eq.${encodeURIComponent(String(access.order_id))}&organization_id=eq.${encodeURIComponent(organizationId)}&status=eq.paid&select=id,customer_email&limit=1`,
+  )) as JsonObject[];
+  const order = orders[0];
+  if (!order?.id) return null;
+  const sourceEmail = typeof order.customer_email === "string"
+    ? order.customer_email.trim().toLowerCase()
+    : null;
+  return { code, source_email: sourceEmail };
 }
 
 async function opaqueDeliveryToken(reference: string): Promise<string> {
@@ -724,6 +816,9 @@ async function getTokenDelivery(rawToken: string, consume: boolean) {
       `delivery:${access.id}:${downloadCount}`,
     );
   }
+  const referralCode = consume
+    ? await issueReferralCode(String(access.id), organizationId)
+    : null;
   return {
     product_name: "Graxia product",
     asset_title: asset.title,
@@ -735,6 +830,10 @@ async function getTokenDelivery(rawToken: string, consume: boolean) {
     downloads_remaining: access.max_downloads == null
       ? undefined
       : Math.max(0, Number(access.max_downloads) - downloadCount),
+    referral_url: referralCode
+      ? frontendUrl(`/r/${referralCode}`)
+      : undefined,
+    referral_bonus_path: referralCode ? REFERRAL_BONUS_PATH : undefined,
   };
 }
 
@@ -766,6 +865,32 @@ async function completeCheckout(session: JsonObject, eventId: string) {
     ((session.customer_details as JsonObject | undefined)?.email as string | undefined) ??
     (checkout.customer_email as string | undefined) ??
     null;
+  const rawCheckoutMetadata = (checkout.metadata_json ?? metadata) as JsonObject;
+  const checkoutMetadata: JsonObject =
+    rawCheckoutMetadata && typeof rawCheckoutMetadata === "object"
+      ? { ...rawCheckoutMetadata }
+      : {};
+  const candidateReferralCode = typeof checkoutMetadata.referral_code === "string"
+    ? checkoutMetadata.referral_code
+    : "";
+  if (candidateReferralCode) {
+    try {
+      const referral = await resolveReferralCode(candidateReferralCode, organizationId);
+      const buyerEmail = email?.trim().toLowerCase() ?? null;
+      const selfReferral = Boolean(
+        referral?.source_email && buyerEmail && referral.source_email === buyerEmail,
+      );
+      if (!referral || selfReferral) {
+        delete checkoutMetadata.referral_code;
+        delete checkoutMetadata.referral_bonus_path;
+      } else {
+        checkoutMetadata.referral_bonus_path = REFERRAL_BONUS_PATH;
+      }
+    } catch {
+      delete checkoutMetadata.referral_code;
+      delete checkoutMetadata.referral_bonus_path;
+    }
+  }
   await supabaseRequest("funnel_orders", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
@@ -838,7 +963,6 @@ async function completeCheckout(session: JsonObject, eventId: string) {
       }),
     },
   );
-  const checkoutMetadata = (checkout.metadata_json ?? metadata) as JsonObject;
   await recordConversion(
     "checkout_success",
     organizationId,
@@ -969,6 +1093,19 @@ async function getDelivery(sessionId: string) {
   };
 }
 
+async function getReferralResolution(code: string) {
+  requireConfig();
+  const resolved = await resolveReferralCode(code, PUBLIC_ORG_ID);
+  if (!resolved) throw new HttpError(404, "Referral link not found");
+  return {
+    referral_code: code,
+    bonus_asset_path: REFERRAL_BONUS_PATH,
+    redirect_url: frontendUrl(
+      `${REFERRAL_BONUS_PATH}?referral_code=${encodeURIComponent(code)}`,
+    ),
+  };
+}
+
 async function route(request: Request) {
   const url = new URL(request.url);
   const pathParts = url.pathname.split("/").filter(Boolean);
@@ -1002,6 +1139,10 @@ async function route(request: Request) {
   );
   if (request.method === "POST" && leadCaptureMatch) {
     return response(await captureLead(leadCaptureMatch[1], (await request.json()) as JsonObject), 201);
+  }
+  const referralMatch = path.match(/^\/public\/referrals\/([^/]+)$/);
+  if (request.method === "GET" && referralMatch) {
+    return response(await getReferralResolution(referralMatch[1]));
   }
   const deliveryTokenMatch = path.match(/^\/(?:funnel\/)?delivery\/([^/]+)$/);
   if (request.method === "GET" && deliveryTokenMatch) {

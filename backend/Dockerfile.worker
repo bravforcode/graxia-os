@@ -28,4 +28,4 @@ RUN groupadd --gid 1001 graxia && \
 USER 1001:1001
 
 # Default command (overridden by fly.toml processes)
-CMD ["celery", "-A", "app.tasks.celery_app", "worker", "-Q", "default,critical", "-c", "1", "--loglevel=info"]
+CMD ["celery", "-A", "app.tasks.celery_app", "worker", "-Q", "default,critical,background", "-c", "1", "--loglevel=info"]

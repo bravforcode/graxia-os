@@ -114,4 +114,9 @@ BEAT_SCHEDULE = {
         "schedule": crontab(hour=10, minute=0),
         "options": {"queue": BACKGROUND_QUEUE},
     },
+    "organic-content-weekly": {
+        "task": "tasks.organic_content_batch.schedule_weekly",
+        "schedule": crontab(day_of_week="monday", hour=8, minute=0),
+        "options": {"queue": BACKGROUND_QUEUE},
+    },
 }

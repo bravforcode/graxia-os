@@ -3,9 +3,11 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.config import settings
 from app.middleware.tenant import get_org
 from app.models.organization import Organization
 from app.schemas.funnel import (
@@ -14,8 +16,14 @@ from app.schemas.funnel import (
     LeadMagnetRead,
     LeadCaptureRequest,
     LeadCaptureResponse,
+    UnsubscribeRequest,
+    UnsubscribeResponse,
 )
 from app.services.lead_magnet_service import LeadMagnetService
+from app.services.public_funnel_service import (
+    PublicFunnelBindingError,
+    require_public_funnel_organization,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -94,8 +102,9 @@ async def capture_lead(
 ):
     service = LeadMagnetService(db)
     try:
+        organization_id = require_public_funnel_organization(payload.organization_id)
         contact, raw_token = await service.capture_lead(
-            organization_id=payload.organization_id,
+            organization_id=organization_id,
             slug=slug,
             email=payload.email,
             name=payload.name,
@@ -103,19 +112,57 @@ async def capture_lead(
             medium=payload.medium,
             campaign=payload.campaign,
             referrer=payload.referrer,
+            marketing_consent=payload.marketing_consent,
+            consent_version=payload.consent_version,
+            session_id=payload.session_id,
+            public=True,
         )
         
         delivery_url = None
         if raw_token:
             delivery_url = f"/delivery/{raw_token}"
+
+        if payload.marketing_consent:
+            broker = getattr(settings, "CELERY_BROKER_URL", "") or getattr(settings, "REDIS_URL", "")
+            if broker:
+                from app.tasks.funnel_automation_tasks import send_lead_nurture
+
+                send_lead_nurture.apply_async(
+                    args=[str(organization_id), str(contact.id)],
+                    task_id=f"lead-nurture:{contact.id}",
+                )
+            else:
+                logger.info("Lead nurture suppressed: no task broker configured")
             
         return LeadCaptureResponse(
             contact_id=contact.id,
             raw_token=raw_token,
             delivery_url=delivery_url,
         )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+    except PublicFunnelBindingError as e:
+        return JSONResponse(
+            status_code=503 if "not configured" in str(e) else 404,
+            content={"detail": str(e)},
         )
+    except ValueError as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(e)},
+        )
+
+
+@router.post("/public/funnel/unsubscribe", response_model=UnsubscribeResponse)
+async def unsubscribe_from_marketing(
+    payload: UnsubscribeRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Suppress future marketing sends; response does not reveal contact existence."""
+    try:
+        organization_id = require_public_funnel_organization(payload.organization_id)
+    except PublicFunnelBindingError as exc:
+        raise HTTPException(
+            status_code=503 if "not configured" in str(exc) else 404,
+            detail=str(exc),
+        ) from exc
+    await LeadMagnetService(db).unsubscribe(organization_id, payload.email, public=True)
+    return UnsubscribeResponse(ok=True)

@@ -42,6 +42,19 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
 
             template = find_route_template(request)
             level = classify_route(request.method, template) if template else AuthLevel.PUBLIC
+            if template and (request.method.upper(), template) in {
+                ("POST", "/api/v1/revenue-bridge/events"),
+                ("POST", "/api/v1/integrations/alerts/telegram"),
+            }:
+                request.state.auth_context = AuthContext(
+                    actor_type="service",
+                    environment=env,
+                    auth_method="internal_service",
+                    is_internal=True,
+                    request_id=request_id or get_request_id(request),
+                    correlation_id=get_correlation_id(request),
+                )
+                return await call_next(request)
             if level == AuthLevel.PUBLIC:
                 request.state.auth_context = None
                 return await call_next(request)

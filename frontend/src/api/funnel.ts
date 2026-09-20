@@ -109,6 +109,7 @@ export interface FunnelDashboardResponse {
   rates: Record<string, number>;
   verified_revenue: { amount: number; currency: string; evidence_state: string };
   verified_subscriptions: { count: number; amount: number; currency: string; evidence_state: string };
+  refunds: { count: number; amount: number; currency: string; evidence_state: string };
   by_source: FunnelAttributionRow[];
   by_product: FunnelAttributionRow[];
   by_plan: FunnelAttributionRow[];
@@ -126,6 +127,14 @@ export interface DeliveryPayload {
   storage_path?: string;
   expires_at?: string;
   downloads_remaining?: number;
+  referral_url?: string;
+  referral_bonus_path?: string;
+}
+
+export interface ReferralResolution {
+  referral_code: string;
+  bonus_asset_path: string;
+  redirect_url: string;
 }
 
 export interface PublicContentArticle {
@@ -301,6 +310,13 @@ export const funnelApi = {
 
   consumeDeliveryPayload: async (token: string): Promise<DeliveryPayload> => {
     const { data } = await publicFunnelClient.post<DeliveryPayload>(`/funnel/delivery/${token}/consume`);
+    return data;
+  },
+
+  resolveReferral: async (code: string): Promise<ReferralResolution> => {
+    const { data } = await publicFunnelClient.get<ReferralResolution>(
+      `/public/referrals/${encodeURIComponent(code)}`,
+    );
     return data;
   },
 

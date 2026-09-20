@@ -4,11 +4,14 @@ from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select, and_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, FunnelOrderItem
 from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.automation_email_service import AutomationEmailService
+from app.services.funnel_analytics_service import FunnelAnalyticsService
+from app.services.referral_service import ReferralError, ReferralService
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -58,6 +61,18 @@ class FunnelOrderService:
         if not checkout_session:
             logger.error(f"Checkout session {checkout_session_id} not found for org {organization_id}")
             return None
+        if checkout_session.product_id != product_id:
+            logger.error(
+                "Checkout metadata product mismatch for session %s",
+                checkout_session_id,
+            )
+            return None
+        if checkout_session.stripe_session_id not in (None, stripe_session_id):
+            logger.error(
+                "Stripe session mismatch for local checkout %s",
+                checkout_session_id,
+            )
+            return None
 
         # Load product
         stmt = select(DigitalProduct).where(
@@ -86,7 +101,18 @@ class FunnelOrderService:
             paid_at=datetime.now(),
         )
         self.db.add(order)
-        await self.db.flush() # Get order ID
+        try:
+            await self.db.flush()  # Get order ID; unique Stripe key is the race guard.
+        except IntegrityError:
+            await self.db.rollback()
+            existing_order = await self.db.scalar(
+                select(FunnelOrder).where(
+                    FunnelOrder.stripe_session_id == stripe_session_id
+                )
+            )
+            if existing_order is not None:
+                return existing_order
+            raise
 
         # Create Order Item
         order_item = FunnelOrderItem(
@@ -106,6 +132,51 @@ class FunnelOrderService:
 
         await self.db.commit()
         await self.db.refresh(order)
+
+        attribution = checkout_session.metadata_json or {}
+        await FunnelAnalyticsService(self.db).log_event(
+            organization_id=organization_id,
+            event_type="purchase",
+            product_id=product_id,
+            order_id=order.id,
+            session_id=attribution.get("session_id"),
+            source=attribution.get("source"),
+            medium=attribution.get("medium"),
+            campaign=attribution.get("campaign"),
+            referrer=attribution.get("referrer"),
+            first_touch=attribution.get("first_touch"),
+            last_touch=attribution.get("last_touch"),
+            landing_path=attribution.get("landing_path"),
+            content_id=attribution.get("content_id"),
+            referral_code=attribution.get("referral_code"),
+            metadata_json={
+                key: attribution[key]
+                for key in (
+                    "content_id", "plan", "channel", "locale",
+                    "landing_path", "referral_code",
+                )
+                if key in attribution
+            },
+            idempotency_key=f"purchase:{order.id}",
+        )
+
+        referral_code = attribution.get("referral_code")
+        referral_session_id = attribution.get("session_id")
+        if referral_code and referral_session_id:
+            try:
+                await ReferralService(self.db).record_conversion_for_order(
+                    organization_id=organization_id,
+                    referral_code=str(referral_code),
+                    session_id=str(referral_session_id),
+                    order_id=order.id,
+                    conversion_key=f"order:{order.id}",
+                )
+            except ReferralError as exc:
+                logger.info(
+                    "Referral conversion skipped for order %s: %s",
+                    order.id,
+                    exc,
+                )
 
         # ── GRANT DELIVERY ACCESS ──
         # Grant access immediately after successful payment/order creation

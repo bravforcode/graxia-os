@@ -309,7 +309,6 @@ class TestFunnelE2EFlow:
         org_id = create_res.json()["organization_id"]
         await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
 
-        session_id = f"cs_idem_{uuid4().hex[:12]}"
         # A real completed checkout requires a local checkout session row;
         # create one through the public checkout API like a real buyer.
         checkout_res = await public_async_client.post(
@@ -323,6 +322,7 @@ class TestFunnelE2EFlow:
         )
         assert checkout_res.status_code == 200, f"Checkout failed: {checkout_res.text}"
         checkout_id = checkout_res.json()["id"]
+        session_id = checkout_res.json()["stripe_session_id"]
 
         event_payload = _make_stripe_event(
             event_type="checkout.session.completed",

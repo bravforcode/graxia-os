@@ -1,7 +1,6 @@
 import { useSearchParams, Link } from "react-router-dom";
 import { useLang } from "@/i18n/LanguageContext";
 import { 
-  CheckCircle, 
   Mail, 
   ArrowRight, 
   ShieldCheck,
@@ -24,13 +23,13 @@ export default function CheckoutSuccess() {
       <div className="w-full max-w-lg bg-slate-900/40 border border-slate-800 rounded-[32px] p-8 shadow-2xl backdrop-blur-xl relative z-10 text-center space-y-6">
         
         {/* Success Icon */}
-        <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto animate-bounce-slow">
-          <CheckCircle size={40} />
+        <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center mx-auto">
+          <Clock size={40} />
         </div>
 
         {/* Title */}
         <div className="space-y-2">
-          <span className="text-[11px] font-mono tracking-[0.24em] text-emerald-400 uppercase font-semibold bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-full">
+          <span className="text-[11px] font-mono tracking-[0.24em] text-amber-400 uppercase font-semibold bg-amber-500/5 border border-amber-500/10 px-3 py-1 rounded-full">
             {t("success.title")}
           </span>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 mt-2">
@@ -52,7 +51,7 @@ export default function CheckoutSuccess() {
             <div>
               <h4 className="text-xs font-semibold text-slate-200">{t("success.checkEmail")}</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                We have emailed a unique secure delivery access link to your checkout email. Keep this key private.
+                A checkout return is not a charge receipt. Follow the provider status and wait for a verified webhook event.
               </p>
             </div>
           </div>
@@ -64,7 +63,7 @@ export default function CheckoutSuccess() {
             <div>
               <h4 className="text-xs font-semibold text-slate-200">{t("success.delayProtection")}</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Emails are dispatched instantly. If not received in 3 minutes, verify your spam/junk folder.
+                Delivery is released only after the provider webhook is verified; no delivery-time claim is made here.
               </p>
             </div>
           </div>

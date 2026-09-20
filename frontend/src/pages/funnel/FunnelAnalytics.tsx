@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { 
   TrendingUp, 
   Eye, 
@@ -17,7 +17,7 @@ import {
   HeartPulse
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { funnelApi, type FunnelAnalyticsSummary, type FunnelDailyAnalytics } from "../../api/funnel";
+import { funnelApi, type FunnelAnalyticsSummary, type FunnelDailyAnalytics, type FunnelAttributionRow, type FunnelDashboardResponse } from "../../api/funnel";
 import { client } from "../../lib/api";
 
 interface AIRecommendation {
@@ -54,30 +54,39 @@ interface AIRecommendationsResponse {
 export default function FunnelAnalytics() {
   const [summary, setSummary] = useState<FunnelAnalyticsSummary | null>(null);
   const [dailyData, setDailyData] = useState<FunnelDailyAnalytics[]>([]);
+  const [attributionData, setAttributionData] = useState<FunnelAttributionRow[]>([]);
+  const [dashboard, setDashboard] = useState<FunnelDashboardResponse | null>(null);
   const [aiData, setAiData] = useState<AIRecommendationsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [dateRange, setDateRange] = useState("30");
+  const [filters, setFilters] = useState({ source: "", medium: "", campaign: "", product_id: "", plan: "", referral_code: "" });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [dateRange]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
-      const [sum, daily] = await Promise.all([
-        funnelApi.getAnalyticsSummary(),
-        funnelApi.getDailyAnalytics()
-      ]);
-      setSummary(sum);
-      setDailyData(daily);
+      const end = new Date();
+      const start = new Date(end.getTime() - Number(dateRange) * 24 * 60 * 60 * 1000);
+      const params = {
+        start_date: start.toISOString(),
+        end_date: end.toISOString(),
+        ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value.trim())),
+      };
+      const data = await funnelApi.getDashboard(params);
+      setDashboard(data);
+      setSummary(data.funnel);
+      setDailyData([]);
+      setAttributionData(data.by_source);
     } catch (err) {
       console.error("Failed to load analytics dashboard data", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange, filters]);
+
+  useEffect(() => {
+    void fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const fetchAIRecommendations = async () => {
     try {
@@ -153,6 +162,21 @@ export default function FunnelAnalytics() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        {(["source", "medium", "campaign", "product_id", "plan", "referral_code"] as const).map((key) => (
+          <input
+            key={key}
+            value={filters[key]}
+            onChange={(event) => setFilters((current) => ({ ...current, [key]: event.target.value }))}
+            onBlur={() => void fetchAnalytics()}
+            onKeyDown={(event) => { if (event.key === "Enter") void fetchAnalytics(); }}
+            placeholder={key.replace("_", " ")}
+            aria-label={key.replace("_", " ")}
+            className="min-w-0 bg-slate-900/60 border border-slate-800 focus:border-indigo-500 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none"
+          />
+        ))}
+      </div>
+
       {/* Analytics Summary Panels */}
       {summary && (
         <>
@@ -162,10 +186,14 @@ export default function FunnelAnalytics() {
                 <div>
                   <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Net Revenue</p>
                   <h3 className="text-2xl font-extrabold text-slate-100 mt-2">
-                    {summary.total_revenue.toLocaleString()} THB
+                    {dashboard?.verified_revenue.evidence_state === "verified"
+                      ? `${summary.total_revenue.toLocaleString()} THB`
+                      : "Unavailable"}
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    AOV: {summary.average_order_value.toFixed(2)} THB
+                    AOV: {dashboard?.verified_revenue.evidence_state === "verified"
+                      ? `${summary.average_order_value.toFixed(2)} THB`
+                      : "Unavailable"}
                   </p>
                 </div>
                 <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
@@ -321,9 +349,34 @@ export default function FunnelAnalytics() {
                   </div>
                 </div>
               </div>
-            </div>
+          </div>
 
-            {/* Daily logs (7 Columns) */}
+          {dashboard && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Verified revenue evidence</p>
+                <p className="mt-2 text-sm font-semibold text-slate-200">{dashboard.verified_revenue.evidence_state}</p>
+                <p className="mt-1 text-xs text-slate-500">Only paid orders/provider events are included.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Attribution completeness</p>
+                <p className="mt-2 text-sm font-semibold text-slate-200">{dashboard.data_quality.attribution_completeness ?? 0}%</p>
+                <p className="mt-1 text-xs text-slate-500">Events with source or referral attribution.</p>
+              </div>
+              <div className={`rounded-2xl border p-4 ${(dashboard.data_quality.unattributed_purchases ?? 0) > 0 ? "border-amber-500/30 bg-amber-500/5" : "border-slate-800 bg-slate-950/40"}`}>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Purchase data quality</p>
+                <p className="mt-2 text-sm font-semibold text-slate-200">{dashboard.data_quality.unattributed_purchases ?? 0} unattributed</p>
+                <p className="mt-1 text-xs text-slate-500">Unattributed purchases stay visible as a warning.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Refunds</p>
+                <p className="mt-2 text-sm font-semibold text-slate-200">{dashboard.refunds.evidence_state === "verified" ? `${dashboard.refunds.count} · ${dashboard.refunds.amount.toFixed(2)} THB` : "Unavailable"}</p>
+                <p className="mt-1 text-xs text-slate-500">Based on the verified order/refund ledger.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Daily logs (7 Columns) */}
             <div className="lg:col-span-7 bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-xl space-y-4">
               <div className="border-b border-slate-850 pb-4 flex justify-between items-center">
                 <div>
@@ -372,6 +425,36 @@ export default function FunnelAnalytics() {
           </div>
         </>
       )}
+
+      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-100">Attribution and revenue</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Source, campaign, product, and plan from consent-safe events.</p>
+          </div>
+          <span className="text-[10px] text-slate-500">No evidence is shown as zero.</span>
+        </div>
+        {attributionData.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">No attributed funnel events yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                <tr><th className="px-3 py-2">Source / campaign</th><th className="px-3 py-2">Product / plan</th><th className="px-3 py-2">Views</th><th className="px-3 py-2">Leads</th><th className="px-3 py-2">Purchases</th><th className="px-3 py-2 text-right">Revenue</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-850/50">
+                {attributionData.map((row, index) => (
+                  <tr key={`${row.source}-${row.campaign}-${row.product_id}-${index}`}>
+                    <td className="px-3 py-2 text-slate-300">{row.source || "direct"} / {row.campaign || "—"}</td>
+                    <td className="px-3 py-2 text-slate-400">{row.product_name || "—"}{row.plan ? ` / ${row.plan}` : ""}</td>
+                    <td className="px-3 py-2 text-slate-400">{row.views}</td><td className="px-3 py-2 text-indigo-300">{row.leads}</td><td className="px-3 py-2 text-emerald-300">{row.purchases}</td><td className="px-3 py-2 text-right text-slate-200">{row.revenue.toFixed(2)} THB</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* AI Funnel Recommendations Panel */}
       <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-xl">

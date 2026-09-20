@@ -38,6 +38,53 @@ def check_and_send_abandoned_cart(self, organization_id: str, checkout_session_i
 
 
 @shared_task(
+    name="tasks.funnel_automation.send_lead_nurture",
+    queue="background",
+    bind=True,
+    max_retries=1,
+)
+def send_lead_nurture(self, organization_id: str, contact_id: str):
+    """Send the first nurture email only after consent and provider checks."""
+    import asyncio
+    from app.config import settings
+    from app.database import AsyncSessionLocal
+    from app.models.contact import Contact
+    from app.services.automation_email_service import AutomationEmailService
+    from sqlalchemy import select
+
+    async def _run():
+        if not settings.RESEND_API_KEY or settings.APP_ENV == "development":
+            logger.info("[TASK] Lead nurture suppressed: email provider unavailable")
+            return {"status": "suppressed", "reason": "provider_unavailable"}
+        async with AsyncSessionLocal() as db:
+            contact = await db.scalar(
+                select(Contact).where(
+                    Contact.id == UUID(contact_id),
+                    Contact.organization_id == UUID(organization_id),
+                    Contact.marketing_consent.is_(True),
+                    Contact.marketing_unsubscribed.is_(False),
+                    Contact.is_deleted.is_(False),
+                )
+            )
+            if contact is None or not contact.email:
+                logger.info("[TASK] Lead nurture suppressed: consent not active")
+                return {"status": "suppressed", "reason": "consent_inactive"}
+            service = AutomationEmailService(db)
+            await service.trigger_welcome(
+                organization_id=contact.organization_id,
+                customer_email=contact.email,
+                customer_name=contact.name,
+            )
+            return {"status": "queued", "contact_id": str(contact.id)}
+
+    try:
+        return asyncio.run(_run())
+    except Exception as exc:
+        logger.error("[TASK] Lead nurture task failed: %s", type(exc).__name__)
+        raise self.retry(exc=exc, countdown=1800)
+
+
+@shared_task(
     name="tasks.funnel_automation.send_review_request",
     queue="background",
     bind=True,

@@ -180,9 +180,11 @@ class FunnelDeliveryService:
         }
         
         # Safe content exposure
-        if asset.asset_type in ["text", "private_page"]:
+        if asset.asset_type in ["text", "private_page", "content"]:
             payload["content_body"] = asset.content_body
         elif asset.asset_type == "external_link":
             payload["external_url"] = asset.external_url
+        elif asset.asset_type == "file":
+            payload["storage_path"] = asset.storage_path
             
         return payload

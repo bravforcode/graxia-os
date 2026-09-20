@@ -15,11 +15,13 @@ from app.models.funnel import (
     DigitalProduct,
 )
 from app.models.contact import Contact
+from app.config import settings
 from app.services.email_service import email_service
 
 logger = logging.getLogger("graxia.automation_email")
 
-STORE_URL = "https://ai-factory-omega.vercel.app/store"
+STORE_URL = f"{settings.FRONTEND_URL.rstrip('/')}/store"
+DELIVERY_URL = f"{settings.FRONTEND_URL.rstrip('/')}/delivery"
 
 
 class AutomationEmailService:
@@ -108,7 +110,7 @@ class AutomationEmailService:
             template_data={
                 "to_name": email.split("@")[0].capitalize(),
                 "product_name": product_name,
-                "product_benefits": "- Battle-tested templates & tools\n- Lifetime updates included\n- 30-day money-back guarantee",
+                "product_benefits": "- Digital product files\n- Setup guidance where included\n- Support resources where available",
                 "price": str(session.amount),
                 "checkout_url": STORE_URL,
             },
@@ -150,7 +152,7 @@ class AutomationEmailService:
             template_data={
                 "to_name": order.customer_email.split("@")[0].capitalize(),
                 "product_name": product_name,
-                "delivery_url": "https://ai-factory-omega.vercel.app/delivery",
+                "delivery_url": DELIVERY_URL,
                 "review_url": STORE_URL,
             },
             idempotency_key=f"post_purchase:{order_id}",
@@ -219,7 +221,7 @@ class AutomationEmailService:
             template_data={
                 "to_name": order.customer_email.split("@")[0].capitalize(),
                 "product_name": "your recent purchase",
-                "recommendations": "- ChatGPT Power Prompts Bundle (590 THB)\n- Notion Life OS (990 THB)\n- SaaS Boilerplate Starter (1,990 THB)",
+                "recommendations": "- Browse related digital products\n- Review the latest Graxia catalog\n- Choose the next workflow that fits your needs",
                 "store_url": STORE_URL,
             },
             idempotency_key=f"cross_sell:{order_id}",
@@ -240,7 +242,7 @@ class AutomationEmailService:
             template_name="funnel_automation_win_back",
             template_data={
                 "to_name": customer_name,
-                "new_products": "- AI Content Automation System (790 THB)\n- Freelancer Command Center (690 THB)\n- YouTube Growth Toolkit (790 THB)",
+                "new_products": "- New digital products\n- Workflow templates\n- Practical AI resources",
                 "store_url": STORE_URL,
             },
             idempotency_key=f"win_back:{customer_email}",

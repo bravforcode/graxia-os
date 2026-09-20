@@ -42,6 +42,8 @@ export default function TokenROIPage() {
 
   useEffect(() => {
     void load(DEFAULT_INPUT);
+    // Initial evaluation intentionally uses the stable baseline, not changing form input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function load(nextInput: TokenRoiInput = input) {

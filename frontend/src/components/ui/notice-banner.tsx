@@ -9,15 +9,19 @@ const noticeStyles: Record<NoticeTone, string> = {
 
 interface NoticeBannerProps {
   tone?: NoticeTone;
-  msg: string;
+  msg?: string;
+  message?: string;
 }
 
-export function NoticeBanner({ tone = 'info', msg }: NoticeBannerProps) {
+export function NoticeBanner({ tone = 'info', msg, message }: NoticeBannerProps) {
+  const text = message ?? msg ?? '';
   return (
     <div
+      role={tone === 'danger' ? 'alert' : 'status'}
+      aria-live={tone === 'danger' ? 'assertive' : 'polite'}
       className={`rounded-[12px] border px-4 py-3 text-sm ${noticeStyles[tone]}`}
     >
-      {msg}
+      {text}
     </div>
   );
 }

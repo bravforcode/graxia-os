@@ -1,0 +1,26 @@
+version: 1
+policy: "Do not publish a numeric or outcome claim without current evidence."
+canonical_domain: https://bravforcode.github.io/graxia
+claims:
+  - id: revenue
+    status: blocked
+    evidence: null
+  - id: roas
+    status: blocked
+    evidence: null
+  - id: refund_rate
+    status: blocked
+    evidence: null
+  - id: delivery_time
+    status: unverified
+    evidence: null
+  - id: reply_rate
+    status: blocked
+    evidence: null
+  - id: time_saved
+    status: blocked
+    evidence: null
+rules:
+  - "No fabricated sales, review, rating, customer, urgency, or scarcity signals."
+  - "Marketing nurture requires explicit consent_version and marketing_consent."
+  - "Payment success is not reported without a verified Stripe charge evidence record."

@@ -202,11 +202,20 @@ class DeliveryPayload(BaseModel):
     asset_type: str
     content_body: Optional[str] = None
     external_url: Optional[str] = None
+    storage_path: Optional[str] = None
     expires_at: Optional[datetime] = None
     downloads_remaining: Optional[int] = None
 
 
 # ── Conversion Event ──────────────────────────────────────────────────────
+
+
+class ConversionAttributionTouch(BaseModel):
+    source: Optional[str] = Field(None, max_length=100)
+    medium: Optional[str] = Field(None, max_length=100)
+    campaign: Optional[str] = Field(None, max_length=100)
+    referrer: Optional[str] = None
+    path: Optional[str] = Field(None, max_length=500)
 
 
 class ConversionEventCreate(BaseModel):
@@ -215,10 +224,16 @@ class ConversionEventCreate(BaseModel):
     contact_id: Optional[UUID] = None
     order_id: Optional[UUID] = None
     session_id: Optional[str] = None
+    idempotency_key: Optional[str] = Field(None, max_length=255)
     source: Optional[str] = None
     medium: Optional[str] = None
     campaign: Optional[str] = None
     referrer: Optional[str] = None
+    first_touch: Optional[ConversionAttributionTouch] = None
+    last_touch: Optional[ConversionAttributionTouch] = None
+    landing_path: Optional[str] = Field(None, max_length=500)
+    content_id: Optional[str] = Field(None, max_length=255)
+    referral_code: Optional[str] = Field(None, max_length=160)
     metadata_json: Optional[dict[str, Any]] = None
 
 
@@ -257,6 +272,35 @@ class FunnelDailyAnalytics(BaseModel):
     leads: int
     purchases: int
     revenue: float
+
+
+class FunnelAttributionRow(BaseModel):
+    source: Optional[str] = None
+    medium: Optional[str] = None
+    campaign: Optional[str] = None
+    product_id: Optional[UUID] = None
+    product_name: Optional[str] = None
+    plan: Optional[str] = None
+    views: int = 0
+    leads: int = 0
+    checkout_starts: int = 0
+    purchases: int = 0
+    revenue: float = 0.0
+
+
+class FunnelDashboardResponse(BaseModel):
+    period: dict[str, Any]
+    funnel: dict[str, Any]
+    rates: dict[str, Any]
+    verified_revenue: dict[str, Any]
+    verified_subscriptions: dict[str, Any]
+    refunds: dict[str, Any] = Field(default_factory=dict)
+    by_source: list[dict[str, Any]] = Field(default_factory=list)
+    by_product: list[dict[str, Any]] = Field(default_factory=list)
+    by_plan: list[dict[str, Any]] = Field(default_factory=list)
+    by_referral: list[dict[str, Any]] = Field(default_factory=list)
+    content: dict[str, Any] = Field(default_factory=dict)
+    data_quality: dict[str, Any] = Field(default_factory=dict)
 
 
 # ── Lead Magnet ───────────────────────────────────────────────────────────
@@ -300,16 +344,27 @@ class LeadCaptureRequest(BaseModel):
     organization_id: UUID
     email: str = Field(..., max_length=300)
     name: Optional[str] = Field(None, max_length=300)
+    marketing_consent: bool = False
+    consent_version: Optional[str] = Field(None, max_length=100)
+    session_id: Optional[str] = Field(None, max_length=255)
     source: Optional[str] = None
     medium: Optional[str] = None
     campaign: Optional[str] = None
     referrer: Optional[str] = None
 
-
 class LeadCaptureResponse(BaseModel):
     contact_id: UUID
     raw_token: Optional[str] = None
     delivery_url: Optional[str] = None
+
+
+class UnsubscribeRequest(BaseModel):
+    organization_id: UUID
+    email: str = Field(..., max_length=300)
+
+
+class UnsubscribeResponse(BaseModel):
+    ok: bool = True
 
 
 # ── Coupon ────────────────────────────────────────────────────────────────

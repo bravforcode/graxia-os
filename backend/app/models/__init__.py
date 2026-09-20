@@ -55,13 +55,24 @@ from .funnel import (
     ConversionEvent,
     DeliveryAccess,
     DeliveryAsset,
+    DeliveryEmailEvent,
     DigitalProduct,
     EmailSequence,
     FunnelOrder,
     FunnelOrderItem,
+    FunnelRecommendation,
+    LeadCapture,
     LeadMagnet,
     ProductReview,
 )
+from .referral import (
+    ReferralAttribution,
+    ReferralCode,
+    ReferralConversion,
+    ReferralPartner,
+)
+from .revenue_bridge import RevenueBridgeEvent
+from .content_batch import ContentBatch, ContentBatchItem
 
 # Ensure the tamper-evident compliance audit table is registered with the
 # metadata (the module is otherwise imported by no one — it was dead code).
@@ -111,12 +122,22 @@ __all__ = [
     "FunnelOrder",
     "FunnelOrderItem",
     "DeliveryAccess",
+    "DeliveryEmailEvent",
     "ConversionEvent",
+    "LeadCapture",
     "LeadMagnet",
+    "FunnelRecommendation",
     "Coupon",
     "ProductReview",
     "EmailSequence",
     "BundleDeal",
+    "ReferralPartner",
+    "ReferralCode",
+    "ReferralAttribution",
+    "ReferralConversion",
+    "RevenueBridgeEvent",
+    "ContentBatch",
+    "ContentBatchItem",
     "Agent",
     "AgentTeam",
     "AgentSkill",

@@ -5,6 +5,7 @@ import { vi } from 'vitest'
 
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
+import { LanguageProvider } from '@/i18n/LanguageContext'
 
 const login = vi.fn()
 const register = vi.fn()
@@ -66,9 +67,11 @@ describe('auth pages when the backend is unavailable', () => {
     const user = userEvent.setup()
 
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Login />
-      </MemoryRouter>,
+      <LanguageProvider>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Login />
+        </MemoryRouter>
+      </LanguageProvider>,
     )
 
     expect(screen.getByText('Control Plane Unavailable')).toBeInTheDocument()
@@ -81,9 +84,11 @@ describe('auth pages when the backend is unavailable', () => {
 
   it('shows the deployment-safe unavailable state on register', () => {
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Register />
-      </MemoryRouter>,
+      <LanguageProvider>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Register />
+        </MemoryRouter>
+      </LanguageProvider>,
     )
 
     expect(screen.getByText('Control Plane Unavailable')).toBeInTheDocument()
