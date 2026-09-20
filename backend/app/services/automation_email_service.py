@@ -6,7 +6,7 @@ All processing is idempotent and runs as background tasks.
 import logging
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import (
@@ -14,6 +14,7 @@ from app.models.funnel import (
     FunnelCheckoutSession,
     DigitalProduct,
 )
+from app.models.contact import Contact
 from app.services.email_service import email_service
 
 logger = logging.getLogger("graxia.automation_email")
@@ -27,12 +28,33 @@ class AutomationEmailService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def _marketing_allowed(
+        self, organization_id: UUID, email: str | None, contact_id: UUID | None = None
+    ) -> bool:
+        normalized_email = email.strip().lower() if email else None
+        if not normalized_email:
+            return False
+        filters = [
+            Contact.organization_id == organization_id,
+            Contact.marketing_consent.is_(True),
+            Contact.marketing_unsubscribed.is_(False),
+            Contact.is_deleted.is_(False),
+        ]
+        if contact_id:
+            filters.append(Contact.id == contact_id)
+        filters.append(func.lower(func.trim(Contact.email)) == normalized_email)
+        row = await self.db.execute(select(Contact.id).where(*filters).limit(1))
+        return row.scalar_one_or_none() is not None
+
     # ── Welcome Sequence ────────────────────────────────────────────────
 
     async def trigger_welcome(
         self, organization_id: UUID, customer_email: str, customer_name: str
     ):
         """Send welcome email immediately on signup."""
+        if not await self._marketing_allowed(organization_id, customer_email):
+            logger.info("[AUTOMATION] Welcome suppressed: no marketing consent")
+            return
         await email_service.send_email(
             to=customer_email,
             template_name="funnel_automation_welcome",
@@ -65,6 +87,9 @@ class AutomationEmailService:
 
         email = session.customer_email
         if not email:
+            return
+        if not await self._marketing_allowed(organization_id, email, session.contact_id):
+            logger.info("[AUTOMATION] Abandoned-cart email suppressed: no marketing consent")
             return
 
         product_name = "your product"
@@ -102,6 +127,9 @@ class AutomationEmailService:
         order = result.scalar_one_or_none()
 
         if not order or not order.customer_email:
+            return
+        if not await self._marketing_allowed(organization_id, order.customer_email, order.contact_id):
+            logger.info("[AUTOMATION] Review request suppressed: no marketing consent")
             return
 
         product_name = "your product"
@@ -141,6 +169,9 @@ class AutomationEmailService:
 
         if not order or not order.customer_email:
             return
+        if not await self._marketing_allowed(organization_id, order.customer_email, order.contact_id):
+            logger.info("[AUTOMATION] Cross-sell suppressed: no marketing consent")
+            return
 
         product_name = "your product"
         if order.items:
@@ -178,6 +209,9 @@ class AutomationEmailService:
 
         if not order or not order.customer_email:
             return
+        if not await self._marketing_allowed(organization_id, order.customer_email, order.contact_id):
+            logger.info("[AUTOMATION] Cross-sell suppressed: no marketing consent")
+            return
 
         await email_service.send_email(
             to=order.customer_email,
@@ -198,6 +232,9 @@ class AutomationEmailService:
         self, organization_id: UUID, customer_email: str, customer_name: str
     ):
         """Send win-back email with discount code."""
+        if not await self._marketing_allowed(organization_id, customer_email):
+            logger.info("[AUTOMATION] Win-back suppressed: no marketing consent")
+            return
         await email_service.send_email(
             to=customer_email,
             template_name="funnel_automation_win_back",

@@ -1,4 +1,4 @@
-import { client, publicClient } from "../lib/api";
+import { client, publicClient, publicFunnelClient } from "../lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -178,7 +178,7 @@ export const funnelApi = {
   },
 
   getPublicProduct: async (organizationId: string, slug: string): Promise<DigitalProduct> => {
-    const { data } = await publicClient.get<DigitalProduct>(`/funnel/public/products/${organizationId}/${slug}`);
+    const { data } = await publicFunnelClient.get<DigitalProduct>(`/funnel/public/products/${organizationId}/${slug}`);
     return data;
   },
 
@@ -189,7 +189,7 @@ export const funnelApi = {
     cancel_url: string;
     metadata?: Record<string, any>;
   }): Promise<FunnelCheckout> => {
-    const { data } = await publicClient.post<FunnelCheckout>(`/funnel/public/products/${productId}/checkout`, payload);
+    const { data } = await publicFunnelClient.post<FunnelCheckout>(`/funnel/public/products/${productId}/checkout`, payload);
     return data;
   },
 
@@ -229,19 +229,19 @@ export const funnelApi = {
     campaign?: string;
     referrer?: string;
   }): Promise<{ contact_id: string; raw_token?: string; delivery_url?: string }> => {
-    const { data } = await publicClient.post(`/public/funnel/lead-magnets/${slug}/capture`, payload);
+    const { data } = await publicFunnelClient.post(`/public/funnel/lead-magnets/${slug}/capture`, payload);
     return data;
   },
 
   // ── Public Delivery Access ─────────────────────────────────────────────
 
   getDeliveryPayload: async (token: string): Promise<DeliveryPayload> => {
-    const { data } = await publicClient.get<DeliveryPayload>(`/funnel/delivery/${token}`);
+    const { data } = await publicFunnelClient.get<DeliveryPayload>(`/funnel/delivery/${token}`);
     return data;
   },
 
   consumeDeliveryPayload: async (token: string): Promise<DeliveryPayload> => {
-    const { data } = await publicClient.post<DeliveryPayload>(`/funnel/delivery/${token}/consume`);
+    const { data } = await publicFunnelClient.post<DeliveryPayload>(`/funnel/delivery/${token}/consume`);
     return data;
   },
 
@@ -278,6 +278,6 @@ export const funnelApi = {
     referrer?: string;
     metadata_json?: Record<string, any>;
   }): Promise<void> => {
-    await publicClient.post("/funnel/events", payload);
+    await publicFunnelClient.post("/funnel/events", payload);
   },
 };

@@ -27,6 +27,10 @@ class Contact(Base, TenantMixin):
             "contact_type IN ('client','lead','mentor','founder','investor','recruiter','collaborator','event_organizer','other')",
             name="ck_contact_type",
         ),
+        CheckConstraint(
+            "NOT marketing_consent OR (marketing_consent_at IS NOT NULL AND consent_version IS NOT NULL AND length(trim(consent_version)) > 0)",
+            name="ck_contact_marketing_consent_audit",
+        ),
         CheckConstraint("relationship_strength BETWEEN 1 AND 5", name="ck_contact_rel_strength"),
         CheckConstraint("value_score BETWEEN 1 AND 10", name="ck_contact_value_score"),
         Index(
@@ -53,6 +57,11 @@ class Contact(Base, TenantMixin):
     telegram_handle = Column(String(200))
     github_handle = Column(String(200))
     other_channels = Column(JSONB, default=dict)
+    marketing_consent = Column(Boolean, default=False, nullable=False)
+    marketing_consent_at = Column(DateTime(timezone=True))
+    consent_version = Column(String(100))
+    marketing_unsubscribed = Column(Boolean, default=False, nullable=False)
+    marketing_unsubscribed_at = Column(DateTime(timezone=True))
     relationship_strength = Column(SmallInteger, default=1)
     last_contacted_at = Column(Date)
     next_followup_date = Column(Date)
