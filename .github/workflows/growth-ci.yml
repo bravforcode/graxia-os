@@ -1,0 +1,91 @@
+name: Graxia growth CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'codex/growth-os-**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-growth:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      TESTING: "true"
+      DATABASE_URL: sqlite+aiosqlite:///./ci-growth.db
+      REDIS_ENABLED: "false"
+      REDIS_URL: ""
+      CELERY_BROKER_URL: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Generate ephemeral test secrets
+        shell: bash
+        run: |
+          echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" >> "$GITHUB_ENV"
+          echo "ENCRYPTION_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" >> "$GITHUB_ENV"
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Install backend test plugin
+        run: python -m pip install "pytest-asyncio>=0.23"
+      - name: Validate Alembic graph
+        run: |
+          python -m alembic heads
+          test "$(python -m alembic heads | grep -c '(head)')" -eq 1
+      - name: Run growth backend tests
+        run: >-
+          python -m pytest
+          tests/test_funnel_v5.py
+          tests/test_funnel_e2e_flow.py
+          tests/test_funnel_webhook_delivery.py
+          tests/test_funnel_analytics.py
+          tests/test_referrals.py
+          tests/test_revenue_bridge.py
+          tests/test_content_batch_orchestration.py
+          tests/test_lead_magnet_api.py
+          tests/test_growth_migrations.py
+          -q
+
+  frontend-growth:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        env:
+          VITE_BASE_PATH: /graxia/
+          VITE_SITE_URL: https://bravforcode.github.io/graxia
+          VITE_PUBLIC_FUNNEL_API_BASE_URL: https://kxundnceeuyjfittlgvo.supabase.co/functions/v1/graxia-funnel
+        run: npm run build

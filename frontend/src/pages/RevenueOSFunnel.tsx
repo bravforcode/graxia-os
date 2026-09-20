@@ -1,4 +1,7 @@
 import { useState } from "react"
+import { funnelApi } from "../api/funnel"
+import { STORE_ORG_ID } from "../data/products"
+import { getAttributionEventFields } from "../lib/attribution"
 
 const REVENUE_OS_API = "https://graxia-revenue-os.onrender.com"
 const PRODUCTS = [
@@ -11,10 +14,10 @@ const PRODUCTS = [
     period: "/เดือน",
     badge: null,
     accent: "paper",
-    promise: "สำหรับร้านเริ่มขาย — ปิดการขายครบวงจรช่องทางเดียว",
-    features: ["1 ช่องทางขาย (Shopee / Shopify / TikTok)", "ออเดอร์ → ส่งของ → ใบเสร็จ อัตโนมัติ", "อีเมลติดตามลูกค้าพื้นฐาน", "CEO Dashboard ดูยอด Realtime", "ผู้ใช้ 1 คน"],
+    promise: "สำหรับร้านเริ่มขาย — workflow ตามช่องทางที่ตั้งค่าไว้กับ provider",
+    features: ["ช่องทางขายตาม provider ที่ตั้งค่าไว้", "ออเดอร์ → ส่งของ → ใบเสร็จ ตาม workflow", "อีเมลติดตามลูกค้าพื้นฐาน", "CEO Dashboard เมื่อมี telemetry", "ผู้ใช้ 1 คน"],
     cta: "เริ่ม Starter",
-    subtext: "ยกเลิกได้ทุกเดือน",
+    subtext: "การยกเลิกเป็นไปตามเงื่อนไขของแผนและ provider",
   },
   {
     id: "9c0c0481-aee7-4c45-8ef8-596a737d6326",
@@ -25,10 +28,10 @@ const PRODUCTS = [
     period: "/เดือน",
     badge: "นิยมสุด",
     accent: "brass",
-    promise: "สำหรับร้าน 1–5 ล้าน/ปี — ทุกช่องทาง + AI คุมงบแทนคุณ",
-    features: ["ทุกช่องทาง + สต็อกกลาง", "แคมเปญ + ขออนุมัติก่อนยิงแอด (CEO)", "AI เปลี่ยนงบ/ปิดแคมเปญแทนคน", "ผู้ใช้ 5 คน + สิทธิ์ Approvals", "Affiliate + Email อัตโนมัติ"],
+    promise: "สำหรับร้านที่ต้องการรวมช่องทางและ workflow ตาม provider ที่ตั้งค่าไว้",
+    features: ["ช่องทางและสต็อกตาม provider ที่ตั้งค่าไว้", "แคมเปญ + ขออนุมัติก่อนยิงแอด (CEO)", "AI แนะนำและร่างการปรับงบ/แคมเปญ — ต้องอนุมัติก่อนดำเนินการ", "ผู้ใช้ 5 คน + สิทธิ์ Approvals", "อีเมลที่ได้รับ consent + affiliate ตาม provider ที่ตั้งค่าไว้"],
     cta: "เริ่ม Growth",
-    subtext: "ประหยัด 3 เท่า vs จ้างแอดมิน",
+    subtext: "การยกเลิกเป็นไปตามเงื่อนไขของแผนและ provider",
   },
   {
     id: "aff2aa7a-e681-4f4a-9d98-18759dcd06cb",
@@ -39,10 +42,10 @@ const PRODUCTS = [
     period: "/เดือน",
     badge: "คุ้มสุด",
     accent: "ink",
-    promise: "สำหรับ 5–20 ล้าน/ปี — SLA 99.5% + ทีมตั้งค่าให้",
-    features: ["ทุกอย่างใน Growth + SLA 99.5%", "Onboarding 1 เดือน + ตั้งค่าให้ครบ", "Incident เฝ้าระวัง 24 ชม.", "Support พรีเมียม + Line ส่วนตัว", "Custom funnel ตามธุรกิจคุณ"],
+    promise: "สำหรับทีมที่ต้องการ onboarding และ workflow ที่ปรับตามธุรกิจ",
+    features: ["ทุกอย่างใน Growth + SLA ตามข้อตกลงที่ตรวจสอบได้", "Onboarding ตาม scope ที่ยืนยัน", "Incident workflow ตามขอบเขตบริการ", "Support พรีเมียม + Line ส่วนตัว", "Custom funnel ตามธุรกิจคุณ"],
     cta: "เริ่ม Scale",
-    subtext: "ROI > ค่าเช่า 1 วัน",
+    subtext: "คุย scope และหลักฐานการให้บริการก่อนเริ่ม",
   },
 ] as const
 
@@ -61,6 +64,13 @@ export default function RevenueOSFunnel() {
     setLoadingId(productId)
     setError(null)
     try {
+      const attribution = getAttributionEventFields({ content_id: productId, plan: productId, cta: "subscription_checkout" })
+      void funnelApi.logPublicEvent({
+        organization_id: STORE_ORG_ID,
+        event_type: "checkout_start",
+        ...attribution,
+        idempotency_key: `subscription_checkout:${attribution.session_id}:${productId}`,
+      }).catch(() => {})
       const res = await fetch(`${REVENUE_OS_API}/api/checkout/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,8 +120,8 @@ export default function RevenueOSFunnel() {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-[8px] bg-[#0F172A] text-[#F8F6F3] grid place-items-center font-mono text-[10px] tracking-[0.2em] font-semibold">GX</div>
             <span className="font-mono text-[11px] tracking-[0.18em] text-[#0F172A]">GRAXIA / REVENUE OS</span>
-            <span className="hidden md:inline-flex items-center gap-1.5 ml-3 pl-3 border-l border-[#0F172A]/10 font-mono text-[10px] tracking-[0.12em] text-[#64748B]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> LIVE
+              <span className="hidden md:inline-flex items-center gap-1.5 ml-3 pl-3 border-l border-[#0F172A]/10 font-mono text-[10px] tracking-[0.12em] text-[#64748B]">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> EVIDENCE GATED
             </span>
           </div>
           <div className="hidden md:flex items-center gap-6 font-mono text-[11px] tracking-[0.12em] text-[#475569]">
@@ -133,15 +143,15 @@ export default function RevenueOSFunnel() {
               <span className="w-1 h-1 bg-[#B45309] rounded-full" /> DECLASSIFIED — OPERATIONS MANUAL 01
             </div>
             <h1 className="mt-5 font-[DM_Serif_Display] text-[40px] md:text-[64px] leading-[0.9] tracking-[-0.03em] text-[#0F172A]">
-              ระบบปิดการขาย
+              ระบบ Revenue OS
               <br />
-              <span className="text-[#B45309]">อัตโนมัติ 100%</span>
+              <span className="text-[#B45309]">workflow ที่ตรวจสอบได้</span>
               <br />
-              <span className="font-mono text-[14px] md:text-[15px] tracking-[0.12em] font-normal text-[#475569]">ตั้งแต่ยิงแอด → รับเงิน → ส่งของ → ตามลูกค้า</span>
+              <span className="font-mono text-[14px] md:text-[15px] tracking-[0.12em] font-normal text-[#475569]">ตั้งแต่รับ lead → รับเงิน → ส่งของ → ตามลูกค้า</span>
             </h1>
             <p className="mt-5 max-w-[52ch] text-[15px] leading-7 text-[#334155] font-[Sarabun]">
-              สำหรับร้านไทยที่ขายจริง ไม่ใช่ร้านทดลอง — Revenue OS คุม funnel แทนคน, ขออนุมัติก่อนยิงงบ, และส่งของทันทีหลัง Stripe ยืนยัน.
-              <span className="text-[#0F172A] font-semibold"> ไม่ต้องจ้างแอดมินเพิ่ม.</span>
+              สำหรับร้านไทยที่ต้องการ workflow ตรวจสอบได้ — Revenue OS ช่วยจัดการ funnel, ขออนุมัติก่อนยิงงบ, และส่งมอบหลัง event จาก provider ได้รับการยืนยัน.
+              <span className="text-[#0F172A] font-semibold"> ลดงานซ้ำตามขอบเขตที่ตั้งค่าไว้.</span>
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#pricing" className="inline-flex h-11 px-6 items-center gap-2 bg-[#B45309] text-white text-sm font-semibold hover:bg-[#92400E] transition-colors">
@@ -149,14 +159,14 @@ export default function RevenueOSFunnel() {
               </a>
               <div className="inline-flex items-center gap-2 text-xs font-mono tracking-[0.08em] text-[#64748B] border border-[#0F172A]/10 px-3">
                 <span className="w-2 h-2 rounded-full border border-[#0F172A]/20 grid place-items-center"><span className="w-1 h-1 bg-emerald-500 rounded-full" /></span>
-                Stripe Live • Webhook ✓ • Kill-switch ✓
+                 Checkout / webhook evidence gated
               </div>
             </div>
             <div className="mt-8 grid grid-cols-3 gap-4 max-w-[520px] border-t border-[#0F172A]/10 pt-6">
-              {[
-                { k: "ออเดอร์", v: "12,400+" },
-                { k: "คืนเงิน", v: "<1.2%" },
-                { k: "ส่งของ", v: "≤ 90s" },
+                {[
+                 { k: "ออเดอร์", v: "—" },
+                 { k: "คืนเงิน", v: "—" },
+                 { k: "ส่งของ", v: "—" },
               ].map((s) => (
                 <div key={s.k}>
                   <div className="font-mono text-[10px] tracking-[0.14em] text-[#94A3B8]">{s.k}</div>
@@ -170,15 +180,15 @@ export default function RevenueOSFunnel() {
           <div className="relative md:sticky md:top-[72px]">
             <div className="rounded-[16px] border border-[#0F172A]/10 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] overflow-hidden">
               <div className="h-9 flex items-center justify-between px-4 border-b border-[#0F172A]/5 bg-[#F8F6F3]">
-                <span className="font-mono text-[10px] tracking-[0.14em] text-[#475569]">LIVE DASHBOARD — CEO VIEW</span>
+                <span className="font-mono text-[10px] tracking-[0.14em] text-[#475569]">DASHBOARD PREVIEW — CEO VIEW</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <div className="p-4 space-y-4">
                 <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "ยอดวันนี้", value: "฿18,400", sub: "+12% vs เมื่อวาน" },
-                    { label: "ออเดอร์ค้าง", value: "3", sub: "รอส่งของ" },
-                    { label: "ROAS", value: "4.2×", sub: "7 วัน" },
+              {[
+                   { label: "ยอดวันนี้", value: "—", sub: "รอ evidence" },
+                   { label: "ออเดอร์ค้าง", value: "—", sub: "รอ evidence" },
+                   { label: "ROAS", value: "—", sub: "ไม่เปิดใช้จนกว่าจะมีหลักฐาน" },
                   ].map((m) => (
                     <div key={m.label} className="rounded-xl border border-[#0F172A]/5 bg-[#F8F6F3] p-3">
                       <div className="font-mono text-[10px] tracking-[0.1em] text-[#64748B]">{m.label}</div>
@@ -190,19 +200,19 @@ export default function RevenueOSFunnel() {
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex items-start gap-3">
                   <div className="w-7 h-7 rounded-full bg-amber-500 text-white grid place-items-center text-xs">!</div>
                   <div>
-                    <div className="text-sm font-semibold text-[#0F172A]">ขอนุมัติ: เพิ่มงบ Retarget +66%</div>
-                    <div className="text-xs text-[#92400E] mt-0.5">ROAS 4.2 ติด 7 วัน — กด Approve ใน CEO Console ได้เลย</div>
+                  <div className="text-sm font-semibold text-[#0F172A]">ตัวอย่าง approval gate</div>
+                  <div className="text-xs text-[#92400E] mt-0.5">ข้อมูลจริงจะแสดงเมื่อมี event และ evidence ที่ตรวจได้</div>
                   </div>
                 </div>
                 <div className="flex gap-2 font-mono text-[11px]">
                   <span className="px-2 py-1 bg-[#0F172A] text-white">APPROVE</span>
                   <span className="px-2 py-1 border border-[#0F172A]/15">REJECT</span>
-                  <span className="ml-auto text-[#64748B]">expires in 2 วัน</span>
+                   <span className="ml-auto text-[#64748B]">ตัวอย่างเท่านั้น</span>
                 </div>
               </div>
               <div className="px-4 py-3 border-t border-[#0F172A]/5 flex items-center justify-between text-[11px] font-mono tracking-[0.08em] text-[#64748B]">
-                <span>graxia-revenue-os.onrender.com • LIVE</span>
-                <span className="text-emerald-600">● 200 OK</span>
+                <span>Revenue OS endpoint • EVIDENCE GATED</span>
+                <span className="text-amber-600">● STATUS UNVERIFIED</span>
               </div>
             </div>
             <div className="mt-3 text-center font-mono text-[10px] tracking-[0.12em] text-[#94A3B8]">ตัวอย่าง — ข้อมูลจริงหลังจ่ายเงินจะขึ้นแบบนี้</div>
@@ -216,7 +226,7 @@ export default function RevenueOSFunnel() {
           <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#0F172A]/10">
             {[
               { n: "01", t: "ยิงแอด → ขออนุมัติ", d: "AI เสนอเพิ่มงบ/ปิดแคมเปญ — ต้อง Approve ก่อนยิงจริง กันงบไหล" },
-              { n: "02", t: "จ่าย → ส่งของทันที", d: "Stripe webhook ยืนยันแล้วส่งไฟล์/สิทธิ์ใน 90s — ไม่ต้องคนเฝ้า" },
+              { n: "02", t: "จ่าย → ส่งของ", d: "Stripe webhook ที่ตรวจสอบได้จะเป็นเงื่อนไขให้ workflow ส่งไฟล์หรือสิทธิ์" },
               { n: "03", t: "ตามลูกค้า + กันคืนเงิน", d: "อีเมลตามอัตโนมัติ + ledger ครบ + ปุ่มคืนเงินมี idempotency" },
             ].map((f) => (
               <div key={f.n} className="p-6">
@@ -233,10 +243,10 @@ export default function RevenueOSFunnel() {
       <section id="pricing" className="mx-auto max-w-[1200px] px-6 md:px-10 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="font-mono text-[11px] tracking-[0.14em] text-[#B45309]">PRICING — 3 ปุ่ม จ่ายจริง Stripe Live</div>
+            <div className="font-mono text-[11px] tracking-[0.14em] text-[#B45309]">PRICING — checkout พร้อมหลักฐานก่อนเปิดใช้งานจริง</div>
             <h2 className="font-[DM_Serif_Display] text-[32px] md:text-[40px] leading-none tracking-[-0.02em] text-[#0F172A] mt-1">เลือกขนาดตามยอดขาย</h2>
           </div>
-          <div className="font-mono text-xs text-[#64748B] border border-[#0F172A]/10 px-3 py-1.5 bg-white">ยกเลิกได้ทุกเดือน • ใบเสร็จอัตโนมัติ</div>
+          <div className="font-mono text-xs text-[#64748B] border border-[#0F172A]/10 px-3 py-1.5 bg-white">เงื่อนไขแผนและ provider • ใบเสร็จตามสถานะ provider</div>
         </div>
 
         {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-3">{error}</div>}
@@ -292,7 +302,7 @@ export default function RevenueOSFunnel() {
                 </button>
 
                 <div className={["mt-3 text-center font-mono text-[10px] tracking-[0.08em]", isGrowth || isScale ? "text-white/50" : "text-[#94A3B8]"].join(" ")}>
-                  Stripe Live • ใบเสร็จอัตโนมัติ
+                  Stripe checkout / receipt evidence gated
                 </div>
               </div>
             )
@@ -300,7 +310,7 @@ export default function RevenueOSFunnel() {
         </div>
 
         <div className="mt-6 rounded-xl border border-[#0F172A]/10 bg-[#F8F6F3] p-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-[#334155]">องค์กรใหญ่ 20M+/ปี — <span className="font-semibold text-[#0F172A]">Enterprise (Custom Quote)</span> ติดต่อทำ SLA 99.9% + ทีมดูแลเฉพาะ</div>
+          <div className="text-sm text-[#334155]">องค์กรที่ต้องการขอบเขตเฉพาะ — <span className="font-semibold text-[#0F172A]">Enterprise (Custom Quote)</span> ติดต่อเพื่อกำหนด SLA และทีมดูแลตามข้อตกลง</div>
           <a href="mailto:hello@graxia.app?subject=Enterprise" className="h-9 px-4 inline-flex items-center border border-[#0F172A] text-sm font-semibold hover:bg-[#0F172A] hover:text-white transition-colors">
             ติดต่อ Enterprise
           </a>
@@ -313,7 +323,7 @@ export default function RevenueOSFunnel() {
           <div className="w-full max-w-[420px] rounded-2xl bg-white p-6 border border-[#0F172A]/10 shadow-xl">
             <div className="font-mono text-[11px] tracking-[0.14em] text-[#B45309]">CHECKOUT — STEP 1/1</div>
             <h3 className="font-semibold text-[#0F172A] mt-1">ใส่อีเมลเพื่อรับใบเสร็จ</h3>
-            <p className="text-sm text-[#475569] mt-1">Stripe จะส่งใบเสร็จและลิงก์เข้าใช้งานไปที่อีเมลนี้</p>
+            <p className="text-sm text-[#475569] mt-1">สถานะใบเสร็จและลิงก์เข้าใช้งานขึ้นกับ provider และการตั้งค่าที่เปิดใช้งานจริง</p>
             <input
               autoFocus
               type="email"
@@ -330,7 +340,7 @@ export default function RevenueOSFunnel() {
                 ไปหน้า Stripe →
               </button>
             </div>
-            <div className="mt-3 text-center font-mono text-[11px] text-[#94A3B8]">Live — ตัดบัตรจริง</div>
+            <div className="mt-3 text-center font-mono text-[11px] text-[#94A3B8]">Checkout status — evidence gated</div>
           </div>
         </div>
       )}
@@ -344,10 +354,10 @@ export default function RevenueOSFunnel() {
           </div>
           <div className="divide-y divide-[#0F172A]/10">
             {[
-              { q: "ยกเลิกได้ไหม? เก็บเงินยังไง?", a: "ได้ทุกเดือน — Stripe ตัดบัตรอัตโนมัติทุกเดือน กดยกเลิกใน Billing Portal ได้ทันที ไม่มีผูกมัด" },
-              { q: "ต่างจากจ้างแอดมินยังไง?", a: "Revenue OS ขออนุมัติก่อนยิงงบทุกครั้ง กันงบไหล — แอดมินทำตามคนสั่ง แต่ระบบทำตาม ROAS จริง พร้อม ledger ครบ" },
-              { q: "ต้องย้ายร้านไหม?", a: "ไม่ต้อง — ต่อ Shopee/Shopify/TikTok เดิมได้เลย ระบบซิงก์สต็อกกลางให้" },
-              { q: "Scale ต่างจาก Growth ยังไง?", a: "Scale ได้ SLA 99.5% + Onboarding ตั้งค่าให้ 1 เดือน + Incident เฝ้า 24 ชม. เหมาะกับร้าน 5–20M/ปี" },
+              { q: "ยกเลิกได้ไหม? เก็บเงินยังไง?", a: "แผนและการยกเลิกขึ้นกับ checkout provider และเงื่อนไขที่เปิดใช้งานจริง ตรวจข้อมูลจาก provider ก่อนสรุปสถานะ" },
+              { q: "ต่างจากจ้างแอดมินยังไง?", a: "Revenue OS วาง approval gate และ ledger ตาม workflow ที่ตั้งค่าไว้ ไม่อ้าง ROAS หรือผลลัพธ์จนกว่าจะมีหลักฐาน" },
+              { q: "ต้องย้ายร้านไหม?", a: "การเชื่อมต่อ Shopee/Shopify/TikTok และการซิงก์สต็อกขึ้นกับ provider กับ scope ที่ตั้งค่าไว้ — ตรวจสอบ provider ก่อนเริ่มใช้งาน" },
+              { q: "Scale ต่างจาก Growth ยังไง?", a: "Scale เพิ่ม onboarding, incident workflow และ support ตาม scope ที่ตกลงกัน ไม่อ้าง SLA หรือผลลัพธ์จนกว่าจะมีหลักฐาน" },
             ].map((f) => (
               <details key={f.q} className="group p-6 open:bg-[#F8F6F3]">
                 <summary className="list-none flex items-center justify-between cursor-pointer">
@@ -364,7 +374,7 @@ export default function RevenueOSFunnel() {
       {/* Footer — blueprint stamp */}
       <footer className="mx-auto max-w-[1200px] px-6 md:px-10 pb-10">
         <div className="border border-[#0F172A]/10 bg-[#0F172A] text-white p-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="font-mono text-[11px] tracking-[0.14em] text-white/60">© 2026 GRAXIA — REVENUE OS • THAILAND • LIVE</div>
+          <div className="font-mono text-[11px] tracking-[0.14em] text-white/60">© 2026 GRAXIA — REVENUE OS • THAILAND • EVIDENCE GATED</div>
           <div className="flex items-center gap-3 text-xs font-mono">
             <a href="/terms" className="text-white/60 hover:text-white">
               Terms
@@ -373,7 +383,7 @@ export default function RevenueOSFunnel() {
             <a href="/privacy" className="text-white/60 hover:text-white">
               Privacy
             </a>
-            <span className="px-2 py-1 bg-white text-[#0F172A]">STRIPE LIVE ✓</span>
+            <span className="px-2 py-1 bg-white text-[#0F172A]">STRIPE EVIDENCE GATED</span>
           </div>
         </div>
       </footer>

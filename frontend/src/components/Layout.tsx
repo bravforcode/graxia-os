@@ -18,14 +18,8 @@ import {
   Target,
   UserPlus,
   Users,
-    Command,
+  Command,
   TerminalSquare,
-  Gauge,
-  Workflow,
-  ScrollText,
-  Server,
-  HardDrive,
-  Database
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'

@@ -4,6 +4,9 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(
   /\/+$/,
   "",
 );
+const PUBLIC_FUNNEL_API_BASE_URL = (
+  import.meta.env.VITE_PUBLIC_FUNNEL_API_BASE_URL || API_BASE_URL
+).replace(/\/+$/, "");
 
 export const client = axios.create({
   baseURL: API_BASE_URL,
@@ -16,6 +19,14 @@ export const client = axios.create({
 export const publicClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export const publicFunnelClient = axios.create({
+  baseURL: PUBLIC_FUNNEL_API_BASE_URL,
+  withCredentials: false,
   headers: {
     "Content-Type": "application/json",
   },

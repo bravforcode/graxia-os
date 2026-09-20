@@ -23,6 +23,7 @@ celery_app = Celery(
         "app.tasks.crm_sync_tasks",
         "app.tasks.funnel_automation_tasks",
         "app.tasks.content_ops_tasks",
+        "app.agent_workflows.workflows.organic_content_batch",
     ],
 )
 

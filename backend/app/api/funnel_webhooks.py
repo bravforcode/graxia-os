@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core.monitoring import metrics_collector
 from app.database import AsyncSessionLocal, get_db
 from app.services.funnel_order_service import FunnelOrderService
 from app.services.automation_email_service import AutomationEmailService
@@ -63,6 +64,7 @@ async def stripe_funnel_webhook(
 
     if not settings.STRIPE_WEBHOOK_SECRET:
         logger.error("STRIPE_WEBHOOK_SECRET not configured")
+        metrics_collector.record_webhook_failure("configuration", "secret_missing")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Webhook secret not configured"
@@ -73,8 +75,10 @@ async def stripe_funnel_webhook(
             payload, sig, settings.STRIPE_WEBHOOK_SECRET
         )
     except ValueError:
+        metrics_collector.record_webhook_failure("signature", "invalid_payload")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
     except stripe.error.SignatureVerificationError:
+        metrics_collector.record_webhook_failure("signature", "invalid_signature")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
 
     event_type = event.get("type")
@@ -84,7 +88,12 @@ async def stripe_funnel_webhook(
 
     order_id = None
     if event_type == "checkout.session.completed":
-        order = await service.create_order_from_checkout_completed(data_object)
+        try:
+            order = await service.create_order_from_checkout_completed(data_object)
+        except Exception:
+            metrics_collector.record_webhook_failure("processing", "order_creation")
+            logger.error("funnel_webhook_order_processing_failed")
+            raise HTTPException(status_code=500, detail="Webhook processing failed")
         if order:
             order_id = str(order.id)
         # Forward to Revenue OS ops layer (best-effort, idempotent there).

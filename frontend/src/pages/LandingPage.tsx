@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -7,75 +7,24 @@ import {
   Star,
   ChevronDown,
   Sparkles,
-  Users,
   TrendingUp,
   Lock,
   CreditCard,
   Play,
   Target,
-  Layers,
   MousePointer,
   RefreshCw,
-  Quote,
   Globe,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, STORE_ORG_ID, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
+import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
+import { siteUrl } from "../lib/site";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 
-function useInView(options?: IntersectionObserverInit) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsInView(true);
-        observer.unobserve(el);
-      }
-    }, { threshold: 0.1, ...options });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, isInView };
-}
-
-function AnimatedCounter({ value, suffix = "", prefix = "" }: { value: number; suffix?: string; prefix?: string }) {
-  const [count, setCount] = useState(0);
-  const { ref, isInView } = useInView();
-
-  useEffect(() => {
-    if (!isInView) return;
-    const duration = 2000;
-    const steps = 60;
-    const increment = value / steps;
-    let current = 0;
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= value) {
-        setCount(value);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, duration / steps);
-    return () => clearInterval(timer);
-  }, [isInView, value]);
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {prefix}{count.toLocaleString()}{suffix}
-    </span>
-  );
-}
-
 /** Lyra-style typewriter (evidence: lyra.marqraft.com hero type span). */
-function Typewriter({ words, locale }: { words: string[]; locale: string }) {
+function Typewriter({ words }: { words: string[] }) {
   const [wordIdx, setWordIdx] = useState(0);
   const [chars, setChars] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -147,8 +96,8 @@ export default function LandingPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",
-            name: "Ai Factory",
-            url: "https://ai-factory-omega.vercel.app",
+        name: "Graxia",
+        url: siteUrl(),
             description: t("brand.description"),
             sameAs: [],
           }),
@@ -234,7 +183,7 @@ export default function LandingPage() {
               {t("hero.title1")}
             </span>
             <br />
-            <Typewriter words={typeWords} locale={locale} />
+            <Typewriter words={typeWords} />
           </h1>
 
           <p className="font-mono text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line tracking-tight" style={{ animationDelay: "0.1s" }}>
@@ -252,7 +201,7 @@ export default function LandingPage() {
                 <ArrowRight size={18} className="group-hover:translate-x-1 rtl:-scale-x-100 transition-transform" />
               </div>
               <div className="text-xs font-normal opacity-90">
-                {locale === "th" ? "เริ่มต้น ฿149 · ส่งสินค้าทันที" : "From ฿149 · Instant delivery"}
+                {locale === "th" ? "เริ่มต้น ฿149 · เงื่อนไขตามสินค้า" : "From ฿149 · Terms per product"}
               </div>
             </Link>
             {/* Lyra 2-line secondary CTA: white card + explicit border */}
@@ -270,27 +219,12 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2 rtl:space-x-reverse">
-                {["bg-indigo-500", "bg-purple-500", "bg-cyan-500", "bg-emerald-500"].map((bg, i) => (
-                  <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-slate-950 flex items-center justify-center text-[11px] font-bold text-white`}>
-                    {["S", "M", "A", "R"][i]}
-                  </div>
-                ))}
-              </div>
-              <span><AnimatedCounter value={50000} prefix="" suffix="+" /> {t("hero.customers")}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
-              ))}
-              <span className="ms-1">4.8 {t("hero.rating")}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Shield size={14} className="text-emerald-400" />
-              <span>{t("hero.guarantee")}</span>
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-400 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            {[t("stats.sold"), t("stats.customers"), t("stats.rating"), t("stats.revenue")].map((label) => (
+              <span key={label} className="rounded-full border border-slate-700/60 bg-slate-900/60 px-3 py-1.5">
+                {label}
+              </span>
+            ))}
           </div>
         </div>
       </section>
@@ -306,8 +240,8 @@ export default function LandingPage() {
                   "Notion Template",
                   "คอร์ส AI สำหรับธุรกิจ",
                   t("featured.subtitle"),
-                  "ส่งสินค้าทันที ⚡",
-                  "รับประกันคืนเงิน 7 วัน",
+                  "ส่งมอบหลังยืนยัน event",
+                  "เงื่อนไขตามระเบียนสินค้า",
                 ].map((item) => (
                   <span key={`${dup}-${item}`} className="flex items-center gap-10 text-sm md:text-base text-slate-400 whitespace-nowrap">
                     {item}
@@ -324,18 +258,11 @@ export default function LandingPage() {
       <ScrollReveal delay={100}>
       <section className="border-y border-slate-800/50 bg-slate-900/30 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { label: t("stats.sold"), value: 85000, suffix: "+", icon: Layers },
-            { label: t("stats.customers"), value: 50000, suffix: "+", icon: Users },
-            { label: t("stats.rating"), value: 4.8, suffix: "/5", icon: Star },
-            { label: t("stats.revenue"), value: 12, suffix: "M+ USD", icon: TrendingUp },
-          ].map(({ label, value, suffix, icon: Icon }) => (
+          {[t("stats.sold"), t("stats.customers"), t("stats.rating"), t("stats.revenue")].map((label) => (
             <div key={label} className="text-center group">
-              <Icon size={20} className="text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <div className="text-2xl md:text-3xl font-display font-extrabold text-white">
-                <AnimatedCounter value={value} suffix={suffix} />
-              </div>
-              <div className="text-xs text-slate-500 mt-1 uppercase tracking-wider">{label}</div>
+              <Shield size={20} className="text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
+              <div className="text-sm md:text-base font-semibold text-white">{label}</div>
+              <div className="text-xs text-slate-500 mt-1">Evidence gate active</div>
             </div>
           ))}
         </div>
@@ -355,7 +282,7 @@ export default function LandingPage() {
             {featuredProducts.map((product, i) => (
               <Link
                 key={product.id}
-                to={`/f/${STORE_ORG_ID}/${product.slug}`}
+                to={`/store/${product.slug}`}
                 className={`group bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
                 style={staggerDelay(i)}
               >
@@ -512,42 +439,17 @@ export default function LandingPage() {
       </section>
       </ScrollReveal>
 
-      {/* Testimonials */}
+      {/* Evidence policy */}
       <ScrollReveal delay={100}>
       <section id="testimonials" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">{t("testimonials.badge")}</span>
             <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("testimonials.title")}</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { name: "Sarah Chen", role: locale === "th" ? "ผู้อำนวยการฝ่ายการตลาด" : "Marketing Director", text: locale === "th" ? "ชุด AI Prompts ช่วยให้ทีมเราประหยัดเวลา 15+ ชั่วโมงต่อสัปดาห์ ROI ทันที เราคืนทุนในวันแรก" : "The AI prompts bundle saved our team 15+ hours per week. The ROI was immediate — we recouped the cost in the first day.", avatar: "SC", color: "bg-indigo-500" },
-              { name: "Marcus Rivera", role: locale === "th" ? "Indie Hacker" : "Indie Hacker", text: locale === "th" ? "เปิดตัว SaaS ใน 3 วันด้วย boilerplate kit ถ้าทำเองคงต้องใช้เวลาหลายเดือน ที่ดีที่สุด" : "I launched my SaaS in 3 days with the boilerplate kit. Would have taken me months otherwise. Best investment I've made.", avatar: "MR", color: "bg-purple-500" },
-              { name: "Lisa Wong", role: locale === "th" ? "ครีเอเตอร์ (200K ผู้ติดตาม)" : "Content Creator (200K)", text: locale === "th" ? "เทมเพลตโซเชียลมีเดียเปลี่ยนกลยุทธ์เนื้อหาของเรา Interaction เพิ่มขึ้น 340% ในเดือนแรก" : "The social media templates transformed my content strategy. Engagement went up 340% in the first month. Absolutely insane results.", avatar: "LW", color: "bg-cyan-500" },
-              { name: "David Park", role: locale === "th" ? "ผู้ก่อตั้ง E-commerce" : "E-commerce Founder", text: locale === "th" ? "Conversion Rate หน้าสินค้าเพิ่มจาก 2.1% เป็น 5.8% ด้วยเทมเพลต copywriting คุ้มค่าทุกบาท" : "My product page conversion rate jumped from 2.1% to 5.8% using the copywriting templates. Worth every penny and then some.", avatar: "DP", color: "bg-emerald-500" },
-              { name: "Emma Rodriguez", role: locale === "th" ? "Product Manager" : "Product Manager", text: locale === "th" ? "Notion Life OS เป็นเทมเพลตเดียวที่ใช้จริงจัง 6 เดือนแล้ว ชีวิตมีระเบียบเป็นครั้งแรก" : "The Notion Life OS is the only template that stuck. 6 months in and my entire life is organized. I've tried dozens of others.", avatar: "ER", color: "bg-amber-500" },
-              { name: "Kevin O'Brien", role: locale === "th" ? "Full-Stack Developer" : "Full-Stack Developer", text: locale === "th" ? "โค้ดสะอาด เอกสารดี ทุกอย่างทำงานได้ทันที Component library แทนระบบ in-house ได้เลย" : "Clean code, great docs, and everything just works. The component library replaced our entire in-house system.", avatar: "KO", color: "bg-rose-500" },
-            ].map(({ name, role, text, avatar, color }) => (
-              <div key={name} className={`p-6 bg-slate-900/40 border border-slate-800/60 rounded-3xl hover:border-slate-700/80 transition-all duration-300 group ${ANIMATIONS.cardHover}`}>
-                <Quote size={20} className="text-indigo-500/30 mb-3 group-hover:text-indigo-500/50 transition-colors duration-300" />
-                <p className="text-sm text-slate-300 leading-relaxed mb-4">"{text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold group-hover:scale-110 transition-transform duration-300`}>
-                    {avatar}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{name}</div>
-                    <div className="text-xs text-slate-500">{role}</div>
-                  </div>
-                  <div className="ms-auto flex gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={10} className="fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-8 text-center text-sm leading-7 text-slate-300">
+            <p>Public pages do not display fabricated sales, ratings, testimonials, revenue, ROAS, or delivery-time claims.</p>
+            <p className="mt-2 text-slate-400">Verified events can unlock the corresponding evidence in the catalog and analytics surfaces.</p>
           </div>
         </div>
       </section>

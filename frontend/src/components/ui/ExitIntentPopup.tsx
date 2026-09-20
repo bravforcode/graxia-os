@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Gift, Mail, Sparkles } from "lucide-react";
 import { useLang } from "../../i18n/LanguageContext";
 import { ANIMATIONS } from "../../lib/animations";
+import { getAttributionEventFields } from "../../lib/attribution";
 
 /**
  * Exit-Intent Popup — shows when user's mouse leaves the viewport (top edge).
@@ -19,7 +20,9 @@ export default function ExitIntentPopup() {
     // Check if already shown this session
     try {
       if (sessionStorage.getItem("ai-factory-exit-popup")) return;
-    } catch {}
+    } catch {
+      // Storage may be unavailable; the popup can still be shown.
+    }
 
     const handleMouseLeave = (e: MouseEvent) => {
       // Only trigger when mouse leaves from the top edge
@@ -27,7 +30,9 @@ export default function ExitIntentPopup() {
         setShow(true);
         try {
           sessionStorage.setItem("ai-factory-exit-popup", "1");
-        } catch {}
+        } catch {
+          // Storage may be unavailable; continue without session persistence.
+        }
         document.removeEventListener("mouseleave", handleMouseLeave);
       }
     };
@@ -49,7 +54,8 @@ export default function ExitIntentPopup() {
         body: JSON.stringify({
           organization_id: "00000000-0000-0000-0000-000000000001",
           event_type: "lead_capture",
-          metadata_json: { source: "exit_intent_popup", email },
+          ...getAttributionEventFields({ cta: "exit_intent_popup", channel: "popup" }),
+          idempotency_key: `exit_intent:${getAttributionEventFields().session_id}`,
         }),
       }).catch(() => {});
     },

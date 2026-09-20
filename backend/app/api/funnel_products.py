@@ -10,6 +10,10 @@ from app.middleware.tenant import get_org
 from app.models.organization import Organization
 from app.services.funnel_product_service import FunnelProductService
 from app.services.funnel_checkout_service import FunnelCheckoutService
+from app.services.public_funnel_service import (
+    PublicFunnelBindingError,
+    require_public_funnel_organization,
+)
 from app.schemas.funnel import (
     DigitalProductRead,
     DigitalProductCreate,
@@ -209,6 +213,13 @@ async def get_public_product_by_slug(
     service: FunnelProductService = Depends(get_funnel_service),
 ):
     """Retrieve a published product by organization and slug."""
+    try:
+        organization_id = require_public_funnel_organization(organization_id)
+    except PublicFunnelBindingError as exc:
+        raise HTTPException(
+            status_code=503 if "not configured" in str(exc) else 404,
+            detail=str(exc),
+        ) from exc
     product = await service.get_product_by_slug(organization_id, slug)
     if not product or product.status != "published":
         raise HTTPException(status_code=404, detail="Product not found or not published")
@@ -221,10 +232,18 @@ async def create_public_checkout_session(
     service: FunnelCheckoutService = Depends(get_checkout_service),
 ):
     """Create a Stripe checkout session for a public buyer (tenant isolated)."""
+    try:
+        organization_id = require_public_funnel_organization(payload.organization_id)
+    except PublicFunnelBindingError as exc:
+        raise HTTPException(
+            status_code=503 if "not configured" in str(exc) else 404,
+            detail=str(exc),
+        ) from exc
     result = await service.create_checkout_session(
-        organization_id=payload.organization_id,
+        organization_id=organization_id,
         product_id=product_id,
         payload=payload,
+        public=True,
     )
     if not result:
         raise HTTPException(status_code=404, detail="Product not found or not published")

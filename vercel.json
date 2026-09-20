@@ -9,6 +9,32 @@
       "excludeFiles": "{.git/**,.worktrees/**,**/node_modules/**,backend/tests/**,backend/requirements.txt,backend/venv/**,tests/**,**/__pycache__/**,**/.mypy_cache/**,**/.pytest_cache/**,**/.ruff_cache/**,**/*.db,**/*.sqlite,**/*.log}"
     }
   },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(sitemap.xml|robots.txt)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=60, stale-while-revalidate=600" }
+      ]
+    },
+    {
+      "source": "/(store|revenue-os|guides/.*|free/.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=60, stale-while-revalidate=600" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

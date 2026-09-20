@@ -14,7 +14,6 @@ import {
 import { useLang } from "../i18n/LanguageContext";
 import {
   PRODUCTS,
-  STORE_ORG_ID,
   CATEGORY_META,
   getPRODUCTS_TH,
   formatPrice,
@@ -27,6 +26,7 @@ import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { SkeletonProductGrid } from "../components/ui/Skeleton";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 import { SupportChat } from "../components/chat/SupportChat";
+import { siteUrl } from "../lib/site";
 
 const ALL_CATEGORIES: ProductCategory[] = Object.keys(CATEGORY_META) as ProductCategory[];
 
@@ -88,9 +88,9 @@ export default function StorePage() {
       {/* SEO Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org", "@type": "CollectionPage",
-        name: "Ai Factory — Digital Products Marketplace",
+        name: "Graxia — Digital Products Marketplace",
         description: "Browse premium digital products: templates, courses, tools, and resources for creators, developers, and entrepreneurs.",
-        url: "https://ai-factory-omega.vercel.app/store",
+        url: siteUrl("/store"),
       }) }} />
 
       {/* Background — layered: grid texture + aurora blobs (evidence: Aceternity grid-dark + aurora drift) */}
@@ -235,7 +235,7 @@ export default function StorePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product, i) => (
-              <Link key={product.id} to={`/f/${STORE_ORG_ID}/${product.slug}`}
+              <Link key={product.id} to={`/store/${product.slug}`}
                 onMouseMove={handleSpotlight}
                 className={`group lyra-card card-spotlight edge-light relative bg-slate-900/40 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1`}
                 style={staggerDelay(i)}>
@@ -248,9 +248,9 @@ export default function StorePage() {
                       {product.badge}
                     </span>
                   )}
-                  <div className="absolute top-3 end-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[11px] text-amber-400">
+                  {product.rating > 0 && product.reviewCount > 0 && <div className="absolute top-3 end-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[11px] text-amber-400">
                     <Star size={10} className="fill-amber-400" /> {product.rating}
-                  </div>
+                  </div>}
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 mb-2">
@@ -265,7 +265,7 @@ export default function StorePage() {
                   <div className="flex items-end justify-between pt-3 border-t border-slate-800/60">
                     <div>
                       <span className="text-xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
-                      <span className="text-[11px] text-slate-500 ms-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
+                      {product.salesCount > 0 && <span className="text-[11px] text-slate-500 ms-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>}
                     </div>
                     <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 group-hover:scale-110">
                       <ArrowRight size={14} />

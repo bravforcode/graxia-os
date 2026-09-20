@@ -1,4 +1,4 @@
-import { client, publicClient } from "../lib/api";
+import { client, publicClient, publicFunnelClient } from "../lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -89,19 +89,79 @@ export interface FunnelDailyAnalytics {
   revenue: number;
 }
 
+export interface FunnelAttributionRow {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  product_id?: string;
+  product_name?: string;
+  plan?: string;
+  views: number;
+  leads: number;
+  checkout_starts: number;
+  purchases: number;
+  revenue: number;
+}
+
+export interface FunnelDashboardResponse {
+  period: { start?: string; end?: string; max_days: number };
+  funnel: FunnelAnalyticsSummary;
+  rates: Record<string, number>;
+  verified_revenue: { amount: number; currency: string; evidence_state: string };
+  verified_subscriptions: { count: number; amount: number; currency: string; evidence_state: string };
+  refunds: { count: number; amount: number; currency: string; evidence_state: string };
+  by_source: FunnelAttributionRow[];
+  by_product: FunnelAttributionRow[];
+  by_plan: FunnelAttributionRow[];
+  by_referral: Array<{ referral_code: string; purchases: number; revenue: number }>;
+  content: Record<string, unknown>;
+  data_quality: Record<string, number>;
+}
+
 export interface DeliveryPayload {
   product_name: string;
   asset_title: string;
   asset_type: string;
   content_body?: string;
   external_url?: string;
+  storage_path?: string;
   expires_at?: string;
   downloads_remaining?: number;
+  referral_url?: string;
+  referral_bonus_path?: string;
+}
+
+export interface ReferralResolution {
+  referral_code: string;
+  bonus_asset_path: string;
+  redirect_url: string;
+}
+
+export interface PublicContentArticle {
+  slug: string;
+  title: string;
+  title_th?: string;
+  language: "en" | "th";
+  content_type: string;
+  meta_title?: string;
+  meta_description?: string;
+  body: string;
+  hero_image_url?: string;
+  published_url?: string;
+  published_at?: string;
 }
 
 // ── API Wrapper ───────────────────────────────────────────────────────────
 
 export const funnelApi = {
+  getPublishedArticle: async (slug: string, language?: "en" | "th"): Promise<PublicContentArticle> => {
+    const { data } = await publicClient.get<PublicContentArticle>(
+      `/public/content/articles/${encodeURIComponent(slug)}`,
+      { params: language ? { language } : undefined },
+    );
+    return data;
+  },
+
   // ── Digital Products (Admin) ───────────────────────────────────────────
   
   listProducts: async (params?: { include_archived?: boolean; limit?: number; offset?: number }): Promise<DigitalProduct[]> => {
@@ -171,14 +231,14 @@ export const funnelApi = {
     customer_email?: string;
     success_url: string;
     cancel_url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<FunnelCheckout> => {
     const { data } = await client.post<FunnelCheckout>(`/funnel/products/${productId}/checkout`, payload);
     return data;
   },
 
   getPublicProduct: async (organizationId: string, slug: string): Promise<DigitalProduct> => {
-    const { data } = await publicClient.get<DigitalProduct>(`/funnel/public/products/${organizationId}/${slug}`);
+    const { data } = await publicFunnelClient.get<DigitalProduct>(`/funnel/public/products/${organizationId}/${slug}`);
     return data;
   },
 
@@ -187,9 +247,9 @@ export const funnelApi = {
     customer_email?: string;
     success_url: string;
     cancel_url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<FunnelCheckout> => {
-    const { data } = await publicClient.post<FunnelCheckout>(`/funnel/public/products/${productId}/checkout`, payload);
+    const { data } = await publicFunnelClient.post<FunnelCheckout>(`/funnel/public/products/${productId}/checkout`, payload);
     return data;
   },
 
@@ -224,24 +284,39 @@ export const funnelApi = {
     organization_id: string;
     email: string;
     name?: string;
+    marketing_consent?: boolean;
+    consent_version?: string;
+    session_id?: string;
     source?: string;
     medium?: string;
     campaign?: string;
     referrer?: string;
+    referral_code?: string;
   }): Promise<{ contact_id: string; raw_token?: string; delivery_url?: string }> => {
-    const { data } = await publicClient.post(`/public/funnel/lead-magnets/${slug}/capture`, payload);
+    const { data } = await publicFunnelClient.post(`/public/funnel/lead-magnets/${slug}/capture`, payload);
     return data;
+  },
+
+  unsubscribe: async (payload: { organization_id: string; email: string }): Promise<void> => {
+    await publicClient.post("/public/funnel/unsubscribe", payload);
   },
 
   // ── Public Delivery Access ─────────────────────────────────────────────
 
   getDeliveryPayload: async (token: string): Promise<DeliveryPayload> => {
-    const { data } = await publicClient.get<DeliveryPayload>(`/funnel/delivery/${token}`);
+    const { data } = await publicFunnelClient.get<DeliveryPayload>(`/funnel/delivery/${token}`);
     return data;
   },
 
   consumeDeliveryPayload: async (token: string): Promise<DeliveryPayload> => {
-    const { data } = await publicClient.post<DeliveryPayload>(`/funnel/delivery/${token}/consume`);
+    const { data } = await publicFunnelClient.post<DeliveryPayload>(`/funnel/delivery/${token}/consume`);
+    return data;
+  },
+
+  resolveReferral: async (code: string): Promise<ReferralResolution> => {
+    const { data } = await publicFunnelClient.get<ReferralResolution>(
+      `/public/referrals/${encodeURIComponent(code)}`,
+    );
     return data;
   },
 
@@ -264,6 +339,28 @@ export const funnelApi = {
     return data;
   },
 
+  getAttributionAnalytics: async (params?: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<FunnelAttributionRow[]> => {
+    const { data } = await client.get<FunnelAttributionRow[]>("/funnel/analytics/attribution", { params });
+    return data;
+  },
+
+  getDashboard: async (params?: {
+    start_date?: string;
+    end_date?: string;
+    source?: string;
+    medium?: string;
+    campaign?: string;
+    product_id?: string;
+    plan?: string;
+    referral_code?: string;
+  }): Promise<FunnelDashboardResponse> => {
+    const { data } = await client.get<FunnelDashboardResponse>("/funnel/analytics/dashboard", { params });
+    return data;
+  },
+
   // Public Event Logging
   logPublicEvent: async (payload: {
     organization_id: string;
@@ -276,8 +373,28 @@ export const funnelApi = {
     medium?: string;
     campaign?: string;
     referrer?: string;
-    metadata_json?: Record<string, any>;
+    first_touch?: {
+      source?: string;
+      medium?: string;
+      campaign?: string;
+      referrer?: string;
+      path?: string;
+      referral_code?: string;
+    };
+    last_touch?: {
+      source?: string;
+      medium?: string;
+      campaign?: string;
+      referrer?: string;
+      path?: string;
+      referral_code?: string;
+    };
+    landing_path?: string;
+    content_id?: string;
+    referral_code?: string;
+    idempotency_key?: string;
+    metadata_json?: Record<string, unknown>;
   }): Promise<void> => {
-    await publicClient.post("/funnel/events", payload);
+    await publicFunnelClient.post("/funnel/events", payload);
   },
 };

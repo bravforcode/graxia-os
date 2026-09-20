@@ -1,13 +1,26 @@
 import pytest
 from uuid import uuid4
 from decimal import Decimal
+from datetime import UTC, datetime
 from unittest.mock import patch, AsyncMock
 
 from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, DeliveryAccess, DeliveryAsset
+from app.models.contact import Contact
+from app.models.funnel import (
+    ConversionEvent,
+    DigitalProduct,
+    FunnelCheckoutSession,
+    FunnelOrder,
+    DeliveryAccess,
+    DeliveryAsset,
+)
+from app.services.automation_email_service import AutomationEmailService
+from app.services.funnel_delivery_service import FunnelDeliveryService
+from app.services.funnel_order_service import FunnelOrderService
 from tests.factories import OrganizationFactory
 
 @pytest.fixture
@@ -136,12 +149,19 @@ class TestFunnelWebhookDelivery:
             id=uuid4(), organization_id=org.id, name="Test Prod", slug="p-exp-aban",
             price_amount=Decimal("200.00"), currency="THB", status="published"
         )
+        contact = Contact(
+            id=uuid4(), organization_id=org.id, name="Cart Buyer",
+            email="cart@abandon.com", contact_type="lead", relationship_strength=1,
+            marketing_consent=True, marketing_unsubscribed=False,
+            marketing_consent_at=datetime.now(UTC),
+            consent_version="funnel-test-v1",
+        )
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org.id, product_id=prod.id,
             status="pending", amount=Decimal("200.00"), currency="THB",
-            customer_email="cart@abandon.com"
+            customer_email="cart@abandon.com", contact_id=contact.id,
         )
-        db_session.add_all([prod, checkout])
+        db_session.add_all([prod, contact, checkout])
         await db_session.commit()
 
         event_data = {
@@ -183,12 +203,19 @@ class TestFunnelWebhookDelivery:
             id=uuid4(), organization_id=org.id, name="P", slug="p-exp-dedup",
             price_amount=Decimal("1"), status="published"
         )
+        contact = Contact(
+            id=uuid4(), organization_id=org.id, name="Duplicate Cart Buyer",
+            email="dup@test.com", contact_type="lead", relationship_strength=1,
+            marketing_consent=True, marketing_unsubscribed=False,
+            marketing_consent_at=datetime.now(UTC),
+            consent_version="funnel-test-v1",
+        )
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org.id, product_id=prod.id,
             status="pending", amount=Decimal("1"), currency="THB",
-            customer_email="dup@test.com"
+            customer_email="dup@test.com", contact_id=contact.id,
         )
-        db_session.add_all([prod, checkout])
+        db_session.add_all([prod, contact, checkout])
         await db_session.commit()
 
         event_data = {
@@ -218,3 +245,126 @@ class TestFunnelWebhookDelivery:
                 headers={"stripe-signature": "valid"}, content="{}"
             )
             mock_send.assert_not_called()
+
+    async def test_marketing_allowed_requires_matching_contact_email(
+        self, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        contact = Contact(
+            id=uuid4(), organization_id=org.id, name="Consented Contact",
+            email="consented@example.com", contact_type="lead", relationship_strength=1,
+            marketing_consent=True, marketing_unsubscribed=False,
+            marketing_consent_at=datetime.now(UTC), consent_version="funnel-test-v1",
+        )
+        db_session.add(contact)
+        await db_session.commit()
+
+        service = AutomationEmailService(db_session)
+        assert not await service._marketing_allowed(
+            org.id, "other-recipient@example.com", contact.id
+        )
+        assert await service._marketing_allowed(
+            org.id, " CONSENTED@example.com ", contact.id
+        )
+
+    async def test_marketing_allowed_denies_negative_or_unsubscribed_consent(
+        self, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        denied = [
+            Contact(
+                id=uuid4(), organization_id=org.id, name="No Consent",
+                email="no-consent@example.com", contact_type="lead", relationship_strength=1,
+                marketing_consent=False, marketing_unsubscribed=False,
+            ),
+            Contact(
+                id=uuid4(), organization_id=org.id, name="Unsubscribed",
+                email="unsubscribed@example.com", contact_type="lead", relationship_strength=1,
+                marketing_consent=True, marketing_unsubscribed=True,
+                marketing_consent_at=datetime.now(UTC), consent_version="funnel-test-v1",
+            ),
+        ]
+        db_session.add_all(denied)
+        await db_session.commit()
+
+        service = AutomationEmailService(db_session)
+        for contact in denied:
+            assert not await service._marketing_allowed(org.id, contact.email, contact.id)
+
+    @pytest.mark.parametrize("missing", ["marketing_consent_at", "consent_version"])
+    async def test_marketing_consent_requires_audit_fields(
+        self, db_session: AsyncSession, missing: str
+    ):
+        org = await OrganizationFactory.build(db_session)
+        contact = Contact(
+            id=uuid4(), organization_id=org.id, name="Invalid Consent",
+            email=f"invalid-{missing}@example.com", contact_type="lead", relationship_strength=1,
+            marketing_consent=True, marketing_unsubscribed=False,
+            marketing_consent_at=None if missing == "marketing_consent_at" else datetime.now(UTC),
+            consent_version=None if missing == "consent_version" else "funnel-test-v1",
+        )
+        db_session.add(contact)
+        with pytest.raises(IntegrityError):
+            await db_session.commit()
+        await db_session.rollback()
+
+    async def test_paid_order_rolls_back_when_delivery_fails(
+        self, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Atomic Paid Product",
+            slug="atomic-paid-product",
+            price_amount=Decimal("100.00"),
+            currency="THB",
+            status="published",
+        )
+        checkout = FunnelCheckoutSession(
+            id=uuid4(),
+            organization_id=org.id,
+            product_id=product.id,
+            status="pending",
+            amount=Decimal("100.00"),
+            currency="THB",
+            customer_email="atomic-paid@example.com",
+            metadata_json={"session_id": "atomic-session"},
+        )
+        db_session.add_all([product, checkout])
+        await db_session.commit()
+
+        session_data = {
+            "id": "cs_atomic_paid",
+            "payment_intent": "pi_atomic_paid",
+            "customer_details": {"email": "atomic-paid@example.com"},
+            "metadata": {
+                "organization_id": str(org.id),
+                "product_id": str(product.id),
+                "funnel_checkout_session_id": str(checkout.id),
+            },
+        }
+
+        with patch.object(
+            FunnelDeliveryService,
+            "grant_delivery_access_for_order",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("delivery unavailable"),
+        ):
+            with pytest.raises(RuntimeError, match="delivery unavailable"):
+                await FunnelOrderService(db_session).create_order_from_checkout_completed(
+                    session_data
+                )
+
+        assert await db_session.scalar(
+            select(FunnelOrder).where(
+                FunnelOrder.stripe_session_id == "cs_atomic_paid"
+            )
+        ) is None
+        assert await db_session.scalar(
+            select(ConversionEvent).where(
+                ConversionEvent.event_type == "purchase"
+            )
+        ) is None
+        await db_session.refresh(checkout)
+        assert checkout.status == "pending"

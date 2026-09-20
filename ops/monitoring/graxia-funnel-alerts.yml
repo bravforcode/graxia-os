@@ -1,0 +1,22 @@
+groups:
+  - name: graxia-funnel
+    rules:
+      - alert: GraxiaCheckoutCreationFailures
+        expr: increase(funnel_checkout_create_failures_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: graxia-funnel
+        annotations:
+          summary: Checkout creation failures detected
+          description: A checkout session failed to initialize in the last 10 minutes.
+
+      - alert: GraxiaStripeWebhookFailures
+        expr: increase(funnel_webhook_failures_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: graxia-funnel
+        annotations:
+          summary: Stripe webhook processing failures detected
+          description: A Stripe webhook was rejected or failed during order processing.

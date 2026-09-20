@@ -3,6 +3,7 @@ import math
 from collections import Counter
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from uuid import UUID
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -81,6 +82,7 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str | None = None
     API_KEY: str = ""
     INTERNAL_API_KEY: str = ""
+    REVENUE_BRIDGE_HMAC_SECRET: str = ""
 
     # Enterprise IP Filtering (comma-separated CIDR blocks)
     # Example: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12"
@@ -347,6 +349,10 @@ class Settings(BaseSettings):
     # enabling them alone is insufficient without an injected provider adapter.
     CONTENT_OPS_EXTERNAL_PUBLISH_ENABLED: bool = False
     CONTENT_OPS_PROVIDER_ALLOWLIST: str = ""
+    REFERRAL_LOOP_ENABLED: bool = True
+    REFERRAL_REWARD_ENABLED: bool = True
+    REVENUE_BRIDGE_ENABLED: bool = True
+    CONTENT_BATCH_ENABLED: bool = True
 
     # Production Readiness Gate
     PRODUCTION_READY: bool = False
@@ -361,6 +367,7 @@ class Settings(BaseSettings):
     BETA_MCP_TOOLS_ENABLED: bool = False
     BETA_WORKFLOWS_ENABLED: bool = False
     BETA_PUBLIC_FUNNEL_ENABLED: bool = False
+    PUBLIC_FUNNEL_ORGANIZATION_ID: str = ""
     BETA_OPERATOR_UI_ENABLED: bool = False
     KILL_SWITCH_ALL_EXTERNAL_BETA: bool = (
         True  # Locked by default until explicitly opened
@@ -892,3 +899,15 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def configured_public_funnel_organization_id() -> UUID | None:
+    """Return the sole public funnel tenant, or fail closed on bad config."""
+
+    value = settings.PUBLIC_FUNNEL_ORGANIZATION_ID.strip()
+    if not value:
+        return None
+    try:
+        return UUID(value)
+    except ValueError:
+        return None

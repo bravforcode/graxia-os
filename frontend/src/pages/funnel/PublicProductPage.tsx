@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   CheckCircle, ArrowRight, Mail, ShieldCheck, Download,
-  AlertTriangle, Gift, Star, ChevronDown, Clock, Check, Users,
-  Lock, Award, ArrowLeft, CreditCard,
+  AlertTriangle, Gift, Star, ChevronDown, Check, Users,
+  Lock, ArrowLeft, CreditCard,
 } from "lucide-react";
 import { useLang } from "../../i18n/LanguageContext";
 import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../../data/products";
+import { getLeadMagnet } from "../../data/organic";
 import { funnelApi, type DigitalProduct } from "../../api/funnel";
 import { ANIMATIONS, staggerDelay } from "../../lib/animations";
 import { ScrollReveal } from "../../components/ui/ScrollReveal";
 import { SkeletonProductDetail } from "../../components/ui/Skeleton";
+import { getAttributionEventFields } from "../../lib/attribution";
+import { siteUrl } from "../../lib/site";
 
 export default function PublicProductPage() {
   const { organization_id, slug } = useParams<{ organization_id: string; slug: string }>();
@@ -27,6 +30,7 @@ export default function PublicProductPage() {
   // Lead Magnet
   const [leadEmail, setLeadEmail] = useState("");
   const [leadName, setLeadName] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [submittingLead, setSubmittingLead] = useState(false);
   const [leadSuccessMsg, setLeadSuccessMsg] = useState("");
   const [leadDownloadUrl, setLeadDownloadUrl] = useState("");
@@ -34,41 +38,9 @@ export default function PublicProductPage() {
   // FAQ accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Countdown timer
-  // Real urgency: 24h window starting from first visit (no fake scarcity)
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const stored = localStorage.getItem("ai-factory-offer-deadline");
-    const deadline = stored ? Number(stored) : Date.now() + 24 * 60 * 60 * 1000;
-    if (!stored) localStorage.setItem("ai-factory-offer-deadline", String(deadline));
-    const diff = Math.max(0, deadline - Date.now());
-    return {
-      hours: Math.floor(diff / 3600000),
-      minutes: Math.floor((diff % 3600000) / 60000),
-      seconds: Math.floor((diff % 60000) / 1000),
-    };
-  });
 
   const orgId = organization_id || "";
   const productSlug = slug || "";
-
-  useEffect(() => {
-    if (orgId && productSlug) {
-      loadProduct();
-    }
-  }, [orgId, productSlug]);
-
-  // Countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Match catalog product
   useEffect(() => {
@@ -78,7 +50,7 @@ export default function PublicProductPage() {
     }
   }, [productSlug]);
 
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMsg("");
@@ -87,17 +59,24 @@ export default function PublicProductPage() {
 
       await funnelApi.logPublicEvent({
         organization_id: orgId,
-        event_type: "product_view",
+        event_type: "page_view",
         product_id: data.id,
-        referrer: document.referrer || undefined,
+        ...getAttributionEventFields({ content_id: data.id, path: window.location.pathname }),
+        idempotency_key: `page_view:${getAttributionEventFields().session_id}:${data.id}`,
       }).catch(() => {});
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to retrieve public product", err);
-      setErrorMsg(err.response?.data?.detail || "Product not found or currently unavailable.");
+      setErrorMsg(err instanceof Error ? err.message : "Product not found or currently unavailable.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [orgId, productSlug]);
+
+  useEffect(() => {
+    if (orgId && productSlug) {
+      void loadProduct();
+    }
+  }, [loadProduct, orgId, productSlug]);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,17 +93,23 @@ export default function PublicProductPage() {
         organization_id: orgId,
         event_type: "checkout_start",
         product_id: product.id,
-        metadata_json: { email: email.trim() },
+        ...getAttributionEventFields({ content_id: product.id, cta: "checkout" }),
+        idempotency_key: `checkout_start:${getAttributionEventFields().session_id}:${product.id}`,
       }).catch(() => {});
 
-      const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = window.location.href;
+      const successUrl = siteUrl("/checkout/success?session_id={CHECKOUT_SESSION_ID}");
+      const cancelUrl = siteUrl(`/store/${productSlug}`);
+      const checkoutAttribution = getAttributionEventFields({ content_id: product.id, cta: "checkout" });
 
       const checkout = await funnelApi.createPublicCheckoutSession(product.id, {
         organization_id: orgId,
         customer_email: email.trim(),
         success_url: successUrl,
         cancel_url: cancelUrl,
+        metadata: {
+          ...checkoutAttribution,
+          ...(checkoutAttribution.metadata_json || {}),
+        },
       });
 
       if (checkout.checkout_url) {
@@ -132,9 +117,9 @@ export default function PublicProductPage() {
       } else {
         alert(locale === "th" ? "ไม่สามารถเริ่มกระบวนการชำระเงินได้" : "Failed to initiate checkout process.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Checkout failed", err);
-      alert(err.response?.data?.detail || "Checkout session failed.");
+      alert(err instanceof Error ? err.message : "Checkout session failed.");
     } finally {
       setCheckingOut(false);
     }
@@ -142,7 +127,7 @@ export default function PublicProductPage() {
 
   const handleLeadCapture = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!product) return;
+    if (!product || !leadMagnet) return;
     if (!leadEmail.trim()) {
       alert(locale === "th" ? "กรุณากรอกอีเมลของคุณ" : "Please enter your email.");
       return;
@@ -151,25 +136,34 @@ export default function PublicProductPage() {
     try {
       setSubmittingLead(true);
       setLeadSuccessMsg("");
-      const res = await funnelApi.captureLead(productSlug, {
+      const attribution = getAttributionEventFields({ content_id: product.id, cta: "lead_magnet" });
+      const res = await funnelApi.captureLead(leadMagnet.slug, {
         organization_id: orgId,
         email: leadEmail.trim(),
         name: leadName.trim() || undefined,
-        source: "sales_page",
+        marketing_consent: marketingConsent,
+        consent_version: marketingConsent ? "organic-v1" : undefined,
+        session_id: attribution.session_id,
+        source: attribution.source,
+        medium: attribution.medium,
+        campaign: attribution.campaign,
+        referrer: attribution.referrer,
+        referral_code: attribution.referral_code,
       });
       setLeadSuccessMsg(locale === "th" ? "สำเร็จ! ตรวจสอบอีเมลของคุณเพื่อรับตัวอย่างฟรี" : "You're in! Check your email for the free sample.");
       if (res.delivery_url) {
         setLeadDownloadUrl(res.delivery_url);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Lead capture failed", err);
-      setErrorMsg(err.response?.data?.detail || "Failed to submit.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to submit.");
     } finally {
       setSubmittingLead(false);
     }
   };
 
   const cp = catalogProduct;
+  const leadMagnet = cp ? getLeadMagnet(cp.slug) : undefined;
   const productName = cp ? getLocalizedName(cp, locale) : product?.name || "Product";
   const productDesc = cp ? getLocalizedShortDescription(cp, locale) : product?.short_description || "";
   const fullDesc = cp ? getLocalizedDescription(cp, locale) : product?.sales_page_content || "";
@@ -178,16 +172,15 @@ export default function PublicProductPage() {
   const features = cp?.features || [];
   const testimonials = cp?.testimonials || [];
   const deliverables = cp?.deliverables || [];
-  const guaranteeDays = cp?.guaranteeDays || 30;
   const salesCount = cp?.salesCount || 0;
-  const rating = cp?.rating || 4.8;
+  const rating = cp?.rating || 0;
   const reviewCount = cp?.reviewCount || 0;
 
   const faqs = [
-    { q: locale === "th" ? "หลังซื้อแล้วจะได้รับอะไรบ้าง?" : "What do I get after purchase?", a: locale === "th" ? "คุณจะได้รับสินค้าดิจิทัลทันที รวมถึงเทมเพลต คู่มือ และทรัพยากรทั้งหมดในสินค้านี้ ทุกอย่างส่งผ่านลิงก์ดาวน์โหลดปลอดภัยไปยังอีเมลของคุณทันที" : "You receive instant access to all digital files, templates, and resources included in this product. Everything is delivered via a secure download link sent to your email immediately." },
-    { q: locale === "th" ? "การรับประกันคืนเงินทำงานอย่างไร?" : "How does the money-back guarantee work?", a: locale === "th" ? `หากคุณไม่พอใจภายใน ${guaranteeDays} วัน อีเมลมาหาเรา เราจะคืนเงินเต็มจำนวน ไม่มีคำถาม` : `If you're not satisfied within ${guaranteeDays} days, email us and we'll issue a full refund. No questions asked.` },
-    { q: locale === "th" ? "สามารถใช้ในเชิงพาณิชย์ได้หรือไม่?" : "Can I use this commercially?", a: locale === "th" ? "ได้! ทุกสินค้ามีลิขสิทธิ์การใช้งานเชิงพาณิชย์ คุณสามารถใช้ในธุรกิจ ทำงานให้ลูกค้า และดัดแปลงตามต้องการ" : "Yes! All products come with a commercial license. You can use them in your business, for client work, and modify them as needed." },
-    { q: locale === "th" ? "ได้รับอัปเดตฟรีหรือไม่?" : "Do I get free updates?", a: locale === "th" ? "ใช่! ทุกสินค้ารวมอัปเดตตลอดชีพ เมื่อเราปรับปรุงสินค้า คุณจะได้รับเวอร์ชันอัปเดตโดยไม่มีค่าใช้จ่ายเพิ่ม" : "Yes! All products include lifetime updates. When we improve the product, you'll receive the updated version at no extra cost." },
+    { q: locale === "th" ? "หลังซื้อแล้วจะได้รับอะไรบ้าง?" : "What do I get after purchase?", a: locale === "th" ? "คุณจะได้รับไฟล์และสิทธิ์ตามที่ระบุในหน้าสินค้า หลัง event การซื้อได้รับการยืนยันและ delivery asset ถูกตั้งค่าไว้" : "You receive the files and access described on this product page after the purchase event is verified and a delivery asset is configured." },
+    { q: locale === "th" ? "ดูเงื่อนไขคืนเงินได้ที่ไหน?" : "Where are refund terms shown?", a: locale === "th" ? "เงื่อนไขคืนเงินจะแสดงเมื่อมีการตั้งค่าไว้สำหรับสินค้านี้ อย่าสมมติระยะเวลาที่ไม่ได้แสดงบนหน้า" : "Refund terms are shown when configured for this product. Do not assume a window that is not displayed on the page." },
+    { q: locale === "th" ? "สามารถใช้ในเชิงพาณิชย์ได้หรือไม่?" : "Can I use this commercially?", a: locale === "th" ? "ตรวจ license และเงื่อนไขการใช้งานของสินค้านี้ก่อนนำไปใช้เชิงพาณิชย์หรือทำงานให้ลูกค้า" : "Review this product's license and usage terms before commercial or client work." },
+    { q: locale === "th" ? "ได้รับอัปเดตหรือไม่?" : "Do I get updates?", a: locale === "th" ? "เงื่อนไขอัปเดตต่างกันตามสินค้า จะแสดงเมื่อมีการตั้งค่าและมีหลักฐานปัจจุบัน" : "Update terms vary by product and are shown when configured with current evidence." },
   ];
 
   if (loading) {
@@ -221,19 +214,35 @@ export default function PublicProductPage() {
             name: productName,
             description: productDesc,
             image: cp?.coverImageUrl || product?.cover_image_url,
-            brand: { "@type": "Brand", name: "Ai Factory" },
+            brand: { "@type": "Brand", name: "Graxia" },
             offers: {
               "@type": "Offer",
               price: price,
               priceCurrency: currency,
               availability: "https://schema.org/InStock",
-              seller: { "@type": "Organization", name: "Ai Factory" },
+              seller: { "@type": "Organization", name: "Graxia", url: siteUrl() },
             },
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: rating,
-              reviewCount: reviewCount,
-            },
+            ...(reviewCount > 0 && rating > 0 ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: rating,
+                reviewCount: reviewCount,
+              },
+            } : {}),
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((faq) => ({
+              "@type": "Question",
+              name: faq.q,
+              acceptedAnswer: { "@type": "Answer", text: faq.a },
+            })),
           }),
         }}
       />
@@ -305,27 +314,27 @@ export default function PublicProductPage() {
               {productDesc}
             </p>
 
-            {/* Social Proof */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
+            {/* Social proof appears only when current evidence exists. */}
+            {(reviewCount > 0 || salesCount > 0) && <div className="flex flex-wrap items-center gap-4 text-sm">
+              {reviewCount > 0 && <div className="flex items-center gap-1.5">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
                 ))}
                 <span className="text-slate-300 font-semibold ms-1">{rating}</span>
                 <span className="text-slate-500">({reviewCount.toLocaleString()} {locale === "th" ? "รีวิว" : "reviews"})</span>
-              </div>
-              <span className="text-slate-600">·</span>
-              <div className="flex items-center gap-1.5 text-slate-400">
+              </div>}
+              {reviewCount > 0 && salesCount > 0 && <span className="text-slate-600">·</span>}
+              {salesCount > 0 && <div className="flex items-center gap-1.5 text-slate-400">
                 <Users size={14} />
                 <span>{formatSalesCount(salesCount)} {locale === "th" ? "ขายแล้ว" : "sold"}</span>
-              </div>
+              </div>}
               {cp && (
                 <>
                   <span className="text-slate-600">·</span>
                   <span className="text-slate-400">{locale === "th" ? "อัปเดต" : "Updated"} {new Date(cp.lastUpdated).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { month: "short", year: "numeric" })}</span>
                 </>
               )}
-            </div>
+            </div>}
 
             {/* Features */}
             {features.length > 0 && (
@@ -372,9 +381,8 @@ export default function PublicProductPage() {
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-extrabold text-white">{formatPrice(price, currency)}</span>
-                  <span className="text-sm text-slate-500 line-through">{formatPrice(Math.round(price * 1.5), currency)}</span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")} · {guaranteeDays}-{locale === "th" ? "วันรับประกัน" : "day guarantee"}</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")}</p>
               </div>
 
               {/* Checkout Form */}
@@ -419,7 +427,6 @@ export default function PublicProductPage() {
                 {[
                   { icon: CheckCircle, text: t("product.instantAccess") },
                   { icon: ShieldCheck, text: t("product.stripeEncrypted") },
-                  { icon: Award, text: `${guaranteeDays}-${locale === "th" ? "วันรับประกันคืนเงิน" : "day money-back guarantee"}` },
                   { icon: Lock, text: t("product.secureEncrypted") },
                   { icon: CreditCard, text: t("store.promptpay") },
                 ].map(({ icon: Icon, text }) => (
@@ -430,24 +437,10 @@ export default function PublicProductPage() {
                 ))}
               </div>
 
-              {/* Urgency */}
-              <div className="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-1.5 text-xs text-rose-400 font-semibold">
-                  <Clock size={12} />
-                  {t("product.limitedOffer")}
-                </div>
-                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-slate-100 font-bold">
-                  <span>{String(timeLeft.hours).padStart(2, "0")}</span>
-                  <span className="text-rose-400">:</span>
-                  <span>{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-rose-400">:</span>
-                  <span>{String(timeLeft.seconds).padStart(2, "0")}</span>
-                </div>
-              </div>
             </div>
 
             {/* Lead Magnet */}
-            <div className="bg-slate-900/20 border border-slate-800/60 rounded-3xl p-5 shadow-xl backdrop-blur-xl space-y-3">
+            {leadMagnet && <div className="bg-slate-900/20 border border-slate-800/60 rounded-3xl p-5 shadow-xl backdrop-blur-xl space-y-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400">
                   <Gift size={16} />
@@ -475,13 +468,22 @@ export default function PublicProductPage() {
                     <input type="email" required aria-label={t("auth.email")} placeholder={locale === "th" ? "อีเมล" : "Email"} value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)}
                       className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 transition-colors duration-200" />
                   </div>
+                  <label className="flex items-start gap-2 text-[11px] text-slate-500">
+                    <input
+                      type="checkbox"
+                      checked={marketingConsent}
+                      onChange={(e) => setMarketingConsent(e.target.checked)}
+                      className="mt-0.5 accent-indigo-500"
+                    />
+                    <span>{locale === "th" ? "ยินยอมรับข่าวสารการตลาดทางอีเมล (ไม่เลือกก็รับไฟล์ฟรีได้)" : "I agree to marketing emails (optional; the free file is available without this)."}</span>
+                  </label>
                   <button type="submit" disabled={submittingLead}
                     className={`w-full py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-xl transition-all duration-200 ${ANIMATIONS.buttonPress}`}>
                     {submittingLead ? (locale === "th" ? "กำลังส่ง..." : "Sending...") : t("product.getFreeSample")}
                   </button>
                 </form>
               )}
-            </div>
+            </div>}
           </div>
         </section>
         </ScrollReveal>
@@ -564,9 +566,9 @@ export default function PublicProductPage() {
               <h2 className="text-2xl md:text-3xl font-serif font-medium text-white">
                 {t("product.readyToStart")}
               </h2>
-              <p className="text-slate-400 max-w-md mx-auto text-sm">
+              {salesCount > 0 && <p className="text-slate-400 max-w-md mx-auto text-sm">
                 {formatSalesCount(salesCount)} {t("product.joinCustomers")}
-              </p>
+              </p>}
               <button
                 onClick={() => document.getElementById("checkout-section")?.scrollIntoView({ behavior: "smooth" })}
                 className={`inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-glow-md transition-all duration-200 ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}
@@ -576,7 +578,7 @@ export default function PublicProductPage() {
               </button>
               <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <ShieldCheck size={12} className="text-emerald-500/60" />
-                {guaranteeDays}-{locale === "th" ? "วันรับประกันคืนเงิน" : "day money-back guarantee"} · {locale === "th" ? "ส่งมอบทันที" : "Instant delivery"}
+                {t("store.trust2")}
               </div>
             </div>
           </div>

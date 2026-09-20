@@ -50,6 +50,10 @@ from app.api.funnel_ai import router as funnel_ai_router  # noqa: E402
 from app.api.funnel_automation import router as funnel_automation_router  # noqa: E402
 from app.api.auth import router as auth_router  # noqa: E402
 from app.api.privacy import router as privacy_router  # noqa: E402
+from app.api.referrals import router as referrals_router  # noqa: E402
+from app.api.revenue_bridge import router as revenue_bridge_router  # noqa: E402
+from app.api.content_batches import router as content_batches_router  # noqa: E402
+from app.api.public_content import router as public_content_router  # noqa: E402
 
 setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -153,6 +157,10 @@ app.include_router(funnel_analytics_router, prefix="/api/v1/funnel")
 app.include_router(funnel_ai_router, prefix="/api/v1/funnel")
 app.include_router(funnel_automation_router, prefix="/api/v1/funnel")
 app.include_router(privacy_router, prefix="/api/v1")
+app.include_router(referrals_router, prefix="/api/v1")
+app.include_router(revenue_bridge_router, prefix="/api/v1")
+app.include_router(content_batches_router, prefix="/api/v1")
+app.include_router(public_content_router, prefix="/api/v1")
 
 
 @app.post("/internal/funnel/process-due")

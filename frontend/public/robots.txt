@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /checkout/
 Disallow: /api/
-Sitemap: https://graxia-os-funnel.vercel.app/sitemap.xml
+Sitemap: https://bravforcode.github.io/graxia/sitemap.xml

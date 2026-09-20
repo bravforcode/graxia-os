@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { 
   Download, 
@@ -6,7 +6,9 @@ import {
   ExternalLink, 
   AlertTriangle,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Copy,
+  Share2,
 } from "lucide-react";
 import { funnelApi, type DeliveryPayload } from "../../api/funnel";
 import { useLang } from "@/i18n/LanguageContext";
@@ -20,28 +22,32 @@ export default function DeliveryAccessPage() {
   const [consuming, setConsuming] = useState(false);
   const [assetUnlocked, setAssetUnlocked] = useState(false);
   const [unlockedPayload, setUnlockedPayload] = useState<DeliveryPayload | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const rawToken = token || "";
 
-  useEffect(() => {
-    if (rawToken) {
-      fetchPayload();
-    }
-  }, [rawToken]);
-
-  const fetchPayload = async () => {
+  const fetchPayload = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMsg("");
       const res = await funnelApi.getDeliveryPayload(rawToken);
       setPayload(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to retrieve delivery payload", err);
-      setErrorMsg(err.response?.data?.detail || t("delivery.invalid"));
+      const detail = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+        : undefined;
+      setErrorMsg(detail || t("delivery.invalid"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [rawToken, t]);
+
+  useEffect(() => {
+    if (rawToken) {
+      void fetchPayload();
+    }
+  }, [fetchPayload, rawToken]);
 
   const handleConsume = async () => {
     if (!rawToken) return;
@@ -54,11 +60,47 @@ export default function DeliveryAccessPage() {
       
       // Update the generic view too
       setPayload(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to consume delivery asset", err);
-      setErrorMsg(err.response?.data?.detail || t("delivery.downloadSecured"));
+      const detail = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+        : undefined;
+      setErrorMsg(detail || t("delivery.downloadSecured"));
     } finally {
       setConsuming(false);
+    }
+  };
+
+  const handleReferralShare = async () => {
+    const referralUrl = unlockedPayload?.referral_url ?? payload.referral_url;
+    if (!referralUrl) return;
+    const shareData = {
+      title: "Graxia bonus resource",
+      text: "รับ bonus resource ฟรีจาก Graxia",
+      url: referralUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(referralUrl);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2200);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = referralUrl;
+        input.setAttribute("readonly", "true");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2200);
+      }
+    } catch {
+      // User cancellation is not an error state for delivery.
     }
   };
 
@@ -203,6 +245,28 @@ export default function DeliveryAccessPage() {
               </div>
             )}
           </div>
+        )}
+
+        {assetUnlocked && (unlockedPayload?.referral_url || payload.referral_url) && (
+          <section className="border-t border-slate-850 pt-5 space-y-3" aria-labelledby="referral-heading">
+            <div>
+              <h2 id="referral-heading" className="text-sm font-bold text-slate-100">
+                Share a bonus with a friend
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                Your link opens a free bonus resource. Referral attribution is
+                verified server-side and self-referrals do not earn rewards.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleReferralShare}
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+            >
+              {copied ? "Referral link copied" : "Share bonus link"}
+              {copied ? <Copy size={16} /> : <Share2 size={16} />}
+            </button>
+          </section>
         )}
       </div>
     </div>

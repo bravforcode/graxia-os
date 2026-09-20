@@ -50,8 +50,11 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/funnel/webhooks/stripe"),
     ("POST", "/api/v1/funnel/events"),
     ("POST", "/api/v1/public/funnel/lead-magnets/{slug}/capture"),
+    ("POST", "/api/v1/public/funnel/unsubscribe"),
     ("GET", "/api/v1/funnel/public/products/{organization_id}/{slug}"),
     ("POST", "/api/v1/funnel/public/products/{product_id}/checkout"),
+    ("GET", "/api/v1/public/referrals/{code}"),
+    ("GET", "/api/v1/public/content/articles/{slug}"),
 }
 
 BLOCKED_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/metrics", "/flower", "/admin")
@@ -77,10 +80,12 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/funnel/webhooks/stripe",
     "/api/v1/funnel/events",
     "/api/v1/public/funnel/lead-magnets/{slug}/capture",
+    "/api/v1/public/funnel/unsubscribe",
     "/api/v1/funnel/public/products/{product_id}/checkout",
 }
 INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/integrations/alerts/telegram"),
+    ("POST", "/api/v1/revenue-bridge/events"),
 }
 
 ROLE_ORDER = {
@@ -233,6 +238,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
             return JSONResponse({"detail": "Not Found"}, status_code=404)
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
+            if route_path == "/api/v1/revenue-bridge/events":
+                # The bridge endpoint verifies the provider HMAC envelope
+                # itself. Keep it off the public allowlist without requiring a
+                # browser JWT for provider-to-service delivery.
+                return await call_next(request)
             secret = (
                 getattr(settings, "ALERTMANAGER_WEBHOOK_SECRET", "") or ""
             ).strip()

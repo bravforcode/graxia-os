@@ -1,13 +1,14 @@
 import { useParams, Link } from "react-router-dom";
 import {
-  ArrowLeft, Star, Users, Download, Check, ChevronDown,
-  ShieldCheck, Award, Clock, ArrowRight, CheckCircle, Gift,
-  TrendingUp, Globe,
+  ArrowLeft, Download, Check, ChevronDown,
+  ShieldCheck, ArrowRight, CheckCircle, Gift,
+  Globe, LockKeyhole, RotateCcw, ExternalLink,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../data/products";
-import { ANIMATIONS, staggerDelay } from "../lib/animations";
+import { PRODUCTS, STORE_ORG_ID, CATEGORY_META, formatPrice, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../data/products";
+import { LEAD_MAGNETS } from "../data/organic";
+import { ANIMATIONS } from "../lib/animations";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 import { SkeletonProductDetail } from "../components/ui/Skeleton";
 
@@ -16,23 +17,10 @@ export default function StoreProductPage() {
   const [product, setProduct] = useState<ProductCatalogItem | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { locale, toggle, t } = useLang();
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 47, seconds: 33 });
 
   useEffect(() => {
     if (slug) { const found = PRODUCTS.find((p) => p.slug === slug); setProduct(found || null); }
   }, [slug]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const [isPageLoading, setIsPageLoading] = useState(true);
 
@@ -63,6 +51,11 @@ export default function StoreProductPage() {
     { q: t("faq.q3"), a: t("faq.a3") },
     { q: t("faq.q5"), a: t("faq.a5") },
   ];
+  const leadMagnet = LEAD_MAGNETS.find((item) => item.targetProductSlug === product.slug) ?? LEAD_MAGNETS[0];
+  const relatedProducts = PRODUCTS
+    .filter((item) => item.slug !== product.slug)
+    .filter((item) => item.category === product.category || item.tags.some((tag) => product.tags.includes(tag)))
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
@@ -71,7 +64,7 @@ export default function StoreProductPage() {
         "@context": "https://schema.org", "@type": "Product",
         name: product.name, description: product.shortDescription, image: product.coverImageUrl,
         offers: { "@type": "Offer", price: product.priceAmount, priceCurrency: product.currency, availability: "https://schema.org/InStock" },
-        aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount },
+        ...(product.reviewCount > 0 && product.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount } } : {}),
       }) }} />
 
       {/* Background */}
@@ -125,16 +118,9 @@ export default function StoreProductPage() {
 
             <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl">{getLocalizedShortDescription(product, locale)}</p>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
-                {[...Array(5)].map((_, i) => <Star key={i} size={14} className="fill-amber-400 text-amber-400" />)}
-                <span className="text-slate-300 font-semibold ms-1">{product.rating}</span>
-                <span className="text-slate-500">({product.reviewCount.toLocaleString()} {t("store.reviews")})</span>
-              </div>
-              <span className="text-slate-600">·</span>
-              <div className="flex items-center gap-1.5 text-slate-400"><Users size={14} /><span>{formatSalesCount(product.salesCount)} {t("featured.sold")}</span></div>
-              <span className="text-slate-600">·</span>
-              <span className="text-slate-400">{t("store.updated")} {new Date(product.lastUpdated).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { month: "short", year: "numeric" })}</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" />{locale === "th" ? "ไฟล์ตามรายการสินค้า" : "Files match the product description"}</span>
+              <span className="inline-flex items-center gap-1.5"><LockKeyhole size={14} className="text-cyan-400" />{locale === "th" ? "ยืนยันสถานะผ่าน checkout provider" : "Checkout status is provider-verified"}</span>
             </div>
 
             <div className="space-y-3 pt-2">
@@ -162,12 +148,11 @@ export default function StoreProductPage() {
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
-                  <span className="text-sm text-slate-500 line-through">{formatPrice(Math.round(product.priceAmount * 1.5))}</span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")} · {product.guaranteeDays}{t("store.dayGuarantee")}</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")}</p>
               </div>
 
-              <Link to={`/f/demo/${product.slug}`}
+              <Link to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-glow-md transition-all duration-200 flex items-center justify-center gap-2 group text-sm ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}>
                 {t("product.getInstantAccess")}
                 <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
@@ -176,26 +161,13 @@ export default function StoreProductPage() {
               <div className="space-y-2.5 text-xs text-slate-500">
                 {[
                   { icon: CheckCircle, text: t("product.instantAccess") },
-                  { icon: ShieldCheck, text: t("product.stripeEncrypted") },
-                  { icon: Award, text: `${product.guaranteeDays}{t("store.dayMoneyBack")}` },
-                  { icon: TrendingUp, text: `${formatSalesCount(product.salesCount)} ${t("product.happyCustomers")}` },
+                  { icon: ShieldCheck, text: locale === "th" ? "ตรวจสอบสถานะการชำระเงินก่อนส่งไฟล์" : "Payment status is checked before delivery" },
+                  { icon: LockKeyhole, text: locale === "th" ? "ไม่แสดงยอดขายหรือรีวิวที่ยังไม่มีหลักฐาน" : "No unverified sales or review claims" },
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-center gap-2"><Icon size={14} className="text-emerald-500" /><span>{text}</span></div>
                 ))}
               </div>
 
-              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-semibold">
-                  <Clock size={12} />{t("product.limitedOffer")}
-                </div>
-                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-white font-bold">
-                  <span>{String(timeLeft.hours).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
-                  <span>{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
-                  <span>{String(timeLeft.seconds).padStart(2, "0")}</span>
-                </div>
-              </div>
             </div>
 
             {/* Lead Magnet */}
@@ -207,43 +179,31 @@ export default function StoreProductPage() {
                   <p className="text-[11px] text-slate-500">{t("product.freeSampleDesc")}</p>
                 </div>
               </div>
-              <form className="space-y-2" onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="text" aria-label={t("store.name")} placeholder={t("store.name")} className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200" />
-                  <input type="email" required aria-label={t("auth.email")} placeholder={t("auth.email")} className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200" />
-                </div>
-                <button type="submit" className={`w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all duration-200 ${ANIMATIONS.buttonPress}`}>
-                  {t("product.getFreeSample")}
-                </button>
-              </form>
+              <Link to={`/free/${leadMagnet.slug}`} className={`w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${ANIMATIONS.buttonPress}`}>
+                {t("product.getFreeSample")}<ArrowRight size={14} />
+              </Link>
+              <p className="text-[10px] text-slate-500">{locale === "th" ? "รับไฟล์ฟรีก่อน แล้วค่อยตัดสินใจซื้อ" : "Get the free starter resource before deciding."}</p>
+            </div>
+
+            <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-3xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-cyan-300"><LockKeyhole size={16} /><h4 className="text-sm font-bold">{locale === "th" ? "กำลังจัดระบบรายได้หลายช่องทาง?" : "Building a repeatable revenue system?"}</h4></div>
+              <p className="text-xs text-slate-400 leading-relaxed">{locale === "th" ? "ดู Revenue OS สำหรับ workflow ที่ต้องมี approval, attribution และหลักฐานจาก provider" : "See Revenue OS for approval, attribution, and provider-evidence workflows."}</p>
+              <Link to="/revenue-os" className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-cyan-200">{locale === "th" ? "ดู Revenue OS" : "Explore Revenue OS"}<ExternalLink size={13} /></Link>
             </div>
           </div>
         </section>
         </ScrollReveal>
 
-        {/* Testimonials */}
-        {product.testimonials.length > 0 && (
-          <ScrollReveal delay={100}>
-          <section>
-            <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.customersSay")}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {product.testimonials.map((testimonial, i) => (
-                <div key={i} className={`p-5 bg-slate-900/40 border border-slate-800/60 rounded-2xl space-y-3 animate-fade-in-up ${ANIMATIONS.cardHover}`} style={staggerDelay(i)}>
-                  <div className="flex gap-0.5">{[...Array(5)].map((_, j) => <Star key={j} size={12} className="fill-amber-400 text-amber-400" />)}</div>
-                  <p className="text-sm text-slate-300 leading-relaxed">"{testimonial.text}"</p>
-                  <div className="flex items-center gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">{testimonial.avatar}</div>
-                    <div>
-                      <div className="text-xs font-semibold text-white">{testimonial.name}</div>
-                      <div className="text-[11px] text-slate-500">{testimonial.role}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Trust and operational expectations */}
+        <ScrollReveal delay={100}>
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { Icon: ShieldCheck, title: locale === "th" ? "ส่งมอบตามสถานะที่ยืนยัน" : "Verified delivery", body: locale === "th" ? "ระบบจะเปิด delivery เมื่อ provider ยืนยันสถานะที่เกี่ยวข้อง" : "Delivery opens only after the relevant provider status is verified." },
+              { Icon: RotateCcw, title: locale === "th" ? "เงื่อนไขคืนเงินชัดเจน" : "Clear refund terms", body: locale === "th" ? "อ่านเงื่อนไขคืนเงินก่อน checkout ได้ที่หน้า Refund" : "Review the refund policy before checkout." },
+              { Icon: LockKeyhole, title: locale === "th" ? "ข้อมูลเท่าที่จำเป็น" : "Minimal data", body: locale === "th" ? "เก็บข้อมูลสำหรับการส่งมอบและ attribution ตาม consent ที่ให้ไว้" : "We use delivery and attribution data according to your consent." },
+            ].map(({ Icon, title, body }) => <div key={title} className="p-5 bg-slate-900/30 border border-slate-800/60 rounded-2xl"><Icon size={18} className="text-emerald-400 mb-3" /><h3 className="text-sm font-bold text-white">{title}</h3><p className="text-xs text-slate-400 mt-2 leading-relaxed">{body}</p></div>)}
           </section>
-          </ScrollReveal>
-        )}
+        </ScrollReveal>
 
         {/* Deliverables */}
         <ScrollReveal delay={100}>
@@ -259,6 +219,15 @@ export default function StoreProductPage() {
           </div>
         </section>
         </ScrollReveal>
+
+        {relatedProducts.length > 0 && <ScrollReveal delay={100}>
+          <section>
+            <div className="flex items-end justify-between gap-4 mb-6"><div><h2 className="text-2xl font-display font-extrabold text-white">{locale === "th" ? "สินค้าที่เกี่ยวข้อง" : "Related products"}</h2><p className="text-sm text-slate-500 mt-1">{locale === "th" ? "เลือกชิ้นถัดไปตาม workflow เดียวกัน" : "Continue with the next step in the same workflow."}</p></div><Link to="/store" className="text-xs text-indigo-300 hover:text-indigo-200">{locale === "th" ? "ดูทั้งหมด" : "Browse all"}</Link></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {relatedProducts.map((item) => <Link key={item.slug} to={`/store/${item.slug}`} className="group p-5 bg-slate-900/30 border border-slate-800/60 rounded-2xl hover:border-indigo-500/40 transition-colors"><span className="text-[11px] uppercase tracking-wider text-indigo-300">{CATEGORY_META[item.category].icon} {item.category}</span><h3 className="text-sm font-bold text-white mt-3 group-hover:text-indigo-200">{getLocalizedName(item, locale)}</h3><p className="text-xs text-slate-400 mt-2 line-clamp-2">{getLocalizedShortDescription(item, locale)}</p><span className="inline-flex items-center gap-1 text-xs text-slate-300 mt-4">{formatPrice(item.priceAmount)}<ArrowRight size={13} /></span></Link>)}
+            </div>
+          </section>
+        </ScrollReveal>}
 
         {/* FAQ */}
         <ScrollReveal delay={100}>
@@ -288,17 +257,15 @@ export default function StoreProductPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1),transparent_70%)]" />
             <div className="relative z-10 space-y-4">
               <h2 className="text-2xl md:text-3xl font-display font-extrabold text-white">{t("product.readyToStart")}</h2>
-              <p className="text-slate-400 max-w-md mx-auto text-sm">
-                {formatSalesCount(product.salesCount)} {t("product.joinCustomers")}
-              </p>
-              <Link to={`/f/demo/${product.slug}`}
+              <p className="text-slate-400 max-w-md mx-auto text-sm">{locale === "th" ? "เริ่มจากไฟล์ที่ใช้ได้จริง แล้วค่อยขยายตามความต้องการ" : "Start with a practical file, then expand when your workflow needs it."}</p>
+              <Link to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-glow-md transition-all duration-200 ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}>
                 {t("product.buyNow")} — {formatPrice(product.priceAmount)}
                 <ArrowRight size={18} />
               </Link>
               <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <ShieldCheck size={12} className="text-emerald-500/60" />
-                {product.guaranteeDays}{t("store.dayMoneyBack")} · {t("store.trust2")}
+                {locale === "th" ? "ตรวจสอบเงื่อนไขก่อนชำระเงินได้" : "Review the terms before checkout"}
               </div>
             </div>
           </div>

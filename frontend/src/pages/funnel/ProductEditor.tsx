@@ -51,7 +51,7 @@ export default function ProductEditor() {
     if (!isNew && id) {
       loadProductAndAssets(id);
     }
-  }, [id]);
+  }, [id, isNew]);
 
   const loadProductAndAssets = async (productId: string) => {
     try {
@@ -107,9 +107,12 @@ export default function ProductEditor() {
         await funnelApi.updateProduct(id, payload);
         alert("Product saved successfully!");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save product failed", err);
-      setErrorMsg(err.response?.data?.detail || "An error occurred while saving the product.");
+      const detail = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+        : undefined;
+      setErrorMsg(detail || "An error occurred while saving the product.");
     } finally {
       setSaving(false);
     }

@@ -317,12 +317,10 @@ class LeadMagnetService:
             id=uuid4(),
             organization_id=organization_id,
             slug=slug,
-            title=title,
-            description=description,
-            product_id=product_id,
-            asset_id=asset_id,
+            name=title,
+            promise=description,
+            target_product_id=product_id,
             status="active",
-            metadata_json=metadata_json,
         )
         if db:
             db.add(magnet)
@@ -842,12 +840,24 @@ class FunnelWebhookHandler:
             )
 
             # Track purchase event
+            attribution = checkout.metadata_json or {}
             purchase_event = ConversionEvent(
                 id=uuid4(),
                 organization_id=organization_id,
                 event_type="purchase",
                 product_id=checkout.product_id,
                 order_id=order.id,
+                session_id=attribution.get("session_id"),
+                source=attribution.get("source"),
+                medium=attribution.get("medium"),
+                campaign=attribution.get("campaign"),
+                referrer=attribution.get("referrer"),
+                metadata_json={
+                    key: attribution[key]
+                    for key in ("content_id", "plan", "channel", "locale")
+                    if key in attribution
+                },
+                idempotency_key=f"purchase:{order.id}",
                 occurred_at=datetime.now(UTC),
             )
             session.add(purchase_event)
