@@ -4,14 +4,31 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
+from app.auth.context import LOCAL_DEV_ORGANIZATION_ID
 from app.core.approval_flow import ApprovalFlowManager
 from app.models.approval_request import ApprovalRequest
+from app.models.organization import Organization
 from app.models.submission import Submission
 from sqlalchemy import select
 
 
 @pytest_asyncio.fixture()
-async def approval_flow_session_factory(session_factory, monkeypatch):
+async def approval_org_id(session_factory):
+    async with session_factory() as session:
+        session.add(
+            Organization(
+                id=LOCAL_DEV_ORGANIZATION_ID,
+                name="Local Dev Org",
+                slug="local-dev-org",
+                status="active",
+            )
+        )
+        await session.commit()
+    return LOCAL_DEV_ORGANIZATION_ID
+
+
+@pytest_asyncio.fixture()
+async def approval_flow_session_factory(session_factory, approval_org_id, monkeypatch):
     monkeypatch.setattr("app.core.approval_flow.AsyncSessionLocal", session_factory)
     yield session_factory
 
@@ -60,6 +77,7 @@ async def test_handle_approval_executes_action_and_callback_once(
     monkeypatch.setattr(manager, "_execute_action", execute_action)
 
     approval = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Send email",
         action_type="email_send",
         status="pending",
@@ -103,6 +121,7 @@ async def test_handle_approval_rejects_invalid_missing_expired_and_rejected_requ
     monkeypatch.setattr(manager, "_execute_action", execute_action)
 
     expired = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Expired action",
         action_type="email_send",
         status="pending",
@@ -112,6 +131,7 @@ async def test_handle_approval_rejects_invalid_missing_expired_and_rejected_requ
         expires_at=datetime.now(UTC) - timedelta(minutes=1),
     )
     rejectable = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Reject action",
         action_type="email_send",
         status="pending",
@@ -154,6 +174,7 @@ async def test_expiration_reminders_pending_list_and_stats_use_real_db(
     now = datetime.now(UTC)
 
     expired = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Expired",
         action_type="email_send",
         status="pending",
@@ -163,6 +184,7 @@ async def test_expiration_reminders_pending_list_and_stats_use_real_db(
         expires_at=now - timedelta(minutes=1),
     )
     old_pending = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Old pending",
         action_type="email_send",
         status="pending",
@@ -173,6 +195,7 @@ async def test_expiration_reminders_pending_list_and_stats_use_real_db(
         created_at=now - timedelta(hours=13),
     )
     fresh_pending = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Fresh pending",
         action_type="email_send",
         status="pending",
@@ -183,6 +206,7 @@ async def test_expiration_reminders_pending_list_and_stats_use_real_db(
         created_at=now,
     )
     approved = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Approved",
         action_type="email_send",
         status="approved",
@@ -192,6 +216,7 @@ async def test_expiration_reminders_pending_list_and_stats_use_real_db(
         resolved_at=now,
     )
     rejected = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Rejected",
         action_type="email_send",
         status="rejected",
@@ -236,12 +261,12 @@ async def test_execute_email_and_job_apply_actions_delegate_to_integrations(
     monkeypatch.setattr("app.core.event_bus.event_bus.emit", AsyncMock())
 
     email_approval = ApprovalRequest(
+        organization_id=LOCAL_DEV_ORGANIZATION_ID,
         title="Send email",
         action_type="email_send",
         policy_class="approval_required",
         details={"to": "client@example.com", "subject": "Hello", "body": "Body"},
     )
-    from app.models.organization import Organization
     from uuid import uuid4 as _new_uuid
     async with approval_flow_session_factory() as approval_session:
         org = Organization(
@@ -264,6 +289,7 @@ async def test_execute_email_and_job_apply_actions_delegate_to_integrations(
     missing_email_result = await manager._execute_email_send({"to": "client@example.com"})
     unknown_result = await manager._execute_action(
         ApprovalRequest(
+            organization_id=LOCAL_DEV_ORGANIZATION_ID,
             title="Unknown", action_type="unknown", policy_class="approval_required", details={}
         )
     )
