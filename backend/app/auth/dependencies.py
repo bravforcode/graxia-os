@@ -22,6 +22,7 @@ from uuid import UUID
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from app.auth.context import AuthContext, LocalDevAuthContext, LOCAL_DEV_ORGANIZATION_ID
+from app.auth.errors import OrgMismatchError
 from app.auth.permissions import auth_context_has_permission, normalize_permissions, permissions_for_role
 from app.config import settings
 
@@ -50,6 +51,17 @@ def _correlation_id(request: Request) -> str:
         or getattr(request.state, "request_id", None)
         or str(uuid.uuid4())
     )
+
+
+def _token_organization_id(request: Request) -> UUID | None:
+    """Tenant carried by the verified access token, if any."""
+    payload = getattr(request.state, "auth_payload", None)
+    if not isinstance(payload, dict):
+        return None
+    try:
+        return UUID(str(payload["organization_id"]))
+    except (KeyError, ValueError, TypeError):
+        return None
 
 
 def _role_permissions(request: Request, env: str, actor_type: str) -> list[str]:
@@ -98,19 +110,36 @@ async def get_auth_context(
     scopes = normalize_permissions(_csv_header_values(x_graxia_scopes))
 
     if env in ("staging", "production"):
-        # Require explicit org header
-        if not x_graxia_org_id:
+        token_org_id = _token_organization_id(request)
+
+        if not token_org_id and auth_method == "bearer_jwt":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Organization context required.",
+            )
+
+        # Require explicit org header unless a verified token carries the org.
+        if not x_graxia_org_id and not token_org_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="X-Graxia-Org-Id header is required.",
             )
-        try:
-            org_id = UUID(x_graxia_org_id)
-        except (ValueError, AttributeError):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid X-Graxia-Org-Id format.",
-            )
+
+        org_id = token_org_id
+        if x_graxia_org_id:
+            try:
+                header_org_id = UUID(x_graxia_org_id)
+            except (ValueError, AttributeError):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid X-Graxia-Org-Id format.",
+                )
+            if token_org_id and header_org_id != token_org_id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=OrgMismatchError().message,
+                )
+            org_id = header_org_id
 
         is_mock = env != "production" and org_id == LOCAL_DEV_ORGANIZATION_ID
         return AuthContext(
@@ -129,8 +158,9 @@ async def get_auth_context(
             is_customer=actor_type == "customer",
         )
 
-    # Local / test: use local dev default
-    org_id = LOCAL_DEV_ORGANIZATION_ID
+    # Local / test: the verified token's tenant beats the dev default; an
+    # explicit header still wins so cross-org checks stay testable.
+    org_id = _token_organization_id(request) or LOCAL_DEV_ORGANIZATION_ID
     if x_graxia_org_id:
         try:
             org_id = UUID(x_graxia_org_id)

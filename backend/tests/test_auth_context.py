@@ -12,8 +12,18 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from fastapi import HTTPException
 from app.auth.context import AuthContext, LocalDevAuthContext, LOCAL_DEV_ORGANIZATION_ID
+from app.auth.dependencies import get_auth_context
 from app.auth.errors import AuthError, MissingAuthError, OrgMismatchError, InsufficientPermissionsError
+from starlette.requests import Request
+
+
+def _request_with_auth_payload(payload: dict | None) -> Request:
+    request = Request({"type": "http", "method": "GET", "path": "/", "headers": []})
+    if payload is not None:
+        request.state.auth_payload = payload
+    return request
 
 
 class TestAuthContextDataclass:
@@ -102,3 +112,53 @@ class TestAuthErrors:
     def test_custom_message(self):
         error = AuthError("Custom message")
         assert str(error) == "Custom message"
+
+
+class TestAuthContextDependency:
+    """Auth dependency tenant resolution."""
+
+    @pytest.mark.asyncio
+    async def test_staging_matching_header_uses_token_org(self, monkeypatch):
+        monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", "staging")
+        org_id = uuid.uuid4()
+        request = _request_with_auth_payload({"organization_id": str(org_id)})
+
+        auth = await get_auth_context(
+            request,
+            x_graxia_org_id=str(org_id),
+            x_graxia_scopes=None,
+        )
+
+        assert auth.organization_id == org_id
+        assert auth.auth_method == "bearer_jwt"
+        assert auth.is_mock_auth is False
+
+    @pytest.mark.asyncio
+    async def test_staging_mismatched_header_rejected_with_safe_tenant_error(self, monkeypatch):
+        monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", "staging")
+        request = _request_with_auth_payload({"organization_id": str(uuid.uuid4())})
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_auth_context(
+                request,
+                x_graxia_org_id=str(uuid.uuid4()),
+                x_graxia_scopes=None,
+            )
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "Resource not found."
+
+    @pytest.mark.asyncio
+    async def test_staging_bearer_token_missing_org_rejected(self, monkeypatch):
+        monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", "staging")
+        request = _request_with_auth_payload({"sub": "user-1"})
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_auth_context(
+                request,
+                x_graxia_org_id=str(uuid.uuid4()),
+                x_graxia_scopes=None,
+            )
+
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == "Organization context required."
