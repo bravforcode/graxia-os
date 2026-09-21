@@ -1,9 +1,11 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
+from app.core.auth import decode_access_token, extract_bearer_token
 from app.models.approval_request import ApprovalRequest
 from app.models.automation_run import AutomationRun
 from app.models.skill_profile import SkillProfile
@@ -110,7 +112,11 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
     async_client, db_session, monkeypatch, api_surface_session_factory
 ):
     now = datetime.now(UTC)
+    token = extract_bearer_token(async_client.headers.get("Authorization"))
+    assert token is not None
+    organization_id = UUID(decode_access_token(token)["organization_id"])
     approval = ApprovalRequest(
+        organization_id=organization_id,
         title="Approve application",
         action_type="job_apply_submit",
         subject_type="job_posting",
