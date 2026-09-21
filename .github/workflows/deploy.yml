@@ -132,8 +132,8 @@ jobs:
             $COMPOSE config --quiet
             $COMPOSE up -d --wait postgres redis
 
-            $COMPOSE run --rm --no-deps backend alembic upgrade head
             $COMPOSE build --pull backend frontend celery_worker celery_beat
+            $COMPOSE run --rm --no-deps backend alembic upgrade head
             $COMPOSE up -d --remove-orphans --wait
 
             docker image prune -f --filter "until=24h"

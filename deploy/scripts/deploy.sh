@@ -31,13 +31,13 @@ python3 backend/scripts/production_env_audit.py \
 compose config --quiet
 compose up -d --wait postgres redis
 
+compose build --pull backend frontend celery_worker celery_beat
 compose run --rm --no-deps backend python scripts/alembic_safe.py upgrade head
 MIGRATION_VERSION="$(
   compose run --rm --no-deps backend python scripts/current_migration.py 2>/dev/null || true
 )"
 export MIGRATION_VERSION
 
-compose build --pull backend frontend celery_worker celery_beat
 compose up -d --remove-orphans --wait
 compose exec -T backend curl -sf http://localhost:8000/health >/dev/null
 
