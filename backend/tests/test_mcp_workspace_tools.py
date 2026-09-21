@@ -295,8 +295,8 @@ class TestWorkspaceApprovalTools:
         )
         assert any(e.status == "approval_required" for e in emails)
 
-    async def test_cross_org_returns_permission_denied(self):
-        """Cross-org access must not expose data when org mismatch."""
+    async def test_cross_org_returns_org_mismatch(self):
+        """Cross-org access uses the canonical safe ORG_MISMATCH contract."""
         # Use a non-system auth constrained to TEST_ORG_ID — accessing OTHER_ORG_ID should be blocked
         auth = MCPAuthContext(
             actor_type="agent",
@@ -315,7 +315,8 @@ class TestWorkspaceApprovalTools:
             auth=auth,
         )
         assert resp.ok is False
-        assert resp.error.code == "PERMISSION_DENIED", f"Expected PERMISSION_DENIED, got: {resp.error.code}"
+        assert resp.error.code == "ORG_MISMATCH", f"Expected ORG_MISMATCH, got: {resp.error.code}"
+        assert resp.error.message == "Resource not found."
 
 
 @pytest.mark.asyncio

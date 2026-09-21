@@ -21,9 +21,9 @@ class TestBillingIntegration:
 
     @pytest.mark.asyncio
     async def test_get_plans_unauthorized(self, public_async_client):
-        """Plans endpoint should require authentication"""
+        """Plans endpoint is intentionally public for pricing discovery."""
         response = await public_async_client.get("/api/v1/billing/plans")
-        assert response.status_code in [401, 403]
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_create_checkout_session(self, async_client):
