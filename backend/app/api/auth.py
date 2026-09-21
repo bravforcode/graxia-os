@@ -26,10 +26,11 @@ from app.middleware.auth import (
     get_device_fingerprint,
 )
 from app.middleware.security import generate_csrf_token
+from app.models.organization import Organization
 from app.models.user import User
 from app.services.audit_service import log_audit_event
 from app.services.risk_engine import RiskEngine
-from app.services.session_service import RefreshTokenReuseDetected, SessionService
+from app.services.session_service import LockoutStatus, RefreshTokenReuseDetected, SessionService
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +204,23 @@ def _raise_database_unavailable(exc: Exception) -> None:
     ) from exc
 
 
+def _new_personal_organization(*, user_id, email: str, full_name: str | None) -> Organization:
+    organization = Organization(
+        id=uuid4(),
+        name=f"{(full_name or email).split('@')[0]}'s Workspace",
+        slug=f"u-{user_id}",
+        plan="free",
+        status="active",
+    )
+    organization.apply_plan_limits()
+    return organization
+
+
+def _lockout_headers(lockout: LockoutStatus) -> dict[str, str]:
+    retry_after = lockout.lockout_duration_seconds or SessionService.BASE_LOCKOUT_SECONDS
+    return {"Retry-After": str(max(1, retry_after))}
+
+
 async def _resolve_refresh_token(request: Request) -> str | None:
     cookie_token = request.cookies.get(settings.REFRESH_COOKIE_NAME)
     if cookie_token:
@@ -316,18 +334,25 @@ async def register(
             detail="Password must be at least 12 characters",
         )
 
+    user_id = uuid4()
+    organization = _new_personal_organization(
+        user_id=user_id,
+        email=user_data.email,
+        full_name=user_data.full_name,
+    )
     user = User(
-        id=uuid4(),
+        id=user_id,
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
         full_name=user_data.full_name,
         role="user",
         is_active=True,
         totp_enabled=False,
+        organization_id=organization.id,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
-    db.add(user)
+    db.add_all([organization, user])
     try:
         await db.commit()
         await db.refresh(user)
@@ -438,8 +463,14 @@ async def social_login(
         raise
 
     if not user:
+        user_id = uuid4()
+        organization = _new_personal_organization(
+            user_id=user_id,
+            email=email,
+            full_name=full_name,
+        )
         user = User(
-            id=uuid4(),
+            id=user_id,
             email=email,
             hashed_password=DUMMY_PASSWORD_HASH,
             full_name=full_name,
@@ -448,10 +479,11 @@ async def social_login(
             provider=payload.provider,
             provider_id=supabase_uid,
             avatar_url=avatar_url,
+            organization_id=organization.id,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
-        db.add(user)
+        db.add_all([organization, user])
         try:
             await db.commit()
             await db.refresh(user)
@@ -581,10 +613,16 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials"
         )
 
-    _check_rate_limit(email)
-
     session_service = SessionService(getattr(request.app.state, "redis", None))
     identifier = f"login:{email}"
+
+    lockout = await session_service.check_lockout(identifier)
+    if lockout.is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Account temporarily locked. Try again later.",
+            headers=_lockout_headers(lockout),
+        )
 
     try:
         user = await _lookup_user_by_email(db, email)
@@ -594,6 +632,10 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
         raise
 
     if not user or not verify_password(password, user.hashed_password):
+        await session_service.record_failed_login(
+            identifier=identifier,
+            ip_address=get_client_ip(request),
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
