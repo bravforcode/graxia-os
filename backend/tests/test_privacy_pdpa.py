@@ -124,7 +124,11 @@ async def test_erasure_anonymizes_user(async_client: AsyncClient, db_session: As
 
 @pytest.mark.asyncio
 async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_session: AsyncSession):
-    """Full erasure removes all consent rows for the current user."""
+    """Full erasure scrubs sensitive fields while preserving FK/audit rows."""
+    me = await async_client.get("/api/v1/auth/me")
+    assert me.status_code == 200, me.text
+    original_email = me.json()["email"]
+
     consent = await async_client.post(
         "/api/v1/privacy/consents",
         json={"purpose": "full-erasure", "granted": True},
@@ -137,13 +141,28 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     )
 
     assert resp.status_code == 200, resp.text
-    assert resp.json()["method"] == "deleted"
+    assert resp.json()["method"] == "scrubbed"
     remaining = (
         await db_session.execute(
             select(PrivacyConsent).where(PrivacyConsent.purpose == "full-erasure")
         )
     ).scalars().all()
     assert remaining == []
+
+    user = await db_session.get(User, UUID(resp.json()["user_id"]))
+    assert user is not None
+    assert user.email != original_email
+    assert user.email == f"deleted-{user.id}@anonymized.local"
+    assert user.full_name is None
+    assert user.hashed_password == "!deleted!"
+    assert user.last_login_at is None
+    assert user.totp_secret is None
+    assert user.totp_enabled is False
+    assert user.provider is None
+    assert user.provider_id is None
+    assert user.avatar_url is None
+    assert user.onboarding_completed_at is None
+    assert user.is_active is False
 
 
 @pytest.mark.asyncio

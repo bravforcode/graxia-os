@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -61,7 +61,7 @@ class ErasureRequest(BaseModel):
 class ErasureResponse(BaseModel):
     status: str
     user_id: UUID
-    method: str  # anonymized | deleted
+    method: str  # anonymized | scrubbed
     note: str
 
 
@@ -247,17 +247,36 @@ async def request_erasure(
         method = "anonymized"
         note = "PII anonymized; order/ledger records preserved"
     else:
-        # Full deletion: drop consent rows, deactivate account. Orders are
-        # preserved by policy but detached from the account email.
+        # Full erasure: retain the user row for FK/audit integrity, but scrub
+        # every identifying, credential, MFA, and provider field. Orders and
+        # the audit trail remain preserved by policy.
         await db.execute(
             delete(PrivacyConsent)
             .where(PrivacyConsent.user_id == current_user.id)
         )
+        await db.execute(
+            update(FunnelOrder)
+            .where(
+                or_(
+                    FunnelOrder.user_id == current_user.id,
+                    FunnelOrder.customer_email == current_user.email,
+                )
+            )
+            .values(customer_email=None)
+        )
         current_user.email = f"deleted-{current_user.id}@anonymized.local"
-        current_user.full_name = "Deleted User"
+        current_user.full_name = None
+        current_user.hashed_password = "!deleted!"
+        current_user.last_login_at = None
+        current_user.totp_secret = None
+        current_user.totp_enabled = False
+        current_user.provider = None
+        current_user.provider_id = None
+        current_user.avatar_url = None
+        current_user.onboarding_completed_at = None
         current_user.is_active = False
-        method = "deleted"
-        note = "Account data removed; order history anonymized for ledger integrity"
+        method = "scrubbed"
+        note = "User data scrubbed; order history and audit trail preserved"
 
     await db.commit()
     return ErasureResponse(status="completed", user_id=current_user.id, method=method, note=note)
