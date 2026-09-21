@@ -24,9 +24,11 @@ from app.models.funnel import (
     FunnelRecommendation,
     LeadCapture,
     LeadMagnet,
+    ProductReview,
 )
 from app.models.organization import Organization
 from app.models.privacy import BreachNotification, PrivacyConsent
+from app.models.referral import ReferralAttribution, ReferralCode, ReferralConversion
 from app.models.user import User
 
 
@@ -98,6 +100,43 @@ async def test_data_export_returns_user_and_consents(async_client: AsyncClient, 
     )).scalars().all()
     assert len(audit) >= 1
     assert audit[0].contains_pii == 1
+
+
+@pytest.mark.asyncio
+async def test_data_export_is_tenant_scoped(async_client: AsyncClient, db_session: AsyncSession):
+    """DSAR export never returns same-email orders from another tenant."""
+    me = await async_client.get("/api/v1/auth/me")
+    assert me.status_code == 200, me.text
+    original_email = me.json()["email"]
+    user = (await db_session.execute(select(User).where(User.email == original_email))).scalar_one()
+    own_order = FunnelOrder(
+        organization_id=user.organization_id,
+        customer_email=original_email,
+        subtotal_amount=10,
+        total_amount=10,
+    )
+    other_org = Organization(
+        id=uuid4(), name=f"Export Other Org {uuid4()}",
+        slug=f"export-other-{uuid4()}", status="active",
+        created_at=datetime.now(UTC), updated_at=datetime.now(UTC),
+    )
+    other_order = FunnelOrder(
+        organization_id=other_org.id,
+        customer_email=original_email,
+        subtotal_amount=20,
+        total_amount=20,
+    )
+    db_session.add(own_order)
+    db_session.add(other_org)
+    await db_session.flush()
+    db_session.add(other_order)
+    await db_session.commit()
+
+    resp = await async_client.post("/api/v1/privacy/data-export")
+    assert resp.status_code == 200, resp.text
+    exported_ids = {row["id"] for row in resp.json()["data"]["orders"]}
+    assert str(own_order.id) in exported_ids
+    assert str(other_order.id) not in exported_ids
 
 
 @pytest.mark.asyncio
@@ -179,6 +218,8 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     order = FunnelOrder(
         id=uuid4(), organization_id=user.organization_id,
         contact_id=contact.id, user_id=user.id, checkout_session_id=linked_checkout.id,
+        stripe_session_id=f"stripe-order-{uuid4()}",
+        stripe_payment_intent_id=f"pi-{uuid4()}",
         customer_email=original_email, subtotal_amount=10, total_amount=10,
     )
     db_session.add(order)
@@ -209,6 +250,18 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
         recommendation_type="test", recommended_action="Test action",
         metadata_json={"email": original_email},
     )
+    review = ProductReview(
+        id=uuid4(), organization_id=user.organization_id, product_id=product.id,
+        order_id=order.id, contact_id=contact.id,
+        customer_name="Original Customer", customer_email=original_email, rating=5,
+    )
+    referral_code = ReferralCode(
+        id=uuid4(), organization_id=user.organization_id,
+        code_hash=uuid4().hex + uuid4().hex, source_type="captured_lead",
+        source_id=contact.id, issuer_user_id=user.id,
+        owner_identity_hash="identity-hash", audience="regular_user",
+        redirect_path="/store",
+    )
     other_org = Organization(
         id=uuid4(), name=f"Other Privacy Org {uuid4()}",
         slug=f"other-privacy-{uuid4()}", status="active",
@@ -232,9 +285,25 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     db_session.add_all([other_contact, other_magnet])
     await db_session.flush()
     db_session.add_all([
-        access, delivery_event, capture, conversion, recommendation,
+        access, delivery_event, capture, conversion, recommendation, review,
+        referral_code,
         other_capture,
     ])
+    await db_session.flush()
+    attribution = ReferralAttribution(
+        id=uuid4(), organization_id=user.organization_id,
+        referral_code_id=referral_code.id, session_id="privacy-referral-session",
+        identity_hash="referral-identity-hash",
+    )
+    referral_conversion = ReferralConversion(
+        id=uuid4(), organization_id=user.organization_id,
+        referral_code_id=referral_code.id, session_id="privacy-referral-session",
+        conversion_key="privacy-conversion-key", verified_order_id=order.id,
+        reward_type="regular_bonus", settlement_status="not_applicable",
+        gross_amount=0, commission_rate=0, commission_amount=0,
+        metadata_json={"email": original_email},
+    )
+    db_session.add_all([attribution, referral_conversion])
     await db_session.commit()
     checkout_id = checkout.id
     linked_checkout_id = linked_checkout.id
@@ -245,6 +314,10 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     contact_id = contact.id
     conversion_id = conversion.id
     recommendation_id = recommendation.id
+    review_id = review.id
+    referral_code_id = referral_code.id
+    attribution_id = attribution.id
+    referral_conversion_id = referral_conversion.id
     other_contact_id = other_contact.id
     other_capture_id = other_capture.id
     db_session.expire_all()
@@ -303,6 +376,8 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     assert order.contact_id is None
     assert order.user_id is None
     assert order.checkout_session_id is None
+    assert order.stripe_session_id is None
+    assert order.stripe_payment_intent_id is None
     assert order.customer_email is None
 
     access = await db_session.get(DeliveryAccess, access_id)
@@ -339,6 +414,27 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
 
     recommendation = await db_session.get(FunnelRecommendation, recommendation_id)
     assert recommendation.metadata_json is None
+
+    review = await db_session.get(ProductReview, review_id)
+    assert review.customer_name == f"Deleted User {review.id}"
+    assert review.customer_email == f"deleted-{review.id}@anonymized.local"
+    assert review.order_id is None
+    assert review.contact_id is None
+
+    referral_code = await db_session.get(ReferralCode, referral_code_id)
+    assert referral_code.issuer_user_id is None
+    assert referral_code.owner_identity_hash is None
+    assert referral_code.source_id != contact_id
+
+    attribution = await db_session.get(ReferralAttribution, attribution_id)
+    assert attribution.identity_hash is None
+    assert attribution.session_id == f"deleted-{attribution.id}"
+
+    referral_conversion = await db_session.get(ReferralConversion, referral_conversion_id)
+    assert referral_conversion.session_id == f"deleted-{referral_conversion.id}"
+    assert referral_conversion.conversion_key == f"deleted-{referral_conversion.id}"
+    assert referral_conversion.verified_order_id == order_id
+    assert referral_conversion.metadata_json is None
 
     other_contact = await db_session.get(Contact, other_contact_id)
     assert other_contact.email == original_email

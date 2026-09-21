@@ -33,7 +33,9 @@ from app.models.funnel import (
     FunnelOrder,
     FunnelRecommendation,
     LeadCapture,
+    ProductReview,
 )
+from app.models.referral import ReferralAttribution, ReferralCode, ReferralConversion
 from app.api.auth import get_current_user
 
 router = APIRouter()
@@ -175,12 +177,20 @@ async def data_export(
     """Return a machine-readable copy of the user's personal data (DSAR)."""
     orders = (
         await db.execute(
-            select(FunnelOrder).where(FunnelOrder.customer_email == current_user.email)
+            select(FunnelOrder).where(
+                FunnelOrder.organization_id == current_user.organization_id,
+                FunnelOrder.customer_email == current_user.email,
+            )
         )
     ).scalars().all()
 
     consents = (
-        await db.execute(select(PrivacyConsent).where(PrivacyConsent.user_id == current_user.id))
+        await db.execute(
+            select(PrivacyConsent).where(
+                PrivacyConsent.organization_id == current_user.organization_id,
+                PrivacyConsent.user_id == current_user.id,
+            )
+        )
     ).scalars().all()
 
     exported_at = datetime.now(UTC)
@@ -299,6 +309,9 @@ async def request_erasure(
         ).scalars().all()
         order_ids = {order.id for order in orders}
         contact_ids.update(order.contact_id for order in orders if order.contact_id)
+        subject_values = user_subject_values | {
+            str(value) for value in contact_ids | order_ids
+        }
 
         order_checkout_ids = {
             order.checkout_session_id for order in orders if order.checkout_session_id
@@ -306,6 +319,7 @@ async def request_erasure(
         order_stripe_ids = {
             order.stripe_session_id for order in orders if order.stripe_session_id
         }
+        subject_values |= {str(value) for value in order_checkout_ids}
         checkout_match = [
             FunnelCheckoutSession.user_id == current_user.id,
             func.lower(FunnelCheckoutSession.customer_email) == normalized_email,
@@ -322,10 +336,22 @@ async def request_erasure(
             await db.execute(
                 select(FunnelCheckoutSession).where(
                     FunnelCheckoutSession.organization_id == organization_id,
-                    or_(*checkout_match),
+                    or_(*checkout_match, FunnelCheckoutSession.metadata_json.is_not(None)),
                 )
             )
         ).scalars().all()
+        checkout_sessions = [
+            session
+            for session in checkout_sessions
+            if (
+                session.user_id == current_user.id
+                or (session.customer_email or "").casefold() == normalized_email
+                or session.contact_id in contact_ids
+                or session.id in order_checkout_ids
+                or session.stripe_session_id in order_stripe_ids
+                or _metadata_references_subject(session.metadata_json, subject_values)
+            )
+        ]
         checkout_ids = {session.id for session in checkout_sessions}
         checkout_ids.update(order_checkout_ids)
         contact_ids.update(session.contact_id for session in checkout_sessions if session.contact_id)
@@ -416,6 +442,7 @@ async def request_erasure(
             )
         ]
         access_ids = {access.id for access in delivery_accesses}
+        subject_values |= {str(value) for value in access_ids}
         for access in delivery_accesses:
             access.contact_id = None
             access.access_token_hash = None
@@ -425,6 +452,8 @@ async def request_erasure(
             order.user_id = None
             order.contact_id = None
             order.checkout_session_id = None
+            order.stripe_session_id = None
+            order.stripe_payment_intent_id = None
             order.customer_email = None
 
         delivery_events = (
@@ -437,10 +466,21 @@ async def request_erasure(
                         if access_ids
                         else False,
                         func.lower(DeliveryEmailEvent.customer_email) == normalized_email,
+                        DeliveryEmailEvent.metadata_json.is_not(None),
                     ),
                 )
             )
         ).scalars().all()
+        delivery_events = [
+            event
+            for event in delivery_events
+            if (
+                event.order_id in order_ids
+                or event.delivery_access_id in access_ids
+                or (event.customer_email or "").casefold() == normalized_email
+                or _metadata_references_subject(event.metadata_json, subject_values)
+            )
+        ]
         for event in delivery_events:
             event.customer_email = f"deleted-{event.id}@anonymized.local"
             event.delivery_access_id = None
@@ -468,6 +508,12 @@ async def request_erasure(
             capture.utm_medium = None
             capture.utm_campaign = None
             capture.metadata_json = None
+        capture_ids = {
+            capture.id
+            for capture in lead_captures
+            if capture.email == f"deleted-{capture.id}@anonymized.local"
+        }
+        subject_values |= {str(value) for value in capture_ids}
 
         conversion_events = (
             await db.execute(
@@ -485,6 +531,7 @@ async def request_erasure(
             )
             if not linked:
                 continue
+            event_session_id = event.session_id
             event.contact_id = None
             event.order_id = None
             event.session_id = None
@@ -507,6 +554,8 @@ async def request_erasure(
             event.content_id = None
             event.referral_code = None
             event.metadata_json = None
+            if event_session_id:
+                subject_values.add(event_session_id)
 
         recommendations = (
             await db.execute(
@@ -518,6 +567,98 @@ async def request_erasure(
         for recommendation in recommendations:
             if _metadata_references_subject(recommendation.metadata_json, subject_values):
                 recommendation.metadata_json = None
+
+        product_reviews = (
+            await db.execute(
+                select(ProductReview).where(
+                    ProductReview.organization_id == organization_id,
+                    or_(
+                        func.lower(ProductReview.customer_email) == normalized_email,
+                        ProductReview.order_id.in_(order_ids) if order_ids else False,
+                        ProductReview.contact_id.in_(contact_ids) if contact_ids else False,
+                    ),
+                )
+            )
+        ).scalars().all()
+        for review in product_reviews:
+            review.customer_name = f"Deleted User {review.id}"
+            review.customer_email = f"deleted-{review.id}@anonymized.local"
+            review.order_id = None
+            review.contact_id = None
+
+        referral_codes = (
+            await db.execute(
+                select(ReferralCode).where(ReferralCode.organization_id == organization_id)
+            )
+        ).scalars().all()
+        referral_attributions = (
+            await db.execute(
+                select(ReferralAttribution).where(
+                    ReferralAttribution.organization_id == organization_id
+                )
+            )
+        ).scalars().all()
+        referral_conversions = (
+            await db.execute(
+                select(ReferralConversion).where(
+                    ReferralConversion.organization_id == organization_id
+                )
+            )
+        ).scalars().all()
+        linked_code_ids = {
+            code.id
+            for code in referral_codes
+            if code.issuer_user_id == current_user.id
+            or code.source_id in contact_ids
+            or code.source_id in access_ids
+            or code.source_id in capture_ids
+        }
+        linked_attribution_ids = {
+            attribution.id
+            for attribution in referral_attributions
+            if attribution.referral_code_id in linked_code_ids
+            or attribution.session_id in subject_values
+        }
+        linked_code_ids |= {
+            attribution.referral_code_id
+            for attribution in referral_attributions
+            if attribution.id in linked_attribution_ids
+        }
+        linked_conversion_ids = {
+            conversion.id
+            for conversion in referral_conversions
+            if conversion.referral_code_id in linked_code_ids
+            or conversion.verified_order_id in order_ids
+            or conversion.session_id in subject_values
+            or _metadata_references_subject(conversion.metadata_json, subject_values)
+        }
+        linked_code_ids |= {
+            conversion.referral_code_id
+            for conversion in referral_conversions
+            if conversion.id in linked_conversion_ids
+        }
+        for code in referral_codes:
+            if code.id not in linked_code_ids:
+                continue
+            code.issuer_user_id = None
+            code.owner_identity_hash = None
+            if (
+                code.source_id in contact_ids
+                or code.source_id in access_ids
+                or code.source_id in capture_ids
+            ):
+                code.source_id = uuid4()
+        for attribution in referral_attributions:
+            if attribution.id not in linked_attribution_ids and attribution.referral_code_id not in linked_code_ids:
+                continue
+            attribution.identity_hash = None
+            attribution.session_id = f"deleted-{attribution.id}"
+        for conversion in referral_conversions:
+            if conversion.id not in linked_conversion_ids and conversion.referral_code_id not in linked_code_ids:
+                continue
+            conversion.session_id = f"deleted-{conversion.id}"
+            conversion.conversion_key = f"deleted-{conversion.id}"
+            conversion.metadata_json = None
 
         await db.execute(
             delete(PrivacyConsent)
