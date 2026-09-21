@@ -3,13 +3,15 @@ set -euo pipefail
 
 COMPOSE_FILE="${COMPOSE_FILE:-config/docker-compose.production.yml}"
 APP_URL="${APP_URL:?APP_URL is required}"
-BACKEND_DIGEST="${BACKEND_DIGEST:?BACKEND_DIGEST is required}"
-FRONTEND_DIGEST="${FRONTEND_DIGEST:?FRONTEND_DIGEST is required}"
-COMMIT_SHA="${COMMIT_SHA:-unknown}"
+COMMIT_SHA="${COMMIT_SHA:?COMMIT_SHA is required for source-build deployment}"
 DEPLOY_OPERATOR="${DEPLOY_OPERATOR:-unknown}"
 HISTORY_FILE="${DEPLOY_HISTORY_FILE:-deploy/deploy_history.jsonl}"
 ENV_FILE="${ENV_FILE:-.env.production}"
 
+# This compose file builds images locally; these fields retain deploy-history
+# compatibility without claiming that a registry image digest was deployed.
+BACKEND_DIGEST="source-build:${COMMIT_SHA}"
+FRONTEND_DIGEST="source-build:${COMMIT_SHA}"
 export BACKEND_DIGEST FRONTEND_DIGEST HISTORY_FILE COMMIT_SHA DEPLOY_OPERATOR ENV_FILE
 
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -26,23 +28,18 @@ python3 backend/scripts/production_env_audit.py \
   --compose-file "$COMPOSE_FILE" \
   --frontend-env-file frontend/.env.production
 
-compose pull backend frontend worker-critical worker-default worker-background beat
+compose config --quiet
+compose up -d --wait postgres redis
 
-compose run --rm backend python scripts/production_preflight.py
-compose run --rm backend python scripts/alembic_safe.py upgrade head
+compose run --rm --no-deps backend python scripts/alembic_safe.py upgrade head
 MIGRATION_VERSION="$(
-  compose run --rm backend python scripts/current_migration.py 2>/dev/null || true
+  compose run --rm --no-deps backend python scripts/current_migration.py 2>/dev/null || true
 )"
 export MIGRATION_VERSION
 
-compose up -d --no-deps backend
-sleep 10
+compose build --pull backend frontend celery_worker celery_beat
+compose up -d --remove-orphans --wait
 compose exec -T backend curl -sf http://localhost:8000/health >/dev/null
-
-compose up -d --no-deps worker-critical
-sleep 5
-compose up -d --no-deps worker-default worker-background beat
-compose up -d --no-deps frontend
 
 python3 deploy/scripts/smoke_test.py --target "$APP_URL"
 
@@ -75,4 +72,4 @@ with history.open("a", encoding="utf-8") as handle:
     handle.write(json.dumps(record, sort_keys=True) + "\n")
 PY
 
-echo "Deploy complete: backend=${BACKEND_DIGEST} frontend=${FRONTEND_DIGEST}"
+echo "Deploy complete: source-build=${COMMIT_SHA}"

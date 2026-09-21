@@ -37,18 +37,26 @@ index = int(os.environ["ROLLBACK_INDEX"])
 if index >= len(healthy):
     raise SystemExit(f"rollback index {index} unavailable; healthy releases retained={len(healthy)}")
 target = healthy[-1 - index]
-print(f"export BACKEND_DIGEST={target['backend_digest']!r}")
-print(f"export FRONTEND_DIGEST={target['frontend_digest']!r}")
-print(f"export ROLLBACK_COMMIT={target.get('commit_sha', 'unknown')!r}")
+commit = str(target.get("commit_sha", "")).strip()
+if not commit or commit == "unknown":
+    raise SystemExit("rollback target has no source-build commit")
+print(f"export ROLLBACK_COMMIT={commit!r}")
 PY
 )"
 eval "$rollback_env"
 
-compose pull backend frontend worker-critical worker-default worker-background beat
-compose up -d --no-deps backend
-sleep 10
+CURRENT_COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"
+TARGET_COMMIT="$(git rev-parse "${ROLLBACK_COMMIT}^{commit}" 2>/dev/null || true)"
+if [[ -z "$CURRENT_COMMIT" || "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]]; then
+  echo "Rollback source mismatch: checkout $ROLLBACK_COMMIT before running rollback." >&2
+  exit 1
+fi
+
+compose config --quiet
+compose up -d --wait postgres redis
+compose build --pull backend frontend celery_worker celery_beat
+compose up -d --remove-orphans --wait
 compose exec -T backend curl -sf http://localhost:8000/health >/dev/null
-compose up -d --no-deps worker-critical worker-default worker-background beat frontend
 python3 deploy/scripts/smoke_test.py --target "$APP_URL"
 
-echo "Rollback complete: commit=${ROLLBACK_COMMIT} backend=${BACKEND_DIGEST} frontend=${FRONTEND_DIGEST}"
+echo "Rollback complete: source-build=${ROLLBACK_COMMIT}"
