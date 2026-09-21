@@ -62,24 +62,6 @@ https://{$APP_HOST:app.example.com} {
         }
     }
 
-    handle /n8n/* {
-        reverse_proxy n8n:5678 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up Host {host}
-        }
-    }
-
-    handle /webhook/* {
-        reverse_proxy n8n:5678 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up Host {host}
-        }
-    }
-
     # Stripe webhooks — bypass auth, go directly to backend
     handle /webhooks/stripe {
         reverse_proxy backend:8000 {
@@ -90,11 +72,9 @@ https://{$APP_HOST:app.example.com} {
         }
     }
 
-    # Serve frontend static files from shared volume
+    # Frontend fallback — proxy to nginx container on internal port 8080
     handle {
-        root * /srv/frontend
-        file_server
-        try_files {path} {path}/ /index.html
+        reverse_proxy frontend:8080
     }
 
     header {
