@@ -16,7 +16,9 @@ from app.middleware.security import _get_security_headers
 async def test_protected_routes_require_authentication(public_async_client):
     response = await public_async_client.get("/api/v1/jobs")
     assert response.status_code == 401
-    assert response.json()["detail"] == "Authentication required"
+    error = response.json()["error"]
+    assert error["code"] == "AUTH_REQUIRED"
+    assert error["message"] == "Authentication required"
 
 
 @pytest.mark.asyncio
@@ -32,7 +34,9 @@ async def test_protected_routes_reject_expired_access_tokens(public_async_client
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid or expired token"
+    error = response.json()["error"]
+    assert error["code"] == "AUTH_INVALID"
+    assert error["message"] == "Authentication required"
 
 
 @pytest.mark.asyncio
@@ -59,7 +63,9 @@ async def test_protected_routes_reject_forged_access_tokens(public_async_client)
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid or expired token"
+    error = response.json()["error"]
+    assert error["code"] == "AUTH_INVALID"
+    assert error["message"] == "Authentication required"
 
 
 @pytest.mark.asyncio
@@ -100,7 +106,9 @@ async def test_csrf_is_enforced_for_state_changing_requests(async_client):
             async_client.headers["X-CSRF-Token"] = original_csrf
 
     assert response.status_code == 403
-    assert response.json()["detail"] == "CSRF token missing"
+    error = response.json()["error"]
+    assert error["code"] == "PERMISSION_DENIED"
+    assert error["message"] == "Not authorized to access this resource"
 
 
 @pytest.mark.asyncio

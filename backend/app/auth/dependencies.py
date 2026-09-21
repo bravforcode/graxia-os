@@ -65,14 +65,13 @@ def _token_organization_id(request: Request) -> UUID | None:
 
 
 def _role_permissions(request: Request, env: str, actor_type: str) -> list[str]:
-    if env in ("local", "development", "test"):
-        authenticated_role = str(getattr(request.state, "authenticated_role", "") or "").strip().lower()
-        if not authenticated_role:
-            payload = getattr(request.state, "auth_payload", None)
-            if isinstance(payload, dict):
-                authenticated_role = str(payload.get("role") or "").strip().lower()
-        if authenticated_role:
-            return permissions_for_role(authenticated_role)
+    authenticated_role = str(getattr(request.state, "authenticated_role", "") or "").strip().lower()
+    if not authenticated_role:
+        payload = getattr(request.state, "auth_payload", None)
+        if isinstance(payload, dict):
+            authenticated_role = str(payload.get("role") or "").strip().lower()
+    if authenticated_role:
+        return permissions_for_role(authenticated_role)
 
     if env in ("local", "development", "test"):
         explicit = _csv_header_values(request.headers.get("X-Graxia-Permissions"))
