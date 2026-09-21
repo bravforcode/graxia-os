@@ -41,6 +41,7 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/auth/social-login"),
     ("POST", "/api/v1/auth/refresh"),
     ("POST", "/api/v1/auth/logout"),
+    ("GET", "/api/v1/billing/plans"),
     ("GET", "/health"),
     ("GET", "/"),
     ("GET", "/favicon.ico"),
