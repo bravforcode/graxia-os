@@ -7,7 +7,7 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -149,7 +149,7 @@ async def get_workflow(
 @router.post("/{workflow_id}/execute", response_model=ExecutionOut)
 async def execute_workflow(
     workflow_id: UUID,
-    input_data: dict[str, Any] = Field(default_factory=dict),
+    input_data: dict[str, Any] = Body(default={}),
     background_tasks: BackgroundTasks = None,
     org: Organization = Depends(get_org),
     service: WorkflowService = Depends(get_workflow_service),
