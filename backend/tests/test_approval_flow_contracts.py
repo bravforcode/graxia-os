@@ -57,6 +57,7 @@ async def test_request_approval_persists_current_model_and_sends_notification(
     assert approval is not None
     assert approval.title == "Send proposal to client"
     assert approval.action_type == "email_send"
+    assert approval.organization_id == LOCAL_DEV_ORGANIZATION_ID
     assert approval.status == "pending"
     assert approval.policy_class == "approval_required"
     assert approval.details["priority"] == "high"

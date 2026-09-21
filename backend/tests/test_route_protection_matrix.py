@@ -74,3 +74,12 @@ async def test_mcp_http_route_blocks_org_mismatch(async_client, default_org):
         headers={"X-Graxia-Org-Id": str(default_org.id)},
     )
     assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_unmatched_paths_keep_api_fail_closed(public_async_client):
+    api_resp = await public_async_client.get("/api/v1/definitely-not-a-route")
+    plain_resp = await public_async_client.get("/definitely-not-a-route")
+
+    assert api_resp.status_code == 403
+    assert plain_resp.status_code == 404

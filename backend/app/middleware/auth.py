@@ -235,6 +235,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if route_path is None:
             if is_blocked_surface(path) and settings.STRICT_BOOTSTRAP:
                 return JSONResponse({"detail": "Not Found"}, status_code=404)
+            # Unmatched paths are never dispatched either way. Keep the API
+            # surface fail-closed (403 hides which /api routes exist); plain
+            # non-API paths have nothing to protect, so answer a normal 404.
+            if not path.startswith("/api/"):
+                return JSONResponse({"detail": "Not Found"}, status_code=404)
             return JSONResponse({"detail": "Forbidden"}, status_code=403)
 
         required_level = classify_route(request.method, route_path)
