@@ -285,7 +285,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request.state.internal_token_authenticated = True
                 return await call_next(request)
 
-            return JSONResponse({"detail": "Unauthorized — HMAC signature required"}, status_code=401)
+            if not secret:
+                configured_token = (
+                    getattr(settings, "ALERTMANAGER_WEBHOOK_TOKEN", "") or ""
+                ).strip()
+                provided_token = extract_bearer_token(
+                    request.headers.get("Authorization")
+                )
+                if configured_token and provided_token and hmac.compare_digest(
+                    configured_token, provided_token
+                ):
+                    request.state.internal_token_authenticated = True
+                    return await call_next(request)
+
+            return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
         if required_level == AuthLevel.PUBLIC:
             return await call_next(request)
