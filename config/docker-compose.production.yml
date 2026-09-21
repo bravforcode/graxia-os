@@ -87,6 +87,9 @@ services:
   # Caddy Reverse Proxy
   caddy:
     image: caddy:2-alpine
+    environment:
+      CADDY_EMAIL: ${CADDY_EMAIL:?CADDY_EMAIL is required}
+      APP_HOST: ${APP_HOST:?APP_HOST is required}
     ports:
       - "80:80"
       - "443:443"

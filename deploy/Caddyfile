@@ -1,5 +1,5 @@
 {
-    email {$CADDY_EMAIL:admin@example.com}
+    email {$CADDY_EMAIL}
     admin off
 
     servers {
@@ -7,11 +7,11 @@
     }
 }
 
-http://{$APP_HOST:app.example.com} {
+http://{$APP_HOST} {
     redir https://{host}{uri} permanent
 }
 
-https://{$APP_HOST:app.example.com} {
+https://{$APP_HOST} {
     tls {
         protocols tls1.2 tls1.3
     }

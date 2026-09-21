@@ -85,6 +85,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
 
+    # Staging is defined in render.yaml, but this SSH workflow has no
+    # repository convention for a Render service ID or deploy credential.
+    # Keep staging out of this workflow until those target inputs exist.
+
     steps:
       - name: Download image tag
         uses: actions/download-artifact@v4
@@ -98,12 +102,17 @@ jobs:
       - name: Validate deployment inputs
         env:
           PROD_PATH: ${{ secrets.PROD_PATH }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${PROD_PATH:-}" ]; then
-            echo "PROD_PATH secret is required for production deploy."
-            exit 1
-          fi
+          for name in PROD_PATH PROD_HOST PROD_USER PROD_SSH_KEY; do
+            if [ -z "${!name:-}" ]; then
+              echo "$name secret is required for production deploy."
+              exit 1
+            fi
+          done
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -126,6 +135,22 @@ jobs:
             cd "$PROD_PATH"
             git fetch --prune origin main
             git checkout --detach "${{ github.sha }}"
+
+            require_env_key() {
+              local name="$1"
+              if ! grep -Eq "^${name}=[^[:space:]]" .env.production; then
+                echo "$name must be set in .env.production."
+                exit 1
+              fi
+            }
+
+            require_env_key CADDY_EMAIL
+            require_env_key APP_HOST
+
+            python3 backend/scripts/production_env_audit.py \
+              --env-file .env.production \
+              --compose-file config/docker-compose.production.yml \
+              --frontend-env-file frontend/.env.production
 
             COMPOSE="docker compose -f config/docker-compose.production.yml --env-file .env.production"
 

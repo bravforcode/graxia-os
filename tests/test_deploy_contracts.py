@@ -23,3 +23,31 @@ def test_source_deploy_builds_images_before_migration_and_startup():
 
     assert script_build < script_migrate < script_start
     assert workflow_checkout < workflow_build < workflow_migrate < workflow_start
+
+
+def test_production_workflow_validates_inputs_and_runs_env_audit_before_remote_compose():
+    repo_root = Path(__file__).resolve().parents[1]
+    workflow = (repo_root / ".github" / "workflows" / "deploy.yml").read_text(encoding="utf-8")
+
+    for secret_name in ("PROD_PATH", "PROD_HOST", "PROD_USER", "PROD_SSH_KEY"):
+        assert secret_name in workflow
+
+    audit = workflow.index("python3 backend/scripts/production_env_audit.py")
+    compose = workflow.index('COMPOSE="docker compose -f config/docker-compose.production.yml')
+    assert audit < compose
+    assert "require_env_key CADDY_EMAIL" in workflow
+    assert "require_env_key APP_HOST" in workflow
+
+
+def test_production_caddy_receives_required_runtime_values_without_defaults():
+    repo_root = Path(__file__).resolve().parents[1]
+    compose = (repo_root / "config" / "docker-compose.production.yml").read_text(encoding="utf-8")
+    caddyfile = (repo_root / "deploy" / "Caddyfile").read_text(encoding="utf-8")
+
+    assert "CADDY_EMAIL: ${CADDY_EMAIL:?CADDY_EMAIL is required}" in compose
+    assert "APP_HOST: ${APP_HOST:?APP_HOST is required}" in compose
+    assert "email {$CADDY_EMAIL}" in caddyfile
+    assert "http://{$APP_HOST}" in caddyfile
+    assert "https://{$APP_HOST}" in caddyfile
+    assert ":admin@example.com" not in caddyfile
+    assert ":app.example.com" not in caddyfile
