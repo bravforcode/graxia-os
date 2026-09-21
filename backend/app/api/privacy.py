@@ -17,18 +17,36 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.core.compliance_audit import AuditEventType, ComplianceAuditLogger
+from app.models.contact import Contact
 from app.models.privacy import BreachNotification, PrivacyConsent
 from app.models.user import User
-from app.models.funnel import FunnelOrder
+from app.models.funnel import (
+    ConversionEvent,
+    DeliveryAccess,
+    DeliveryEmailEvent,
+    FunnelCheckoutSession,
+    FunnelOrder,
+    FunnelRecommendation,
+    LeadCapture,
+)
 from app.api.auth import get_current_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _metadata_references_subject(metadata: object, subject_values: set[str]) -> bool:
+    """Match only explicit scalar subject references in JSON metadata."""
+    if isinstance(metadata, dict):
+        return any(_metadata_references_subject(value, subject_values) for value in metadata.values())
+    if isinstance(metadata, (list, tuple)):
+        return any(_metadata_references_subject(value, subject_values) for value in metadata)
+    return isinstance(metadata, str) and metadata in subject_values
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────
@@ -250,19 +268,220 @@ async def request_erasure(
         # Full erasure: retain the user row for FK/audit integrity, but scrub
         # every identifying, credential, MFA, and provider field. Orders and
         # the audit trail remain preserved by policy.
+        original_email = current_user.email
+        organization_id = current_user.organization_id
+        user_subject_values = {str(current_user.id), original_email}
+
+        contacts = (
+            await db.execute(
+                select(Contact).where(
+                    Contact.organization_id == organization_id,
+                    Contact.email == original_email,
+                )
+            )
+        ).scalars().all()
+        contact_ids = {contact.id for contact in contacts}
+
+        orders = (
+            await db.execute(
+                select(FunnelOrder).where(
+                    FunnelOrder.organization_id == organization_id,
+                    or_(
+                        FunnelOrder.user_id == current_user.id,
+                        FunnelOrder.customer_email == original_email,
+                    ),
+                )
+            )
+        ).scalars().all()
+        order_ids = {order.id for order in orders}
+        contact_ids.update(order.contact_id for order in orders if order.contact_id)
+
+        checkout_sessions = (
+            await db.execute(
+                select(FunnelCheckoutSession).where(
+                    FunnelCheckoutSession.organization_id == organization_id,
+                    or_(
+                        FunnelCheckoutSession.user_id == current_user.id,
+                        FunnelCheckoutSession.customer_email == original_email,
+                    ),
+                )
+            )
+        ).scalars().all()
+        checkout_ids = {session.id for session in checkout_sessions}
+        contact_ids.update(session.contact_id for session in checkout_sessions if session.contact_id)
+
+        if contact_ids:
+            contacts.extend(
+                (
+                    await db.execute(
+                        select(Contact).where(
+                            Contact.organization_id == organization_id,
+                            Contact.id.in_(contact_ids),
+                        )
+                    )
+                ).scalars().all()
+            )
+
+        for contact in {contact.id: contact for contact in contacts}.values():
+            contact.name = f"Deleted Contact {contact.id}"
+            contact.role = None
+            contact.company = None
+            contact.contact_type = None
+            contact.linkedin_url = None
+            contact.email = None
+            contact.telegram_handle = None
+            contact.github_handle = None
+            contact.other_channels = None
+            contact.marketing_consent = False
+            contact.marketing_consent_at = None
+            contact.consent_version = None
+            contact.marketing_unsubscribed = False
+            contact.marketing_unsubscribed_at = None
+            contact.followup_reason = None
+            contact.notes = None
+            contact.conversation_summary = None
+            contact.met_at = None
+            contact.referred_by = None
+            contact.status = "Deleted"
+            contact.is_deleted = True
+            contact.deleted_at = datetime.now(UTC)
+
+        subject_values = user_subject_values | {str(value) for value in contact_ids}
+        subject_values |= {str(value) for value in order_ids | checkout_ids}
+
+        for session in checkout_sessions:
+            if _metadata_references_subject(session.metadata_json, subject_values):
+                checkout_ids.add(session.id)
+            session.contact_id = None
+            session.user_id = None
+            session.customer_email = None
+            session.stripe_session_id = None
+            session.metadata_json = None
+
+        if checkout_ids - {session.id for session in checkout_sessions}:
+            extra_sessions = (
+                await db.execute(
+                    select(FunnelCheckoutSession).where(
+                        FunnelCheckoutSession.organization_id == organization_id,
+                        FunnelCheckoutSession.id.in_(checkout_ids),
+                    )
+                )
+            ).scalars().all()
+            for session in extra_sessions:
+                session.contact_id = None
+                session.user_id = None
+                session.customer_email = None
+                session.stripe_session_id = None
+                session.metadata_json = None
+
+        delivery_accesses = (
+            await db.execute(
+                select(DeliveryAccess).where(
+                    DeliveryAccess.organization_id == organization_id,
+                    or_(
+                        DeliveryAccess.order_id.in_(order_ids) if order_ids else False,
+                        DeliveryAccess.contact_id.in_(contact_ids) if contact_ids else False,
+                    ),
+                )
+            )
+        ).scalars().all()
+        for access in delivery_accesses:
+            access.contact_id = None
+            access.access_token_hash = None
+            access.metadata_json = None
+
+        for order in orders:
+            order.user_id = None
+            order.contact_id = None
+            order.checkout_session_id = None
+            order.customer_email = None
+
+        delivery_events = (
+            await db.execute(
+                select(DeliveryEmailEvent).where(
+                    DeliveryEmailEvent.organization_id == organization_id,
+                    or_(
+                        DeliveryEmailEvent.order_id.in_(order_ids) if order_ids else False,
+                        DeliveryEmailEvent.customer_email == original_email,
+                    ),
+                )
+            )
+        ).scalars().all()
+        for event in delivery_events:
+            event.customer_email = f"deleted-{event.id}@anonymized.local"
+            event.delivery_access_id = None
+            event.idempotency_key = f"deleted-{event.id}"
+            event.metadata_json = None
+
+        lead_captures = (
+            await db.execute(
+                select(LeadCapture).where(
+                    LeadCapture.organization_id == organization_id,
+                    LeadCapture.email == original_email,
+                )
+            )
+        ).scalars().all()
+        for capture in lead_captures:
+            capture.email = f"deleted-{capture.id}@anonymized.local"
+            capture.source = None
+            capture.utm_source = None
+            capture.utm_medium = None
+            capture.utm_campaign = None
+            capture.metadata_json = None
+
+        conversion_events = (
+            await db.execute(
+                select(ConversionEvent).where(
+                    ConversionEvent.organization_id == organization_id,
+                )
+            )
+        ).scalars().all()
+        for event in conversion_events:
+            linked = (
+                event.contact_id in contact_ids
+                or event.order_id in order_ids
+                or event.session_id in subject_values
+                or _metadata_references_subject(event.metadata_json, subject_values)
+            )
+            if not linked:
+                continue
+            event.contact_id = None
+            event.order_id = None
+            event.session_id = None
+            event.idempotency_key = None
+            event.source = None
+            event.medium = None
+            event.campaign = None
+            event.referrer = None
+            event.first_touch_source = None
+            event.first_touch_medium = None
+            event.first_touch_campaign = None
+            event.first_touch_referrer = None
+            event.first_touch_path = None
+            event.last_touch_source = None
+            event.last_touch_medium = None
+            event.last_touch_campaign = None
+            event.last_touch_referrer = None
+            event.last_touch_path = None
+            event.landing_path = None
+            event.content_id = None
+            event.referral_code = None
+            event.metadata_json = None
+
+        recommendations = (
+            await db.execute(
+                select(FunnelRecommendation).where(
+                    FunnelRecommendation.organization_id == organization_id,
+                )
+            )
+        ).scalars().all()
+        for recommendation in recommendations:
+            if _metadata_references_subject(recommendation.metadata_json, subject_values):
+                recommendation.metadata_json = None
+
         await db.execute(
             delete(PrivacyConsent)
             .where(PrivacyConsent.user_id == current_user.id)
-        )
-        await db.execute(
-            update(FunnelOrder)
-            .where(
-                or_(
-                    FunnelOrder.user_id == current_user.id,
-                    FunnelOrder.customer_email == current_user.email,
-                )
-            )
-            .values(customer_email=None)
         )
         current_user.email = f"deleted-{current_user.id}@anonymized.local"
         current_user.full_name = None

@@ -13,6 +13,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.compliance_audit import ComplianceAuditLog
+from app.models.contact import Contact
+from app.models.funnel import (
+    ConversionEvent,
+    DeliveryAccess,
+    DeliveryEmailEvent,
+    DigitalProduct,
+    FunnelCheckoutSession,
+    FunnelOrder,
+    FunnelRecommendation,
+    LeadCapture,
+    LeadMagnet,
+)
 from app.models.privacy import BreachNotification, PrivacyConsent
 from app.models.user import User
 
@@ -128,6 +140,78 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     me = await async_client.get("/api/v1/auth/me")
     assert me.status_code == 200, me.text
     original_email = me.json()["email"]
+    user = (await db_session.execute(
+        select(User).where(User.email == original_email)
+    )).scalar_one()
+    product = DigitalProduct(
+        id=uuid4(), organization_id=user.organization_id,
+        name="Privacy Test Product", slug=f"privacy-{uuid4()}",
+        price_amount=10, product_type="ebook",
+    )
+    contact = Contact(
+        id=uuid4(), organization_id=user.organization_id,
+        name="Original Contact", email=original_email,
+        company="PII Company", notes="PII notes", marketing_consent=True,
+        marketing_consent_at=datetime.now(UTC), consent_version="v1",
+    )
+    lead_magnet = LeadMagnet(
+        id=uuid4(), organization_id=user.organization_id,
+        name="Privacy Test Magnet", slug=f"privacy-magnet-{uuid4()}",
+    )
+    db_session.add_all([product, contact, lead_magnet])
+    await db_session.flush()
+    checkout = FunnelCheckoutSession(
+        id=uuid4(), organization_id=user.organization_id,
+        product_id=product.id, contact_id=contact.id, user_id=user.id,
+        stripe_session_id=f"stripe-{uuid4()}", customer_email=original_email,
+        amount=10, metadata_json={"email": original_email},
+    )
+    db_session.add(checkout)
+    await db_session.flush()
+    order = FunnelOrder(
+        id=uuid4(), organization_id=user.organization_id,
+        contact_id=contact.id, user_id=user.id, checkout_session_id=checkout.id,
+        customer_email=original_email, subtotal_amount=10, total_amount=10,
+    )
+    db_session.add(order)
+    await db_session.flush()
+    access = DeliveryAccess(
+        id=uuid4(), organization_id=user.organization_id,
+        order_id=order.id, product_id=product.id, contact_id=contact.id,
+        access_token_hash="secret-token-hash", metadata_json={"email": original_email},
+    )
+    delivery_event = DeliveryEmailEvent(
+        id=uuid4(), organization_id=user.organization_id, order_id=order.id,
+        delivery_access_id=access.id, customer_email=original_email,
+        idempotency_key=f"delivery-{uuid4()}", metadata_json={"email": original_email},
+    )
+    capture = LeadCapture(
+        id=uuid4(), organization_id=user.organization_id,
+        lead_magnet_id=lead_magnet.id, email=original_email,
+        metadata_json={"email": original_email},
+    )
+    conversion = ConversionEvent(
+        id=uuid4(), organization_id=user.organization_id, event_type="purchase",
+        contact_id=contact.id, order_id=order.id, session_id=str(checkout.id),
+        idempotency_key=f"conversion-{uuid4()}", source="email",
+        metadata_json={"email": original_email},
+    )
+    recommendation = FunnelRecommendation(
+        id=uuid4(), organization_id=user.organization_id, product_id=product.id,
+        recommendation_type="test", recommended_action="Test action",
+        metadata_json={"email": original_email},
+    )
+    db_session.add_all([access, delivery_event, capture, conversion, recommendation])
+    await db_session.commit()
+    checkout_id = checkout.id
+    order_id = order.id
+    access_id = access.id
+    delivery_event_id = delivery_event.id
+    capture_id = capture.id
+    contact_id = contact.id
+    conversion_id = conversion.id
+    recommendation_id = recommendation.id
+    db_session.expire_all()
 
     consent = await async_client.post(
         "/api/v1/privacy/consents",
@@ -163,6 +247,54 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     assert user.avatar_url is None
     assert user.onboarding_completed_at is None
     assert user.is_active is False
+
+    checkout = await db_session.get(FunnelCheckoutSession, checkout_id)
+    assert checkout.contact_id is None
+    assert checkout.user_id is None
+    assert checkout.customer_email is None
+    assert checkout.stripe_session_id is None
+    assert checkout.metadata_json is None
+
+    order = await db_session.get(FunnelOrder, order_id)
+    assert order.contact_id is None
+    assert order.user_id is None
+    assert order.checkout_session_id is None
+    assert order.customer_email is None
+
+    access = await db_session.get(DeliveryAccess, access_id)
+    assert access.contact_id is None
+    assert access.access_token_hash is None
+    assert access.metadata_json is None
+
+    delivery_event = await db_session.get(DeliveryEmailEvent, delivery_event_id)
+    assert delivery_event.customer_email == f"deleted-{delivery_event.id}@anonymized.local"
+    assert delivery_event.delivery_access_id is None
+    assert delivery_event.metadata_json is None
+
+    capture = await db_session.get(LeadCapture, capture_id)
+    assert capture.email == f"deleted-{capture.id}@anonymized.local"
+    assert capture.metadata_json is None
+
+    contact = await db_session.get(Contact, contact_id)
+    assert contact.name == f"Deleted Contact {contact.id}"
+    assert contact.email is None
+    assert contact.company is None
+    assert contact.notes is None
+    assert contact.marketing_consent is False
+    assert contact.marketing_consent_at is None
+    assert contact.consent_version is None
+    assert contact.is_deleted is True
+
+    conversion = await db_session.get(ConversionEvent, conversion_id)
+    assert conversion.contact_id is None
+    assert conversion.order_id is None
+    assert conversion.session_id is None
+    assert conversion.idempotency_key is None
+    assert conversion.source is None
+    assert conversion.metadata_json is None
+
+    recommendation = await db_session.get(FunnelRecommendation, recommendation_id)
+    assert recommendation.metadata_json is None
 
 
 @pytest.mark.asyncio
