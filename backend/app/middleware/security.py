@@ -213,8 +213,9 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return build_error_response(
                 request,
                 code="PERMISSION_DENIED",
-                message="CSRF token missing",
+                message="Not authorized to access this resource",
                 status_code=403,
+                legacy_detail="CSRF token missing",
             )
 
         # SECURITY: Use hmac.compare_digest for constant-time string comparison
@@ -240,8 +241,9 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return build_error_response(
                 request,
                 code="PERMISSION_DENIED",
-                message="CSRF token invalid",
+                message="Not authorized to access this resource",
                 status_code=403,
+                legacy_detail="CSRF token invalid",
             )
 
         if not validate_csrf_token_signature(cookie_token, request.state.session_id):
@@ -265,8 +267,9 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return build_error_response(
                 request,
                 code="PERMISSION_DENIED",
-                message="CSRF token forged",
+                message="Not authorized to access this resource",
                 status_code=403,
+                legacy_detail="CSRF token forged",
             )
 
         return await call_next(request)
