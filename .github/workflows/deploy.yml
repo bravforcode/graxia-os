@@ -82,6 +82,7 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
 
@@ -115,7 +116,7 @@ jobs:
           done
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
         env:
           PROD_PATH: ${{ secrets.PROD_PATH }}
         with:

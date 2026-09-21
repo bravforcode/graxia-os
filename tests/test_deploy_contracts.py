@@ -39,6 +39,22 @@ def test_production_workflow_validates_inputs_and_runs_env_audit_before_remote_c
     assert "require_env_key APP_HOST" in workflow
 
 
+def test_production_deploy_is_main_ref_gated_and_ssh_action_is_immutable():
+    repo_root = Path(__file__).resolve().parents[1]
+    workflow = (repo_root / ".github" / "workflows" / "deploy.yml").read_text(encoding="utf-8")
+
+    deploy_job = workflow.index("\n  deploy:\n")
+    deploy_guard = workflow.index("if: github.ref == 'refs/heads/main'", deploy_job)
+    deploy_steps = workflow.index("\n    steps:\n", deploy_job)
+
+    assert deploy_guard < deploy_steps
+    assert (
+        "uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2"
+        in workflow
+    )
+    assert "uses: appleboy/ssh-action@v1" not in workflow
+
+
 def test_production_caddy_receives_required_runtime_values_without_defaults():
     repo_root = Path(__file__).resolve().parents[1]
     compose = (repo_root / "config" / "docker-compose.production.yml").read_text(encoding="utf-8")
