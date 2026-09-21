@@ -14,6 +14,7 @@ jobs:
   # ─── Build Images ──────────────────────────────────────────────────────────
   build:
     name: Build & Push Docker Images
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,17 +22,17 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
 
       - name: Generate Image Tag
         id: meta
@@ -41,7 +42,7 @@ jobs:
           echo "tag=$SHORT_TAG" >> $GITHUB_OUTPUT
 
       - name: Build & Push Backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
           context: ./backend
           file: ./backend/Dockerfile
@@ -53,7 +54,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=backend
 
       - name: Build & Push Frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
           context: ./frontend
           file: ./frontend/Dockerfile.prod
@@ -73,7 +74,7 @@ jobs:
         run: echo "${{ steps.meta.outputs.tag }}" > image_tag.txt
 
       - name: Upload image tag artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: image-tag
           path: image_tag.txt
@@ -92,7 +93,7 @@ jobs:
 
     steps:
       - name: Download image tag
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: image-tag
 

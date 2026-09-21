@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 
@@ -53,6 +54,36 @@ def test_production_deploy_is_main_ref_gated_and_ssh_action_is_immutable():
         in workflow
     )
     assert "uses: appleboy/ssh-action@v1" not in workflow
+
+
+def test_production_build_and_latest_publication_are_main_ref_gated_and_pinned():
+    repo_root = Path(__file__).resolve().parents[1]
+    workflow = (repo_root / ".github" / "workflows" / "deploy.yml").read_text(encoding="utf-8")
+
+    build_job = workflow.index("\n  build:\n")
+    build_guard = workflow.index("if: github.ref == 'refs/heads/main'", build_job)
+    build_steps = workflow.index("\n    steps:\n", build_job)
+    deploy_job = workflow.index("\n  # ─── Deploy", build_job)
+    build_body = workflow[build_job:deploy_job]
+
+    assert build_guard < build_steps
+    assert "${{ env.BACKEND_IMAGE }}:latest" in build_body
+    assert "${{ env.FRONTEND_IMAGE }}:latest" in build_body
+
+    expected_actions = [
+        ("actions/checkout", "11bd71901bbe5b1630ceea73d27597364c9af683"),
+        ("docker/login-action", "74a5d142397b4f367a81961eba4e8cd7edddf772"),
+        ("docker/setup-buildx-action", "6524bf65af31da8d45b59e8c27de4bd072b392f5"),
+        ("docker/build-push-action", "ca052bb54ab0790a636c9b5f226502c73d547a25"),
+        ("docker/build-push-action", "ca052bb54ab0790a636c9b5f226502c73d547a25"),
+        ("actions/upload-artifact", "ea165f8d65b6e75b540449e92b4886f43607fa02"),
+        ("actions/download-artifact", "d3f86a106a0bac45b974a628896c90dbdf5c8093"),
+        ("appleboy/ssh-action", "0ff4204d59e8e51228ff73bce53f80d53301dee2"),
+    ]
+    action_refs = re.findall(r"^\s+uses:\s+([^@\s]+)@([^\s]+)$", workflow, re.MULTILINE)
+
+    assert action_refs == expected_actions
+    assert all(re.fullmatch(r"[0-9a-f]{40}", sha) for _, sha in action_refs)
 
 
 def test_production_caddy_receives_required_runtime_values_without_defaults():
