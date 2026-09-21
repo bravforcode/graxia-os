@@ -1,10 +1,13 @@
 import shutil
+import subprocess
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
 from scripts.ops.production_env_audit import audit_production_env
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 WRITABLE_TEMP_ROOT = Path("C:/Users/menum/.codex/memories/tmp/bravos-prodready-tests")
 
 
@@ -229,3 +232,29 @@ services:
         assert "BACKUP_BUCKET must be configured in production" in failures
         assert "BACKUP_REGION must be configured in production" in failures
         assert "BACKUP_ENCRYPTION_PUBLIC_KEY must be configured in production" in failures
+
+
+def test_production_env_audit_help_from_repo_root_does_not_load_settings():
+    result = subprocess.run(
+        [sys.executable, "scripts/ops/production_env_audit.py", "--help"],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Audit .env.production before Docker preflight" in result.stdout
+
+
+def test_backend_production_env_audit_help_from_backend_dir_does_not_load_settings():
+    result = subprocess.run(
+        [sys.executable, "scripts/ops/production_env_audit.py", "--help"],
+        cwd=REPO_ROOT / "backend",
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Audit .env.production before Docker preflight" in result.stdout

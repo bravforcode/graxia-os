@@ -13,8 +13,6 @@ REPO_ROOT = BACKEND_ROOT.parent
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.config import Settings  # noqa: E402
-
 
 @dataclass
 class AuditResult:
@@ -105,6 +103,8 @@ def audit_production_env(
     frontend_env_file: Path | None = None,
     repo_root: Path = REPO_ROOT,
 ) -> AuditResult:
+    from app.config import Settings
+
     result = AuditResult()
 
     if not env_file.exists():
