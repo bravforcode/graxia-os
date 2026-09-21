@@ -40,7 +40,9 @@ class User(Base, TenantMixin):
 
     # Relationships
     from sqlalchemy.orm import relationship
-    organization = relationship("Organization", back_populates="users")
+    # Eager: callers read user.organization after the await returns, where a
+    # lazy load would raise MissingGreenlet on the async session.
+    organization = relationship("Organization", back_populates="users", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

@@ -13,6 +13,7 @@ from app.core.control_plane import (
     resolve_approval_batch,
     resolve_approval_request,
 )
+from app.core.errors import ConflictError
 from app.database import get_db
 from app.models.approval_request import ApprovalRequest
 from app.schemas.approval import (
@@ -78,7 +79,7 @@ async def approve_approval(
     try:
         approval = await resolve_approval_request(approval_id, "approved", note=note or None)
     except ApprovalAlreadyProcessedError as exc:
-        raise HTTPException(status_code=409, detail="Approval already processed") from exc
+        raise ConflictError("Approval already processed") from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(
@@ -102,7 +103,7 @@ async def reject_approval(
     try:
         approval = await resolve_approval_request(approval_id, "rejected", note=note or None)
     except ApprovalAlreadyProcessedError as exc:
-        raise HTTPException(status_code=409, detail="Approval already processed") from exc
+        raise ConflictError("Approval already processed") from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(

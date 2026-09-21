@@ -172,6 +172,7 @@ def _build_auth_payloads(
         "sub": str(user.id),
         "email": user.email,
         "role": user.role,
+        "organization_id": str(user.organization_id),
         "session_id": session_id,
         "device_id": device_id,
         "jti": str(uuid4()),
@@ -828,6 +829,101 @@ async def update_current_user(
     )
     await db.commit()
     return _serialize_user(current_user)
+
+
+@router.get("/me/export")
+async def export_current_user_data(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """GDPR right to data portability — machine-readable copy of own account data."""
+    exported_at = datetime.now(UTC)
+    payload = {
+        "export_metadata": {
+            "user_id": str(current_user.id),
+            "exported_at": exported_at.isoformat(),
+            "format_version": "1.0",
+        },
+        "profile": {
+            "email": current_user.email,
+            "full_name": current_user.full_name,
+            "role": current_user.role,
+            "is_active": current_user.is_active,
+            "provider": current_user.provider,
+            "created_at": current_user.created_at.isoformat()
+            if current_user.created_at
+            else None,
+            "last_login_at": current_user.last_login_at.isoformat()
+            if current_user.last_login_at
+            else None,
+            "onboarding_completed_at": current_user.onboarding_completed_at.isoformat()
+            if current_user.onboarding_completed_at
+            else None,
+        },
+        "organization": {"organization_id": str(current_user.organization_id)},
+    }
+    await log_audit_event(
+        db=db,
+        action="auth.data_export",
+        event_type="data_export",
+        event_category="privacy",
+        metadata={"format_version": "1.0"},
+        user_id=str(current_user.id),
+        session_id=getattr(request.state, "session_id", None),
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        request_path=str(request.url.path),
+        request_method=request.method,
+    )
+    await db.commit()
+    return payload
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user(
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """GDPR right to erasure — soft-delete: anonymize PII and deactivate.
+
+    Soft delete keeps org/order referential integrity intact; the account can
+    no longer authenticate because it is inactive and every session is revoked.
+    """
+    user_id = str(current_user.id)
+    current_user.email = f"deleted-{current_user.id}@deleted.graxia.io"
+    current_user.full_name = "Deleted User"
+    current_user.is_active = False
+    current_user.provider_id = None
+    current_user.avatar_url = None
+    current_user.updated_at = datetime.now(UTC)
+    await db.commit()
+
+    session_service = SessionService(getattr(request.app.state, "redis", None))
+    await session_service.invalidate_all_user_sessions(
+        user_id, reason="account_deleted"
+    )
+    _clear_auth_cookies(response)
+    await log_audit_event(
+        db=db,
+        action="auth.account_delete",
+        event_type="account_deleted",
+        event_category="privacy",
+        severity="HIGH",
+        metadata={"method": "soft_delete"},
+        user_id=user_id,
+        session_id=getattr(request.state, "session_id", None),
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        request_path=str(request.url.path),
+        request_method=request.method,
+    )
+    await db.commit()
+    logger.info("Account soft-deleted: %s", user_id)
+    # Return None so FastAPI keeps the injected response's cleared auth cookies.
+    return None
 
 
 @router.post("/change-password")

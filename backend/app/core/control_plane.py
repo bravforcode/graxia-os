@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 
+from app.auth.context import resolve_organization_id
 from app.core.event_bus import event_bus
 from app.core.policy import build_batch_key, get_action_policy
 from app.database import AsyncSessionLocal
@@ -101,6 +102,7 @@ async def queue_approval_request(
     preview: dict[str, Any] | None = None,
     requested_by: str | None = None,
     batch_group: str | None = None,
+    organization_id: UUID | None = None,
 ) -> ApprovalRequest:
     policy = get_action_policy(action_type)
     expires_at = None
@@ -108,6 +110,7 @@ async def queue_approval_request(
         expires_at = datetime.now(UTC) + timedelta(hours=policy.default_ttl_hours)
 
     approval = ApprovalRequest(
+        organization_id=resolve_organization_id(organization_id),
         title=title,
         action_type=action_type,
         subject_type=subject_type,
@@ -138,6 +141,7 @@ async def create_draft_review_request(
     draft_title: str | None,
     preview_text: str,
     requested_by: str,
+    organization_id: UUID | None = None,
 ) -> ApprovalRequest:
     return await queue_approval_request(
         title=draft_title or "Draft review",
@@ -148,6 +152,7 @@ async def create_draft_review_request(
         preview={"content_preview": preview_text[:280]},
         requested_by=requested_by,
         batch_group=draft_type or "draft",
+        organization_id=organization_id,
     )
 
 

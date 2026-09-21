@@ -1,7 +1,7 @@
 import logging
 import secrets
 import hashlib
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import List, Optional, Tuple
 from uuid import UUID
 
@@ -145,6 +145,16 @@ class FunnelDeliveryService:
         await self.db.commit()
         await self.db.refresh(access)
         
+        return access
+
+    async def record_open(self, access: DeliveryAccess) -> DeliveryAccess:
+        """Persist a delivery open against an already validated access token."""
+        now = datetime.now(UTC)
+        access.open_count = (access.open_count or 0) + 1
+        access.first_opened_at = access.first_opened_at or now
+        access.last_opened_at = now
+        await self.db.commit()
+        await self.db.refresh(access)
         return access
 
     async def list_order_delivery_accesses(self, organization_id: UUID, order_id: UUID) -> List[DeliveryAccess]:

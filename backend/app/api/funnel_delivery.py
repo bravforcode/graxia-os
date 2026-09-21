@@ -75,6 +75,23 @@ async def consume_delivery(
         )
     return payload
 
+@router.post("/events/delivery-opened", response_model=dict)
+async def track_delivery_opened(
+    access_token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint to track that a delivery was opened, by raw token."""
+    service = FunnelDeliveryService(db)
+    access = await service.get_delivery_access_by_token(access_token)
+    if not access:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid or expired delivery token",
+        )
+    access = await service.record_open(access)
+    return {"status": "tracked", "access_id": str(access.id)}
+
+
 @router.post("/delivery-access/{access_id}/revoke", status_code=status.HTTP_200_OK)
 async def revoke_delivery_access(
     access_id: UUID,

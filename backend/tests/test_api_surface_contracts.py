@@ -1,14 +1,20 @@
+import hashlib
+import secrets
 from datetime import UTC, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
+
 from app.core.auth import decode_access_token, extract_bearer_token
 from app.models.approval_request import ApprovalRequest
 from app.models.automation_run import AutomationRun
+from app.models.funnel import DeliveryAccess, DeliveryAsset, DigitalProduct, FunnelOrder
 from app.models.skill_profile import SkillProfile
+from app.models.user import User
 
 
 @pytest_asyncio.fixture()
@@ -180,14 +186,18 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
         params={"note": "Double click"},
     )
     assert duplicate_approve_response.status_code == 409
-    assert duplicate_approve_response.json()["detail"] == "Approval already processed"
+    duplicate_approve_payload = duplicate_approve_response.json()
+    assert duplicate_approve_payload["error"]["code"] == "CONFLICT"
+    assert duplicate_approve_payload["error"]["message"] == "Approval already processed"
 
     reject_after_approve_response = await async_client.patch(
         f"/api/v1/approvals/{approval.id}/reject",
         params={"note": "Changed mind"},
     )
     assert reject_after_approve_response.status_code == 409
-    assert reject_after_approve_response.json()["detail"] == "Approval already processed"
+    reject_after_approve_payload = reject_after_approve_response.json()
+    assert reject_after_approve_payload["error"]["code"] == "CONFLICT"
+    assert reject_after_approve_payload["error"]["message"] == "Approval already processed"
 
     runs_response = await async_client.get("/api/v1/runs")
     assert runs_response.status_code == 200
@@ -206,3 +216,120 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
     bootstrap_response = await async_client.post("/api/v1/skills/bootstrap")
     assert bootstrap_response.status_code == 200
     assert bootstrap_response.json() == {"inserted": 0, "updated": 1, "total": 1}
+
+
+@pytest.mark.asyncio
+async def test_delivery_opened_persists_open_state(public_async_client, db_session):
+    raw_token = secrets.token_urlsafe(32)
+    organization_id = uuid4()
+    product = DigitalProduct(
+        id=uuid4(),
+        organization_id=organization_id,
+        name="Delivery Product",
+        slug=f"delivery-product-{uuid4()}",
+        price_amount=Decimal("10.00"),
+        currency="THB",
+        status="published",
+    )
+    asset = DeliveryAsset(
+        id=uuid4(),
+        organization_id=organization_id,
+        product_id=product.id,
+        title="Delivery Asset",
+        asset_type="text",
+        content_body="customer payload",
+        is_active=True,
+    )
+    order = FunnelOrder(
+        id=uuid4(),
+        organization_id=organization_id,
+        status="paid",
+        subtotal_amount=Decimal("10.00"),
+        total_amount=Decimal("10.00"),
+        currency="THB",
+    )
+    access = DeliveryAccess(
+        id=uuid4(),
+        organization_id=organization_id,
+        order_id=order.id,
+        product_id=product.id,
+        asset_id=asset.id,
+        access_token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+        status="active",
+        max_downloads=10,
+        download_count=0,
+        open_count=0,
+    )
+    db_session.add_all([product, asset, order, access])
+    await db_session.commit()
+
+    response = await public_async_client.post(
+        "/api/v1/funnel/events/delivery-opened",
+        params={"access_token": raw_token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "tracked", "access_id": str(access.id)}
+    await db_session.refresh(access)
+    assert access.open_count == 1
+    assert access.first_opened_at is not None
+    assert access.last_opened_at is not None
+    assert access.download_count == 1
+
+
+@pytest.mark.asyncio
+async def test_gdpr_export_requires_auth_and_audits_tenant_session(
+    async_client, public_async_client, monkeypatch
+):
+    audit = AsyncMock()
+    monkeypatch.setattr("app.api.auth.log_audit_event", audit)
+
+    unauthenticated = await public_async_client.get("/api/v1/auth/me/export")
+    assert unauthenticated.status_code in (401, 403)
+
+    token = extract_bearer_token(async_client.headers.get("Authorization"))
+    assert token is not None
+    payload = decode_access_token(token)
+
+    response = await async_client.get("/api/v1/auth/me/export")
+
+    assert response.status_code == 200
+    exported = response.json()
+    assert exported["export_metadata"]["user_id"] == payload["sub"]
+    assert exported["organization"]["organization_id"] == payload["organization_id"]
+    audit.assert_awaited_once()
+    audit_kwargs = audit.await_args.kwargs
+    assert audit_kwargs["action"] == "auth.data_export"
+    assert audit_kwargs["user_id"] == payload["sub"]
+    assert audit_kwargs["session_id"] == payload["session_id"]
+
+
+@pytest.mark.asyncio
+async def test_gdpr_delete_soft_deletes_revokes_sessions_and_audits(
+    async_client, db_session, monkeypatch
+):
+    audit = AsyncMock()
+    invalidate_all = AsyncMock()
+    monkeypatch.setattr("app.api.auth.log_audit_event", audit)
+    monkeypatch.setattr(
+        "app.api.auth.SessionService.invalidate_all_user_sessions",
+        invalidate_all,
+    )
+    token = extract_bearer_token(async_client.headers.get("Authorization"))
+    assert token is not None
+    payload = decode_access_token(token)
+    user_id = UUID(payload["sub"])
+
+    response = await async_client.delete("/api/v1/auth/me")
+
+    assert response.status_code == 204
+    stored_user = await db_session.scalar(select(User).where(User.id == user_id))
+    assert stored_user is not None
+    assert stored_user.is_active is False
+    assert stored_user.email == f"deleted-{user_id}@deleted.graxia.io"
+    invalidate_all.assert_awaited_once_with(str(user_id), reason="account_deleted")
+    audit.assert_awaited_once()
+    audit_kwargs = audit.await_args.kwargs
+    assert audit_kwargs["action"] == "auth.account_delete"
+    assert audit_kwargs["user_id"] == str(user_id)
+    assert audit_kwargs["session_id"] == payload["session_id"]

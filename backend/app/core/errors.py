@@ -65,6 +65,11 @@ class ApprovalRequiredError(AppError):
         super().__init__("APPROVAL_REQUIRED", message, 403)
 
 
+class ConflictError(AppError):
+    def __init__(self, message: str = "Resource state conflict") -> None:
+        super().__init__("CONFLICT", message, 409)
+
+
 def build_error_body(
     request: Request,
     code: str,

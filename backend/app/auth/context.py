@@ -10,6 +10,27 @@ LOCAL_DEV_ORGANIZATION_ID = UUID("00000000-0000-0000-0000-000000000001")
 """Default local-dev org ID. Never use in staging or production."""
 
 
+def resolve_organization_id(explicit: UUID | None = None) -> UUID:
+    """Resolve the tenant for a write made outside a request (agent, worker).
+
+    Mirrors `get_auth_context`: staging/production must supply the org
+    explicitly, local/test falls back to the local-dev tenant. Failing loudly
+    beats writing a row into whichever tenant happens to be first.
+    """
+    if explicit is not None:
+        return explicit
+
+    from app.config import settings
+
+    env = (settings.APP_ENV or "development").lower()
+    if env in ("staging", "production"):
+        raise ValueError(
+            "organization_id is required in staging/production; refusing to "
+            "fall back to the local-dev tenant."
+        )
+    return LOCAL_DEV_ORGANIZATION_ID
+
+
 @dataclass(frozen=True)
 class AuthContext:
     """Organization-scoped authentication context.
