@@ -191,9 +191,49 @@ class DeliveryAccessRead(BaseModel):
     created_at: datetime
 
 
+class DeliveryAccessPublic(BaseModel):
+    product_name: str
+    asset_title: Optional[str]
+    status: str
+    is_opened: bool
+    opened_at: Optional[datetime]
+
+
 class DeliveryAccessGrantResponse(BaseModel):
     access_id: UUID
     raw_token: str  # Only returned once at creation
+
+
+class DeliveryEmailEventCreate(BaseModel):
+    order_id: UUID
+    delivery_access_id: Optional[UUID] = None
+    customer_email: str = Field(..., max_length=255)
+    status: str = "pending"
+    provider: str = Field(default="mock", max_length=100)
+    idempotency_key: str = Field(..., max_length=255)
+    error_code: Optional[str] = Field(None, max_length=100)
+    error_message_redacted: Optional[str] = Field(None, max_length=500)
+    sent_at: Optional[datetime] = None
+    metadata_json: Optional[dict[str, Any]] = None
+    organization_id: Optional[UUID] = None
+
+
+class DeliveryEmailEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    order_id: UUID
+    delivery_access_id: Optional[UUID] = None
+    customer_email: str
+    status: str
+    provider: str
+    idempotency_key: str
+    error_code: Optional[str] = None
+    error_message_redacted: Optional[str] = None
+    sent_at: Optional[datetime] = None
+    metadata_json: Optional[dict[str, Any]] = None
+    created_at: datetime
 
 
 class DeliveryPayload(BaseModel):
@@ -340,6 +380,31 @@ class LeadMagnetRead(LeadMagnetBase):
     updated_at: datetime
 
 
+class LeadMagnetPublic(BaseModel):
+    slug: str
+    title: str
+    description: Optional[str] = None
+
+
+class LeadCaptureCreate(BaseModel):
+    lead_magnet_id: UUID
+    email: str = Field(..., max_length=255)
+    source: Optional[str] = Field(None, max_length=100)
+    utm_source: Optional[str] = Field(None, max_length=255)
+    utm_medium: Optional[str] = Field(None, max_length=255)
+    utm_campaign: Optional[str] = Field(None, max_length=255)
+    metadata_json: Optional[dict[str, Any]] = None
+    organization_id: Optional[UUID] = None
+
+
+class LeadCaptureRead(LeadCaptureCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    created_at: datetime
+
+
 class LeadCaptureRequest(BaseModel):
     organization_id: UUID
     email: str = Field(..., max_length=300)
@@ -365,6 +430,35 @@ class UnsubscribeRequest(BaseModel):
 
 class UnsubscribeResponse(BaseModel):
     ok: bool = True
+
+
+# ── Recommendation ────────────────────────────────────────────────────────
+
+
+class FunnelRecommendationCreate(BaseModel):
+    recommendation_type: str = Field(..., max_length=50)
+    recommended_action: str
+    bottleneck: Optional[str] = Field(None, max_length=255)
+    expected_impact: Optional[str] = Field(None, max_length=255)
+    confidence: Optional[str] = Field(None, max_length=50)
+    effort: Optional[str] = Field(None, max_length=50)
+    risk: Optional[str] = Field(None, max_length=50)
+    reasoning: Optional[str] = None
+    draft_content: Optional[str] = None
+    metadata_json: Optional[dict[str, Any]] = None
+
+
+class FunnelRecommendationRead(FunnelRecommendationCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    product_id: UUID
+    rollback_note: Optional[str] = None
+    approval_request_id: Optional[UUID] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
 
 
 # ── Coupon ────────────────────────────────────────────────────────────────
