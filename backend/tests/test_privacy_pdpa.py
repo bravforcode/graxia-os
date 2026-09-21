@@ -25,6 +25,7 @@ from app.models.funnel import (
     LeadCapture,
     LeadMagnet,
 )
+from app.models.organization import Organization
 from app.models.privacy import BreachNotification, PrivacyConsent
 from app.models.user import User
 
@@ -168,9 +169,16 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     )
     db_session.add(checkout)
     await db_session.flush()
+    linked_checkout = FunnelCheckoutSession(
+        id=uuid4(), organization_id=user.organization_id,
+        product_id=product.id, amount=10,
+        metadata_json={"unrelated": "checkout-record"},
+    )
+    db_session.add(linked_checkout)
+    await db_session.flush()
     order = FunnelOrder(
         id=uuid4(), organization_id=user.organization_id,
-        contact_id=contact.id, user_id=user.id, checkout_session_id=checkout.id,
+        contact_id=contact.id, user_id=user.id, checkout_session_id=linked_checkout.id,
         customer_email=original_email, subtotal_amount=10, total_amount=10,
     )
     db_session.add(order)
@@ -201,9 +209,35 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
         recommendation_type="test", recommended_action="Test action",
         metadata_json={"email": original_email},
     )
-    db_session.add_all([access, delivery_event, capture, conversion, recommendation])
+    other_org = Organization(
+        id=uuid4(), name=f"Other Privacy Org {uuid4()}",
+        slug=f"other-privacy-{uuid4()}", status="active",
+        created_at=datetime.now(UTC), updated_at=datetime.now(UTC),
+    )
+    other_contact = Contact(
+        id=uuid4(), organization_id=other_org.id,
+        name="Other Tenant Contact", email=original_email,
+    )
+    other_magnet = LeadMagnet(
+        id=uuid4(), organization_id=other_org.id,
+        name="Other Tenant Magnet", slug=f"other-magnet-{uuid4()}",
+    )
+    other_capture = LeadCapture(
+        id=uuid4(), organization_id=other_org.id,
+        lead_magnet_id=other_magnet.id, email=original_email,
+        metadata_json={"email": original_email},
+    )
+    db_session.add(other_org)
+    await db_session.flush()
+    db_session.add_all([other_contact, other_magnet])
+    await db_session.flush()
+    db_session.add_all([
+        access, delivery_event, capture, conversion, recommendation,
+        other_capture,
+    ])
     await db_session.commit()
     checkout_id = checkout.id
+    linked_checkout_id = linked_checkout.id
     order_id = order.id
     access_id = access.id
     delivery_event_id = delivery_event.id
@@ -211,6 +245,8 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     contact_id = contact.id
     conversion_id = conversion.id
     recommendation_id = recommendation.id
+    other_contact_id = other_contact.id
+    other_capture_id = other_capture.id
     db_session.expire_all()
 
     consent = await async_client.post(
@@ -255,6 +291,14 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     assert checkout.stripe_session_id is None
     assert checkout.metadata_json is None
 
+    linked_checkout = await db_session.get(
+        FunnelCheckoutSession, linked_checkout_id
+    )
+    assert linked_checkout.contact_id is None
+    assert linked_checkout.user_id is None
+    assert linked_checkout.customer_email is None
+    assert linked_checkout.metadata_json is None
+
     order = await db_session.get(FunnelOrder, order_id)
     assert order.contact_id is None
     assert order.user_id is None
@@ -295,6 +339,12 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
 
     recommendation = await db_session.get(FunnelRecommendation, recommendation_id)
     assert recommendation.metadata_json is None
+
+    other_contact = await db_session.get(Contact, other_contact_id)
+    assert other_contact.email == original_email
+    other_capture = await db_session.get(LeadCapture, other_capture_id)
+    assert other_capture.email == original_email
+    assert other_capture.metadata_json == {"email": original_email}
 
 
 @pytest.mark.asyncio

@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -272,42 +272,62 @@ async def request_erasure(
         organization_id = current_user.organization_id
         user_subject_values = {str(current_user.id), original_email}
 
+        normalized_email = original_email.casefold()
         contacts = (
             await db.execute(
                 select(Contact).where(
                     Contact.organization_id == organization_id,
-                    Contact.email == original_email,
+                    func.lower(Contact.email) == normalized_email,
                 )
             )
         ).scalars().all()
         contact_ids = {contact.id for contact in contacts}
 
+        order_match = [
+            FunnelOrder.user_id == current_user.id,
+            func.lower(FunnelOrder.customer_email) == normalized_email,
+        ]
+        if contact_ids:
+            order_match.append(FunnelOrder.contact_id.in_(contact_ids))
         orders = (
             await db.execute(
                 select(FunnelOrder).where(
                     FunnelOrder.organization_id == organization_id,
-                    or_(
-                        FunnelOrder.user_id == current_user.id,
-                        FunnelOrder.customer_email == original_email,
-                    ),
+                    or_(*order_match),
                 )
             )
         ).scalars().all()
         order_ids = {order.id for order in orders}
         contact_ids.update(order.contact_id for order in orders if order.contact_id)
 
+        order_checkout_ids = {
+            order.checkout_session_id for order in orders if order.checkout_session_id
+        }
+        order_stripe_ids = {
+            order.stripe_session_id for order in orders if order.stripe_session_id
+        }
+        checkout_match = [
+            FunnelCheckoutSession.user_id == current_user.id,
+            func.lower(FunnelCheckoutSession.customer_email) == normalized_email,
+        ]
+        if contact_ids:
+            checkout_match.append(FunnelCheckoutSession.contact_id.in_(contact_ids))
+        if order_checkout_ids:
+            checkout_match.append(FunnelCheckoutSession.id.in_(order_checkout_ids))
+        if order_stripe_ids:
+            checkout_match.append(
+                FunnelCheckoutSession.stripe_session_id.in_(order_stripe_ids)
+            )
         checkout_sessions = (
             await db.execute(
                 select(FunnelCheckoutSession).where(
                     FunnelCheckoutSession.organization_id == organization_id,
-                    or_(
-                        FunnelCheckoutSession.user_id == current_user.id,
-                        FunnelCheckoutSession.customer_email == original_email,
-                    ),
+                    or_(*checkout_match),
                 )
             )
         ).scalars().all()
         checkout_ids = {session.id for session in checkout_sessions}
+        checkout_ids.update(order_checkout_ids)
         contact_ids.update(session.contact_id for session in checkout_sessions if session.contact_id)
 
         if contact_ids:
@@ -381,10 +401,21 @@ async def request_erasure(
                     or_(
                         DeliveryAccess.order_id.in_(order_ids) if order_ids else False,
                         DeliveryAccess.contact_id.in_(contact_ids) if contact_ids else False,
+                        DeliveryAccess.metadata_json.is_not(None),
                     ),
                 )
             )
         ).scalars().all()
+        delivery_accesses = [
+            access
+            for access in delivery_accesses
+            if (
+                access.order_id in order_ids
+                or access.contact_id in contact_ids
+                or _metadata_references_subject(access.metadata_json, subject_values)
+            )
+        ]
+        access_ids = {access.id for access in delivery_accesses}
         for access in delivery_accesses:
             access.contact_id = None
             access.access_token_hash = None
@@ -402,7 +433,10 @@ async def request_erasure(
                     DeliveryEmailEvent.organization_id == organization_id,
                     or_(
                         DeliveryEmailEvent.order_id.in_(order_ids) if order_ids else False,
-                        DeliveryEmailEvent.customer_email == original_email,
+                        DeliveryEmailEvent.delivery_access_id.in_(access_ids)
+                        if access_ids
+                        else False,
+                        func.lower(DeliveryEmailEvent.customer_email) == normalized_email,
                     ),
                 )
             )
@@ -417,11 +451,17 @@ async def request_erasure(
             await db.execute(
                 select(LeadCapture).where(
                     LeadCapture.organization_id == organization_id,
-                    LeadCapture.email == original_email,
                 )
             )
         ).scalars().all()
         for capture in lead_captures:
+            if (
+                capture.email.casefold() != normalized_email
+                and not _metadata_references_subject(
+                    capture.metadata_json, subject_values
+                )
+            ):
+                continue
             capture.email = f"deleted-{capture.id}@anonymized.local"
             capture.source = None
             capture.utm_source = None
@@ -481,7 +521,10 @@ async def request_erasure(
 
         await db.execute(
             delete(PrivacyConsent)
-            .where(PrivacyConsent.user_id == current_user.id)
+            .where(
+                PrivacyConsent.organization_id == organization_id,
+                PrivacyConsent.user_id == current_user.id,
+            )
         )
         current_user.email = f"deleted-{current_user.id}@anonymized.local"
         current_user.full_name = None
