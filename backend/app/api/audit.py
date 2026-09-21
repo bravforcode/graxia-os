@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.context import AuthContext
 from app.auth.dependencies import require_organization
 from app.database import get_db
-from app.models.audit_log import AuditLog
+from app.models.audit import AuditLog
 from app.models.approval_request import ApprovalRequest
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ async def list_audit_events(
             "event_type": row.event_type,
             "severity": row.severity,
             "outcome": row.outcome,
-            "metadata": _redact_safe(row.metadata_),
+            "metadata": _redact_safe(row.metadata_json),
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
@@ -101,10 +101,10 @@ async def list_mcp_audit(
         items.append({
             "id": str(row.id),
             "action": row.action,
-            "tool_name": (row.metadata_ or {}).get("tool_name", ""),
+            "tool_name": (row.metadata_json or {}).get("tool_name", ""),
             "outcome": row.outcome,
             "success": row.success,
-            "metadata": _redact_safe(row.metadata_),
+            "metadata": _redact_safe(row.metadata_json),
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
@@ -136,10 +136,10 @@ async def list_workflow_audit(
         items.append({
             "id": str(row.id),
             "action": row.action,
-            "workflow_type": (row.metadata_ or {}).get("workflow_type", ""),
-            "workflow_run_id": (row.metadata_ or {}).get("workflow_run_id", ""),
+            "workflow_type": (row.metadata_json or {}).get("workflow_type", ""),
+            "workflow_run_id": (row.metadata_json or {}).get("workflow_run_id", ""),
             "outcome": row.outcome,
-            "metadata": _redact_safe(row.metadata_),
+            "metadata": _redact_safe(row.metadata_json),
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
