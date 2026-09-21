@@ -21,7 +21,7 @@ from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
-from app.auth.context import AuthContext, LocalDevAuthContext, LOCAL_DEV_ORGANIZATION_ID
+from app.auth.context import AuthContext, LOCAL_DEV_ORGANIZATION_ID
 from app.auth.errors import OrgMismatchError
 from app.auth.permissions import auth_context_has_permission, normalize_permissions, permissions_for_role
 from app.config import settings
@@ -64,14 +64,36 @@ def _token_organization_id(request: Request) -> UUID | None:
         return None
 
 
+def _trusted_internal_context(request: Request, env: str) -> AuthContext | None:
+    context = getattr(request.state, "auth_context", None)
+    if (
+        env in ("staging", "production")
+        and isinstance(context, AuthContext)
+        and context.auth_method == "internal_service"
+        and context.is_internal
+    ):
+        return context
+    return None
+
+
+def _authenticated_role(request: Request) -> str:
+    role = str(getattr(request.state, "authenticated_role", "") or "").strip().lower()
+    if role:
+        return role
+    payload = getattr(request.state, "auth_payload", None)
+    if isinstance(payload, dict):
+        return str(payload.get("role") or "").strip().lower()
+    return ""
+
+
 def _role_permissions(request: Request, env: str, actor_type: str) -> list[str]:
-    authenticated_role = str(getattr(request.state, "authenticated_role", "") or "").strip().lower()
-    if not authenticated_role:
-        payload = getattr(request.state, "auth_payload", None)
-        if isinstance(payload, dict):
-            authenticated_role = str(payload.get("role") or "").strip().lower()
+    authenticated_role = _authenticated_role(request)
     if authenticated_role:
         return permissions_for_role(authenticated_role)
+
+    trusted_internal = _trusted_internal_context(request, env)
+    if trusted_internal:
+        return permissions_for_role(trusted_internal.actor_type)
 
     if env in ("local", "development", "test"):
         explicit = _csv_header_values(request.headers.get("X-Graxia-Permissions"))
@@ -81,6 +103,34 @@ def _role_permissions(request: Request, env: str, actor_type: str) -> list[str]:
         return permissions_for_role(fallback_role)
 
     return []
+
+
+def _actor_identity(request: Request, env: str) -> tuple[str, str | None]:
+    if env in ("staging", "production"):
+        trusted_internal = _trusted_internal_context(request, env)
+        if trusted_internal:
+            return trusted_internal.actor_type, trusted_internal.actor_id
+
+        authenticated_role = _authenticated_role(request)
+        if authenticated_role:
+            actor_type = (
+                authenticated_role
+                if authenticated_role in {"admin", "service", "system", "agent"}
+                else "user"
+            )
+            return actor_type, getattr(request.state, "authenticated_user_id", None)
+
+        return "user", None
+
+    actor_type = request.headers.get("X-Graxia-Actor-Type")
+    actor_id = request.headers.get("X-Graxia-Actor-Id")
+    return (
+        actor_type
+        or ("admin" if getattr(request.state, "authenticated_role", "") == "admin" else "")
+        or ("user" if getattr(request.state, "authenticated_user_id", "") else "")
+        or "system",
+        actor_id or getattr(request.state, "authenticated_user_id", None) or "local-dev",
+    )
 
 
 async def get_auth_context(
@@ -102,13 +152,10 @@ async def get_auth_context(
 
     request_id = _request_id(request, x_graxia_request_id)
     correlation_id = _correlation_id(request)
-    actor_type = (
-        x_graxia_actor_type
-        or ("admin" if getattr(request.state, "authenticated_role", "") == "admin" else "")
-        or ("user" if getattr(request.state, "authenticated_user_id", "") else "")
-        or ("system" if env not in ("staging", "production") else "user")
-    )
-    actor_id = x_graxia_actor_id or getattr(request.state, "authenticated_user_id", None) or None
+    actor_type, actor_id = _actor_identity(request, env)
+    if env not in ("staging", "production"):
+        actor_type = x_graxia_actor_type or actor_type
+        actor_id = x_graxia_actor_id or actor_id
     auth_method = "bearer_jwt" if getattr(request.state, "auth_payload", None) else "local_test"
     scopes = normalize_permissions(_csv_header_values(x_graxia_scopes))
 

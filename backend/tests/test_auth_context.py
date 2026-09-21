@@ -14,7 +14,7 @@ import uuid
 import pytest
 from fastapi import HTTPException
 from app.auth.context import AuthContext, LocalDevAuthContext, LOCAL_DEV_ORGANIZATION_ID
-from app.auth.dependencies import get_auth_context
+from app.auth.dependencies import get_auth_context, require_permission
 from app.auth.errors import AuthError, MissingAuthError, OrgMismatchError, InsufficientPermissionsError
 from starlette.requests import Request
 
@@ -146,6 +146,48 @@ class TestAuthContextDependency:
 
         assert "admin:write" not in auth.permissions
         assert "org:read" in auth.permissions
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("environment", ["staging", "production"])
+    @pytest.mark.parametrize("spoofed_actor_type", ["system", "service", "admin"])
+    async def test_spoofed_actor_headers_cannot_reach_runtime_write(
+        self, monkeypatch, environment, spoofed_actor_type
+    ):
+        monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", environment)
+        org_id = uuid.uuid4()
+        request = Request(
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/api/v1/content-batches",
+                "headers": [
+                    (b"x-graxia-actor-type", spoofed_actor_type.encode()),
+                    (b"x-graxia-actor-id", spoofed_actor_type.encode()),
+                ],
+            }
+        )
+        request.state.auth_payload = {
+            "organization_id": str(org_id),
+            "sub": "viewer-1",
+            "role": "viewer",
+        }
+        request.state.authenticated_role = "viewer"
+        request.state.authenticated_user_id = "viewer-1"
+
+        auth = await get_auth_context(
+            request,
+            x_graxia_org_id=str(org_id),
+            x_graxia_actor_type=spoofed_actor_type,
+            x_graxia_actor_id=spoofed_actor_type,
+            x_graxia_scopes=None,
+        )
+
+        assert auth.actor_type == "user"
+        assert auth.actor_id == "viewer-1"
+        assert "runtime:write" not in auth.permissions
+        with pytest.raises(HTTPException) as exc_info:
+            await require_permission("runtime:write")(auth)
+        assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
     async def test_local_permissions_header_remains_available_for_test_fixtures(self, monkeypatch):
