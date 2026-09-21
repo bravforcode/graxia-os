@@ -5,7 +5,7 @@ access request (export), right to erasure (anonymize + full), and breach
 notification (admin-only, 72h deadline).
 """
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from httpx import AsyncClient
