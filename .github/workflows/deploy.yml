@@ -56,7 +56,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          file: ./frontend/Dockerfile
+          file: ./frontend/Dockerfile.prod
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.tag }}
@@ -66,6 +66,8 @@ jobs:
           build-args: |
             VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
             VITE_AGENT_STREAM_URL=${{ secrets.VITE_AGENT_STREAM_URL }}
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Save image tag
         run: echo "${{ steps.meta.outputs.tag }}" > image_tag.txt
@@ -93,44 +95,59 @@ jobs:
         id: tag
         run: echo "value=$(cat image_tag.txt)" >> $GITHUB_OUTPUT
 
+      - name: Validate deployment inputs
+        env:
+          PROD_PATH: ${{ secrets.PROD_PATH }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PROD_PATH:-}" ]; then
+            echo "PROD_PATH secret is required for production deploy."
+            exit 1
+          fi
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          PROD_PATH: ${{ secrets.PROD_PATH }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          port: ${{ secrets.PROD_SSH_PORT || '22' }}
           timeout: 300s
+          envs: PROD_PATH
           script: |
-            set -e
-            cd /opt/graxia
-            git pull origin main
+            set -euo pipefail
+            if [ -z "${PROD_PATH:-}" ]; then
+              echo "PROD_PATH is required."
+              exit 1
+            fi
 
-            # Pin the deployed image tag
-            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${{ steps.tag.outputs.value }}|" .env.production
+            cd "$PROD_PATH"
+            git fetch --prune origin main
+            git checkout --detach "${{ github.sha }}"
 
-            # Auth GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            COMPOSE="docker compose -f config/docker-compose.production.yml --env-file .env.production"
 
-            # Run migrations before swapping containers
-            docker compose -f config/docker-compose.production.yml --env-file .env.production \
-              run --rm --no-deps backend alembic upgrade head
+            $COMPOSE config --quiet
+            $COMPOSE up -d --wait postgres redis
 
-            # Pull new images and restart
-            docker compose -f config/docker-compose.production.yml --env-file .env.production pull
-            docker compose -f config/docker-compose.production.yml --env-file .env.production \
-              up -d --remove-orphans --no-build
+            $COMPOSE run --rm --no-deps backend alembic upgrade head
+            $COMPOSE build --pull backend frontend celery_worker celery_beat
+            $COMPOSE up -d --remove-orphans --wait
 
-            # Wait for health
-            timeout 120 bash -c 'until docker compose -f config/docker-compose.production.yml ps backend | grep -q "healthy"; do sleep 5; done'
-
-            # Clean old images
             docker image prune -f --filter "until=24h"
             echo "Deploy complete: ${{ steps.tag.outputs.value }}"
 
       - name: Notify Success
         if: success()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+            echo "Discord webhook not configured; skipping success notification."
+            exit 0
+          fi
           curl -s -X POST -H 'Content-type: application/json' \
             --data '{
               "username": "GitHub Actions",
@@ -144,11 +161,17 @@ jobs:
                 ]
               }]
             }' \
-            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+            "$DISCORD_WEBHOOK_URL"
 
       - name: Notify Failure
         if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+            echo "Discord webhook not configured; skipping failure notification."
+            exit 0
+          fi
           curl -s -X POST -H 'Content-type: application/json' \
             --data '{
               "username": "GitHub Actions",
@@ -161,4 +184,4 @@ jobs:
                 ]
               }]
             }' \
-            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+            "$DISCORD_WEBHOOK_URL"
