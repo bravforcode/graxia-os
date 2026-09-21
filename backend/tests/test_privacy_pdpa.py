@@ -123,6 +123,30 @@ async def test_erasure_anonymizes_user(async_client: AsyncClient, db_session: As
 
 
 @pytest.mark.asyncio
+async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_session: AsyncSession):
+    """Full erasure removes all consent rows for the current user."""
+    consent = await async_client.post(
+        "/api/v1/privacy/consents",
+        json={"purpose": "full-erasure", "granted": True},
+    )
+    assert consent.status_code == 200, consent.text
+
+    resp = await async_client.post(
+        "/api/v1/privacy/erasure",
+        json={"confirm": True},
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["method"] == "deleted"
+    remaining = (
+        await db_session.execute(
+            select(PrivacyConsent).where(PrivacyConsent.purpose == "full-erasure")
+        )
+    ).scalars().all()
+    assert remaining == []
+
+
+@pytest.mark.asyncio
 async def test_breach_requires_admin(public_async_client: AsyncClient, db_session: AsyncSession):
     """Non-admin users cannot register a breach."""
     from app.core.auth import get_password_hash

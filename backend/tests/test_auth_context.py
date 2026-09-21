@@ -118,6 +118,52 @@ class TestAuthContextDependency:
     """Auth dependency tenant resolution."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("environment", ["staging", "production"])
+    async def test_client_permissions_header_cannot_elevate_verified_role(
+        self, monkeypatch, environment
+    ):
+        monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", environment)
+        org_id = uuid.uuid4()
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "path": "/",
+                "headers": [(b"x-graxia-permissions", b"admin:write")],
+            }
+        )
+        request.state.auth_payload = {
+            "organization_id": str(org_id),
+            "role": "viewer",
+        }
+        request.state.authenticated_role = "viewer"
+
+        auth = await get_auth_context(
+            request,
+            x_graxia_org_id=str(org_id),
+            x_graxia_scopes=None,
+        )
+
+        assert "admin:write" not in auth.permissions
+        assert "org:read" in auth.permissions
+
+    @pytest.mark.asyncio
+    async def test_local_permissions_header_remains_available_for_test_fixtures(self, monkeypatch):
+        monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", "test")
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "path": "/",
+                "headers": [(b"x-graxia-permissions", b"admin:write")],
+            }
+        )
+
+        auth = await get_auth_context(request, x_graxia_scopes=None)
+
+        assert auth.permissions == ["admin:write"]
+
+    @pytest.mark.asyncio
     async def test_staging_matching_header_uses_token_org(self, monkeypatch):
         monkeypatch.setattr("app.auth.dependencies.settings.APP_ENV", "staging")
         org_id = uuid.uuid4()

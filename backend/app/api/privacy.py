@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -250,9 +250,8 @@ async def request_erasure(
         # Full deletion: drop consent rows, deactivate account. Orders are
         # preserved by policy but detached from the account email.
         await db.execute(
-            select(PrivacyConsent)
+            delete(PrivacyConsent)
             .where(PrivacyConsent.user_id == current_user.id)
-            .delete()
         )
         current_user.email = f"deleted-{current_user.id}@anonymized.local"
         current_user.full_name = "Deleted User"
