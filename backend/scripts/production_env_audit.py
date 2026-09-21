@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -63,7 +64,12 @@ def _check_compose_frontend_bridge(compose_file: Path, result: AuditResult) -> N
         )
 
 
-def _check_required_secret_files(repo_root: Path, result: AuditResult) -> None:
+def _check_required_secret_files(
+    repo_root: Path, result: AuditResult, *, required: bool
+) -> None:
+    if not required:
+        return
+
     required_secret_files = {
         repo_root
         / "secrets"
@@ -73,11 +79,13 @@ def _check_required_secret_files(repo_root: Path, result: AuditResult) -> None:
         / "alertmanager_webhook_token.txt": "alertmanager webhook token file must exist",
     }
     for path, message in required_secret_files.items():
-        ok = path.exists() and path.is_file()
+        ok = path.is_file() and path.stat().st_size > 0
         result.add(
             f"secret file {path.name}",
             ok,
-            message if ok else f"{message}: missing {path.relative_to(repo_root)}",
+            message
+            if ok
+            else f"{message}: missing or empty {path.relative_to(repo_root)}",
         )
 
 
@@ -103,8 +111,6 @@ def audit_production_env(
     frontend_env_file: Path | None = None,
     repo_root: Path = REPO_ROOT,
 ) -> AuditResult:
-    from app.config import Settings
-
     result = AuditResult()
 
     if not env_file.exists():
@@ -115,7 +121,22 @@ def audit_production_env(
         return result
 
     env_values = parse_env_file(env_file)
-    settings = Settings(**env_values)
+    from app.config import Settings
+
+    # Validate only the explicitly requested env file.  BaseSettings also reads
+    # its configured repository .env and the process environment by default.
+    settings_env_names = set(Settings.model_fields)
+    inherited_env = {
+        name: os.environ[name]
+        for name in settings_env_names
+        if name in os.environ
+    }
+    try:
+        for name in settings_env_names:
+            os.environ.pop(name, None)
+        settings = Settings(_env_file=None, **env_values)
+    finally:
+        os.environ.update(inherited_env)
 
     production_errors = settings.get_production_configuration_errors()
     if production_errors:
@@ -125,7 +146,7 @@ def audit_production_env(
         result.add("production configuration", True, "strict settings accepted")
 
     _check_compose_frontend_bridge(compose_file, result)
-    _check_required_secret_files(repo_root, result)
+    _check_required_secret_files(repo_root, result, required=settings.STRICT_BOOTSTRAP)
 
     if frontend_env_file and frontend_env_file.exists():
         frontend_env = parse_env_file(frontend_env_file)

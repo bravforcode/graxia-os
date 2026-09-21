@@ -180,6 +180,45 @@ services:
             name == "secret file backup_private_key.txt" and not ok
             for name, ok, _message in result.checks
         )
+        assert any(
+            name == "secret file alertmanager_webhook_token.txt" and not ok
+            for name, ok, _message in result.checks
+        )
+
+
+def test_production_env_audit_does_not_merge_process_env_into_requested_file(
+    monkeypatch,
+):
+    with _temp_workspace() as temp_dir:
+        tmp_path = Path(temp_dir)
+        env_file = tmp_path / ".env.production"
+        compose_file = tmp_path / "docker-compose.supabase.yml"
+
+        values = _valid_env_values()
+        values.pop("APP_HOST")
+        _write_env_file(env_file, values)
+        _write_secret_files(tmp_path)
+        compose_file.write_text(
+            """
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${APP_BASE_URL}/api/v1
+        VITE_AGENT_STREAM_URL: wss://${APP_HOST}/api/v1/events/stream
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+""".strip(),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("APP_HOST", "app.from-process-env.example")
+
+        result = audit_production_env(env_file, compose_file, repo_root=tmp_path)
+        messages = [message for _name, _ok, message in result.checks]
+
+        assert "APP_HOST must be a real production hostname without a URL scheme" in messages
+        assert "app.from-process-env.example" not in " ".join(messages)
 
 
 def test_production_env_audit_surfaces_each_missing_deploy_value_as_a_separate_failure():
