@@ -1,13 +1,18 @@
 """Tests for Customer Inbox Triage workflow — classifies, drafts, never sends."""
 from __future__ import annotations
 
+from uuid import UUID
+
 import pytest
+import pytest_asyncio
 
 from app.agent_workflows.service import WorkflowEngineService
 from app.agent_workflows.state import workflow_store
 from app.mcp.auth import MCPAuthContext
+from app.models.organization import Organization
 
 TEST_ORG = "00000000-0000-0000-0000-000000000001"
+TEST_ORG_ID = UUID(TEST_ORG)
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +30,21 @@ def auth() -> MCPAuthContext:
     return MCPAuthContext.system(organization_id=TEST_ORG)
 
 
-def test_customer_inbox_triage_runs(service, auth):
+@pytest_asyncio.fixture()
+async def workflow_org(db_session):
+    db_session.add(
+        Organization(
+            id=TEST_ORG_ID,
+            name="Customer Inbox Triage Test Org",
+            slug="customer-inbox-triage-test-org",
+            status="active",
+        )
+    )
+    await db_session.commit()
+    return TEST_ORG_ID
+
+
+def test_customer_inbox_triage_runs(service, auth, workflow_org):
     import asyncio
     async def _test():
         run = await service.run_workflow(
@@ -38,7 +57,7 @@ def test_customer_inbox_triage_runs(service, auth):
     asyncio.run(_test())
 
 
-def test_customer_inbox_triage_searches_mock_emails(service, auth):
+def test_customer_inbox_triage_searches_mock_emails(service, auth, workflow_org):
     import asyncio
     async def _test():
         run = await service.run_workflow(
@@ -52,7 +71,7 @@ def test_customer_inbox_triage_searches_mock_emails(service, auth):
     asyncio.run(_test())
 
 
-def test_customer_inbox_triage_drafts_replies(service, auth):
+def test_customer_inbox_triage_drafts_replies(service, auth, workflow_org):
     import asyncio
     async def _test():
         run = await service.run_workflow(
@@ -66,7 +85,7 @@ def test_customer_inbox_triage_drafts_replies(service, auth):
     asyncio.run(_test())
 
 
-def test_customer_inbox_triage_creates_send_approvals(service, auth):
+def test_customer_inbox_triage_creates_send_approvals(service, auth, workflow_org):
     import asyncio
     async def _test():
         run = await service.run_workflow(
@@ -79,7 +98,7 @@ def test_customer_inbox_triage_creates_send_approvals(service, auth):
     asyncio.run(_test())
 
 
-def test_customer_inbox_triage_never_sends_email_directly(service, auth):
+def test_customer_inbox_triage_never_sends_email_directly(service, auth, workflow_org):
     import asyncio
     async def _test():
         run = await service.run_workflow(

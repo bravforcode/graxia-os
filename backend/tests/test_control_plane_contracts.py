@@ -1,6 +1,6 @@
 import asyncio
 from unittest.mock import AsyncMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
@@ -11,7 +11,10 @@ from app.core.control_plane import (
 )
 from app.core.event_bus import event_bus
 from app.models.approval_request import ApprovalRequest
+from app.models.organization import Organization
 from sqlalchemy import select
+
+TEST_ORG_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 
 @pytest_asyncio.fixture()
@@ -29,10 +32,26 @@ async def isolated_control_plane_event_bus():
     event_bus.reset()
 
 
+@pytest_asyncio.fixture()
+async def control_plane_org(control_plane_session_factory):
+    async with control_plane_session_factory() as session:
+        session.add(
+            Organization(
+                id=TEST_ORG_ID,
+                name="Control Plane Test Org",
+                slug="control-plane-test-org",
+                status="active",
+            )
+        )
+        await session.commit()
+    return TEST_ORG_ID
+
+
 @pytest.mark.asyncio
 async def test_queue_and_resolve_approval_emit_lifecycle_events(
     control_plane_session_factory,
     isolated_control_plane_event_bus,
+    control_plane_org,
     monkeypatch,
 ):
     notify = AsyncMock(return_value=True)
@@ -58,6 +77,7 @@ async def test_queue_and_resolve_approval_emit_lifecycle_events(
             details={"to": "client@example.com", "subject": "Proposal"},
             preview={"summary": "Ready to send"},
             requested_by="draft_agent",
+            organization_id=control_plane_org,
         )
         await asyncio.wait_for(event_bus._queue.join(), timeout=3)
 
@@ -87,6 +107,7 @@ async def test_queue_and_resolve_approval_emit_lifecycle_events(
 async def test_mark_subject_resolution_emits_events_for_each_pending_request(
     control_plane_session_factory,
     isolated_control_plane_event_bus,
+    control_plane_org,
 ):
     subject_id = uuid4()
     resolved: list[dict] = []
@@ -100,6 +121,7 @@ async def test_mark_subject_resolution_emits_events_for_each_pending_request(
         session.add_all(
             [
                 ApprovalRequest(
+                    organization_id=control_plane_org,
                     title="First approval",
                     action_type="draft_review",
                     subject_type="content_draft",
@@ -111,6 +133,7 @@ async def test_mark_subject_resolution_emits_events_for_each_pending_request(
                     preview={},
                 ),
                 ApprovalRequest(
+                    organization_id=control_plane_org,
                     title="Second approval",
                     action_type="draft_review",
                     subject_type="content_draft",
@@ -122,6 +145,7 @@ async def test_mark_subject_resolution_emits_events_for_each_pending_request(
                     preview={},
                 ),
                 ApprovalRequest(
+                    organization_id=control_plane_org,
                     title="Already approved",
                     action_type="draft_review",
                     subject_type="content_draft",
