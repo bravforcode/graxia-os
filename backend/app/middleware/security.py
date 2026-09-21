@@ -213,7 +213,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return build_error_response(
                 request,
                 code="PERMISSION_DENIED",
-                message="Not authorized to access this resource",
+                message="CSRF token missing",
                 status_code=403,
             )
 
@@ -240,7 +240,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return build_error_response(
                 request,
                 code="PERMISSION_DENIED",
-                message="Not authorized to access this resource",
+                message="CSRF token invalid",
                 status_code=403,
             )
 
@@ -265,7 +265,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return build_error_response(
                 request,
                 code="PERMISSION_DENIED",
-                message="Not authorized to access this resource",
+                message="CSRF token forged",
                 status_code=403,
             )
 

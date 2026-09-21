@@ -67,6 +67,7 @@ class ApprovalRequiredError(AppError):
 
 def build_error_body(request: Request, code: str, message: str) -> dict[str, object]:
     return {
+        "detail": message,
         "error": {
             "code": code,
             "message": message,
