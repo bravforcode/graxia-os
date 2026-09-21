@@ -187,7 +187,7 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          for f in scripts/ops/backup_database.sh scripts/ops/restore_database.sh scripts/tests/smoke_tests.sh scripts/deployment/harden-vps.sh scripts/deployment/deploy.sh scripts/deployment/rollback.sh scripts/deployment/dr-rebuild.sh; do
+          for f in scripts/ops/backup_database.sh scripts/ops/restore_database.sh scripts/ops/smoke_tests.sh deploy/scripts/harden-vps.sh deploy/scripts/deploy.sh deploy/scripts/rollback.sh deploy/scripts/dr-rebuild.sh; do
             if [ -f "$f" ]; then bash -n "$f"; else echo "SKIP: $f not found"; fi
           done
 
