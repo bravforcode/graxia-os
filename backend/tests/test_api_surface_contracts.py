@@ -7,9 +7,11 @@ from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
 from app.core.auth import decode_access_token, extract_bearer_token
+from app.main import app as fastapi_app
 from app.models.approval_request import ApprovalRequest
 from app.models.automation_run import AutomationRun
 from app.models.funnel import DeliveryAccess, DeliveryAsset, DigitalProduct, FunnelOrder
@@ -219,9 +221,11 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
 
 
 @pytest.mark.asyncio
-async def test_delivery_opened_persists_open_state(public_async_client, db_session):
+async def test_delivery_opened_persists_open_state(
+    public_async_client, db_session, default_org
+):
     raw_token = secrets.token_urlsafe(32)
-    organization_id = uuid4()
+    organization_id = default_org.id
     product = DigitalProduct(
         id=uuid4(),
         organization_id=organization_id,
@@ -284,7 +288,9 @@ async def test_gdpr_export_requires_auth_and_audits_tenant_session(
     audit = AsyncMock()
     monkeypatch.setattr("app.api.auth.log_audit_event", audit)
 
-    unauthenticated = await public_async_client.get("/api/v1/auth/me/export")
+    transport = ASGITransport(app=fastapi_app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as anonymous_client:
+        unauthenticated = await anonymous_client.get("/api/v1/auth/me/export")
     assert unauthenticated.status_code in (401, 403)
 
     token = extract_bearer_token(async_client.headers.get("Authorization"))
