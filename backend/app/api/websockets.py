@@ -1,14 +1,36 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 
+from app.core.errors import build_error_response
 from app.core.swarm_bootstrap import GRAXIA_ENABLED, AgentMessage, message_bus
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+@router.get("/v1/graxia/stream")
+@router.get("/api/v1/stream")
+async def graxia_stream_requires_websocket(request: Request, token: str | None = None):
+    """Reject plain HTTP access to the authenticated stream endpoint."""
+    if not token:
+        return build_error_response(
+            request,
+            code="AUTH_REQUIRED",
+            message="Authentication required",
+            status_code=401,
+        )
+    return build_error_response(
+        request,
+        code="AUTH_INVALID",
+        message="Authentication required",
+        status_code=401,
+    )
+
+
 @router.websocket("/v1/graxia/stream")
+@router.websocket("/api/v1/stream")
 async def graxia_websocket_stream(websocket: WebSocket, token: str | None = None):
     """Real-time thought and event stream from the Graxia Swarm. Requires bearer token."""
     # Validate token BEFORE accept â€” rejecting before accept costs nothing
