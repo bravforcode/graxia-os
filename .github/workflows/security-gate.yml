@@ -8,18 +8,17 @@ jobs:
   secret-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
       - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
         with:
           config-path: .github/workflows/.gitleaks.toml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: TruffleHog
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@288a8a8643a2c5a36b81d231c550dccfa0beeb64
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
@@ -43,24 +42,24 @@ jobs:
       MT5_PASSWORD: ""
       MT5_SERVER: ""
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
       - name: Install security tooling
         run: |
           python -m pip install --upgrade pip
           pip install bandit semgrep pip-audit safety
-          pip install -r requirements.txt 2>/dev/null || true
+          pip install -r requirements.txt
           mkdir -p ../reports
       - name: Bandit
-        run: bandit -r app -f json -o ../reports/bandit-baseline.json --severity-level medium || true
+        run: bandit -r app -f json -o ../reports/bandit-baseline.json --severity-level medium
       - name: Semgrep
-        run: semgrep --config=p/python --config=p/jwt --config=p/secrets --json -o ../reports/semgrep-baseline.json app || true
+        run: semgrep --config=p/python --config=p/jwt --config=p/secrets --json -o ../reports/semgrep-baseline.json app
       - name: Dependency audit
         run: |
-          pip-audit -r requirements.txt -f json -o ../reports/pip-audit-baseline.json || true
-          safety check --json > ../reports/safety-baseline.json || true
+          pip-audit -r requirements.txt -f json -o ../reports/pip-audit-baseline.json
+          safety check --json > ../reports/safety-baseline.json
 
   sast-frontend:
     runs-on: ubuntu-latest
@@ -68,8 +67,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
           bun-version: "1.3.6"
       - name: Install dependencies
@@ -77,7 +76,7 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p ../reports
       - name: npm audit
-        run: npm audit --audit-level=high --json > ../reports/npm-audit-baseline.json || true
+        run: npm audit --audit-level=high --json > ../reports/npm-audit-baseline.json
 
   route-manifest:
     runs-on: ubuntu-latest
@@ -96,28 +95,25 @@ jobs:
       MT5_PASSWORD: ""
       MT5_SERVER: ""
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
       - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || pip install fastapi uvicorn httpx pydantic sqlalchemy aiosqlite redis celery alembic passlib python-jose python-multipart stripe
+          pip install -r requirements.txt
       - name: Generate route manifest
-        run: python scripts/generate_route_manifest.py || echo "Route manifest generation skipped"
+        run: python scripts/generate_route_manifest.py
       - name: Validate manifest has no gaps
         run: |
-          python - <<'PY' || true
+          python - <<'PY'
           import json
           from pathlib import Path
-          try:
-              manifest = json.loads(Path("../docs/route-manifest.json").read_text())
-              gaps = manifest.get("summary", {}).get("gaps_found", 0)
-              if gaps:
-                  raise SystemExit(f"route manifest contains {gaps} gaps")
-          except FileNotFoundError:
-              print("route-manifest.json not found, skipping")
+          manifest = json.loads(Path("../docs/route-manifest.json").read_text())
+          gaps = manifest.get("summary", {}).get("gaps_found", 0)
+          if gaps:
+              raise SystemExit(f"route manifest contains {gaps} gaps")
           PY
 
   migration-safety:
@@ -137,9 +133,9 @@ jobs:
       MT5_PASSWORD: ""
       MT5_SERVER: ""
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
       - name: Check destructive migrations
-        run: python scripts/check_destructive_migrations.py || echo "Migration safety check skipped"
+        run: python scripts/check_destructive_migrations.py
