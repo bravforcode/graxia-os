@@ -121,6 +121,15 @@ def audit_production_env(
         return result
 
     env_values = parse_env_file(env_file)
+    if env_values.get("APP_ENV", "").strip().lower() != "production":
+        result.add(
+            "env APP_ENV",
+            False,
+            "explicit env file must declare APP_ENV=production",
+        )
+        return result
+    result.add("env APP_ENV", True, "explicit env file declares production")
+
     from app.config import Settings
 
     # Validate only the explicitly requested env file.  BaseSettings also reads

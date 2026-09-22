@@ -64,8 +64,10 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
-    ports:
-      - "8000:8000"
+    # Security: Caddy is the only public entrypoint; keep the API on the
+    # internal Docker network.
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
