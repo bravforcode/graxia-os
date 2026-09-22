@@ -212,24 +212,36 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Validate deploy inputs before image publication
+        env:
+          EXPECTED_REF: refs/heads/main
+          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -eu
+          test "${GITHUB_REF}" = "${EXPECTED_REF}"
+          test "${IMAGE_TAG}" = "$(git rev-parse HEAD)"
+          printf '%s\n' "${IMAGE_TAG}" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s\n' "${IMAGE_REPOSITORY}" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Backend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
           context: ./backend
           push: true
           tags: ghcr.io/${{ github.repository }}/graxia-backend:${{ github.sha }}
 
       - name: Build and push Frontend Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
           context: ./frontend
           file: ./frontend/Dockerfile.prod
