@@ -36,6 +36,8 @@ from app.models.funnel import (
     ProductReview,
 )
 from app.models.referral import ReferralAttribution, ReferralCode, ReferralConversion
+from app.models.referral import ReferralPartner
+from app.models.skill_conversation import ConversationMessage, ConversationSession
 from app.api.auth import get_current_user
 
 router = APIRouter()
@@ -110,7 +112,10 @@ async def list_consents(
     """List all consent records for the current user."""
     result = await db.execute(
         select(PrivacyConsent)
-        .where(PrivacyConsent.user_id == current_user.id)
+        .where(
+            PrivacyConsent.organization_id == current_user.organization_id,
+            PrivacyConsent.user_id == current_user.id,
+        )
         .order_by(PrivacyConsent.purpose)
     )
     return result.scalars().all()
@@ -125,6 +130,7 @@ async def set_consent(
     """Grant or revoke consent for a processing purpose. Recorded in the audit trail."""
     consent = await db.scalar(
         select(PrivacyConsent).where(
+            PrivacyConsent.organization_id == current_user.organization_id,
             PrivacyConsent.user_id == current_user.id,
             PrivacyConsent.purpose == payload.purpose,
         )
@@ -175,11 +181,12 @@ async def data_export(
     db: AsyncSession = Depends(get_db),
 ):
     """Return a machine-readable copy of the user's personal data (DSAR)."""
+    normalized_email = current_user.email.casefold()
     orders = (
         await db.execute(
             select(FunnelOrder).where(
                 FunnelOrder.organization_id == current_user.organization_id,
-                FunnelOrder.customer_email == current_user.email,
+                func.lower(FunnelOrder.customer_email) == normalized_email,
             )
         )
     ).scalars().all()
@@ -586,11 +593,58 @@ async def request_erasure(
             review.order_id = None
             review.contact_id = None
 
+        conversation_sessions = (
+            await db.execute(
+                select(ConversationSession).where(
+                    ConversationSession.user_id == current_user.id,
+                )
+            )
+        ).scalars().all()
+        conversation_session_ids = {session.id for session in conversation_sessions}
+        if conversation_session_ids:
+            conversation_messages = (
+                await db.execute(
+                    select(ConversationMessage).where(
+                        ConversationMessage.session_id.in_(conversation_session_ids),
+                    )
+                )
+            ).scalars().all()
+            for message in conversation_messages:
+                message.sender_id = None
+                message.content = "[deleted]"
+                message.content_type = "text"
+                message.skill_input = None
+                message.skill_output = None
+                message.context_messages = []
+        for session in conversation_sessions:
+            erased_at = datetime.now(UTC)
+            session.user_id = None
+            session.title = None
+            session.description = None
+            session.summary = None
+            session.key_entities = []
+            session.status = "archived"
+            session.updated_at = erased_at
+            session.archived_at = erased_at
+
         referral_codes = (
             await db.execute(
                 select(ReferralCode).where(ReferralCode.organization_id == organization_id)
             )
         ).scalars().all()
+        referral_partners = (
+            await db.execute(
+                select(ReferralPartner).where(
+                    ReferralPartner.organization_id == organization_id,
+                    ReferralPartner.user_id == current_user.id,
+                )
+            )
+        ).scalars().all()
+        referral_partner_ids = {partner.id for partner in referral_partners}
+        for partner in referral_partners:
+            partner.display_name = f"Deleted Partner {partner.id}"
+            partner.user_id = None
+            partner.status = "suspended"
         referral_attributions = (
             await db.execute(
                 select(ReferralAttribution).where(
@@ -609,6 +663,7 @@ async def request_erasure(
             code.id
             for code in referral_codes
             if code.issuer_user_id == current_user.id
+            or code.partner_id in referral_partner_ids
             or code.source_id in contact_ids
             or code.source_id in access_ids
             or code.source_id in capture_ids

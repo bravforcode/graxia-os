@@ -29,6 +29,8 @@ from app.models.funnel import (
 from app.models.organization import Organization
 from app.models.privacy import BreachNotification, PrivacyConsent
 from app.models.referral import ReferralAttribution, ReferralCode, ReferralConversion
+from app.models.referral import ReferralPartner
+from app.models.skill_conversation import ConversationMessage, ConversationSession
 from app.models.user import User
 
 
@@ -85,6 +87,34 @@ async def test_list_consents(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_list_consents_is_tenant_scoped(
+    async_client: AsyncClient, db_session: AsyncSession
+):
+    """Consent listing excludes same-user rows from another organization."""
+    me = await async_client.get("/api/v1/auth/me")
+    assert me.status_code == 200, me.text
+    user = (await db_session.execute(
+        select(User).where(User.email == me.json()["email"])
+    )).scalar_one()
+    other_org = Organization(
+        id=uuid4(), name=f"Consent Other Org {uuid4()}",
+        slug=f"consent-other-{uuid4()}", status="active",
+        created_at=datetime.now(UTC), updated_at=datetime.now(UTC),
+    )
+    db_session.add(other_org)
+    await db_session.flush()
+    db_session.add(PrivacyConsent(
+        id=uuid4(), organization_id=other_org.id, user_id=user.id,
+        purpose="foreign-tenant", granted=True,
+    ))
+    await db_session.commit()
+
+    resp = await async_client.get("/api/v1/privacy/consents")
+    assert resp.status_code == 200
+    assert "foreign-tenant" not in {c["purpose"] for c in resp.json()}
+
+
+@pytest.mark.asyncio
 async def test_data_export_returns_user_and_consents(async_client: AsyncClient, db_session: AsyncSession):
     """DSAR export returns user, consents and order data with audit entry."""
     await async_client.post("/api/v1/privacy/consents", json={"purpose": "marketing", "granted": True})
@@ -111,7 +141,7 @@ async def test_data_export_is_tenant_scoped(async_client: AsyncClient, db_sessio
     user = (await db_session.execute(select(User).where(User.email == original_email))).scalar_one()
     own_order = FunnelOrder(
         organization_id=user.organization_id,
-        customer_email=original_email,
+        customer_email=original_email.upper(),
         subtotal_amount=10,
         total_amount=10,
     )
@@ -262,6 +292,29 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
         owner_identity_hash="identity-hash", audience="regular_user",
         redirect_path="/store",
     )
+    partner = ReferralPartner(
+        id=uuid4(), organization_id=user.organization_id,
+        display_name="Original Partner", user_id=user.id, status="approved",
+        commission_rate=0.2,
+    )
+    db_session.add(partner)
+    await db_session.flush()
+    referral_code.partner_id = partner.id
+    conversation = ConversationSession(
+        id=uuid4(), session_key=f"privacy-conversation-{uuid4()}",
+        user_id=user.id, title="Private title", description="Private description",
+        summary="Private summary", key_entities=["private"],
+        created_at=datetime.now(UTC), updated_at=datetime.now(UTC),
+    )
+    db_session.add(conversation)
+    await db_session.flush()
+    conversation_message = ConversationMessage(
+        id=uuid4(), session_id=conversation.id, message_number=1,
+        sender_type="user", sender_id=user.id, content="Private message",
+        skill_input={"email": original_email}, skill_output={"secret": "value"},
+        context_messages=[1],
+        created_at=datetime.now(UTC),
+    )
     other_org = Organization(
         id=uuid4(), name=f"Other Privacy Org {uuid4()}",
         slug=f"other-privacy-{uuid4()}", status="active",
@@ -286,7 +339,7 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     await db_session.flush()
     db_session.add_all([
         access, delivery_event, capture, conversion, recommendation, review,
-        referral_code,
+        referral_code, partner, conversation, conversation_message,
         other_capture,
     ])
     await db_session.flush()
@@ -318,6 +371,9 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     referral_code_id = referral_code.id
     attribution_id = attribution.id
     referral_conversion_id = referral_conversion.id
+    partner_id = partner.id
+    conversation_id = conversation.id
+    conversation_message_id = conversation_message.id
     other_contact_id = other_contact.id
     other_capture_id = other_capture.id
     db_session.expire_all()
@@ -422,6 +478,11 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     assert review.contact_id is None
 
     referral_code = await db_session.get(ReferralCode, referral_code_id)
+    partner = await db_session.get(ReferralPartner, partner_id)
+    assert partner.display_name == f"Deleted Partner {partner.id}"
+    assert partner.user_id is None
+    assert partner.status == "suspended"
+    assert referral_code.partner_id == partner.id
     assert referral_code.issuer_user_id is None
     assert referral_code.owner_identity_hash is None
     assert referral_code.source_id != contact_id
@@ -435,6 +496,24 @@ async def test_erasure_deletes_user_consents(async_client: AsyncClient, db_sessi
     assert referral_conversion.conversion_key == f"deleted-{referral_conversion.id}"
     assert referral_conversion.verified_order_id == order_id
     assert referral_conversion.metadata_json is None
+
+    conversation = await db_session.get(ConversationSession, conversation_id)
+    assert conversation.user_id is None
+    assert conversation.title is None
+    assert conversation.description is None
+    assert conversation.summary is None
+    assert conversation.key_entities == []
+    assert conversation.status == "archived"
+
+    conversation_message = await db_session.get(
+        ConversationMessage, conversation_message_id
+    )
+    assert conversation_message.session_id == conversation_id
+    assert conversation_message.sender_id is None
+    assert conversation_message.content == "[deleted]"
+    assert conversation_message.skill_input is None
+    assert conversation_message.skill_output is None
+    assert conversation_message.context_messages == []
 
     other_contact = await db_session.get(Contact, other_contact_id)
     assert other_contact.email == original_email
