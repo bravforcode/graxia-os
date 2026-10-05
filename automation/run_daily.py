@@ -4,10 +4,11 @@ Daily pipeline orchestrator.
 Run automatically by GitHub Actions (.github/workflows/free-pipeline.yml).
 Steps:
   1. Generate content (template — $0; --ai uses OpenAI if key present)
-  2. If META_PAGE_TOKEN is set: post the first FB item to the page
+  2. Only --live plus META_PAGE_TOKEN may publish the first FB item
   3. Build a Meta ad campaign in DRY-RUN (PAUSED) — never spends money
   4. Report what happened
 """
+import argparse
 import json
 import os
 import subprocess
@@ -18,17 +19,21 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ai", action="store_true", help="opt into AI provider calls")
+    parser.add_argument("--live", action="store_true", help="opt into Facebook posting; ads remain preview-only")
+    args = parser.parse_args()
     # 1. Generate
     r = subprocess.run(
-        [sys.executable, str(ROOT / "automation" / "content_generator.py"), "--ai"],
+        [sys.executable, str(ROOT / "automation" / "content_generator.py")] + (["--ai"] if args.ai else []),
         capture_output=True,
         text=True,
         cwd=ROOT,
     )
     print(r.stdout)
     if r.returncode != 0:
-        print(r.stderr)
-        return r.returncode
+        print("Content generation failed", file=sys.stderr)
+        return r.returncode if r.returncode > 0 else 1
 
     # newest generated file
     gen_dir = ROOT / "docs" / "content" / "generated"
@@ -41,13 +46,16 @@ def main() -> int:
     tiktok_items = [i for i in data["items"] if i["channel"] == "tiktok"]
 
     # 2. Auto-post FB (only if token configured — otherwise queue only)
-    if fb_items and os.environ.get("META_PAGE_TOKEN"):
+    if args.live and fb_items and os.environ.get("META_PAGE_TOKEN"):
         r = subprocess.run(
-            [sys.executable, str(ROOT / "automation" / "meta_poster.py"), "--post", fb_items[0]["body"]],
+            [sys.executable, str(ROOT / "automation" / "meta_poster.py"), "--post", fb_items[0]["body"], "--live"],
             capture_output=True,
             text=True,
             cwd=ROOT,
         )
+        if r.returncode != 0:
+            print("AUTO-POST failed", file=sys.stderr)
+            return r.returncode if r.returncode > 0 else 1
         print("AUTO-POST:", r.stdout.strip())
     else:
         print("AUTO-POST: skipped (META_PAGE_TOKEN not set — items queued for manual posting)")
@@ -59,6 +67,9 @@ def main() -> int:
         text=True,
         cwd=ROOT,
     )
+    if r.returncode != 0:
+        print("ADS preview failed", file=sys.stderr)
+        return r.returncode if r.returncode > 0 else 1
     print("ADS:", r.stdout.strip()[:400])
 
     # 4. Summary for the commit message

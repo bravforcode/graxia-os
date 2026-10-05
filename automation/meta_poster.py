@@ -3,7 +3,7 @@ Meta poster + Ads builder.
 
 - Post to a Facebook Page (Graph API) — works with a Page access token.
 - Create Meta Ads campaigns (campaign -> ad set -> ad) via the Marketing API.
-  DRY-RUN by default: prints everything it would create; pass --live with
+  DRY-RUN by default: performs no network calls; pass --live with
   real tokens + an ad account to actually launch (spends money).
 
 Tokens come from the environment (never commit them):
@@ -16,13 +16,16 @@ import os
 import sys
 
 
-def post_to_page(body: str) -> dict:
-    """Publish a text post to the configured Facebook Page."""
-    import httpx
-
+def post_to_page(body: str, dry_run: bool = True) -> dict:
+    """Preview a post by default; publishing requires dry_run=False."""
+    if dry_run:
+        return {"ok": True, "dry_run": True, "body": body}
     token = os.environ.get("META_PAGE_TOKEN", "")
     if not token:
         return {"ok": False, "reason": "META_PAGE_TOKEN not set"}
+
+    import httpx
+
     r = httpx.post(
         "https://graph.facebook.com/v21.0/me/feed",
         params={"message": body, "access_token": token},
@@ -33,13 +36,17 @@ def post_to_page(body: str) -> dict:
 
 
 def build_ad_campaign(dry_run: bool = True) -> dict:
-    """Create a Conversions campaign for the prompt pack (dry-run default)."""
-    import httpx
-
+    """Preview object creation without HTTP calls; live mode is explicit."""
+    if dry_run:
+        return {"ok": True, "dry_run": True,
+                "operations": ["campaign", "adset", "creative", "ad"],
+                "status": "PAUSED", "daily_budget": 30000}
     account = os.environ.get("META_AD_ACCOUNT_ID", "")
     token = os.environ.get("META_ACCESS_TOKEN", "")
     if not account or not token:
         return {"ok": False, "reason": "META_AD_ACCOUNT_ID / META_ACCESS_TOKEN not set"}
+
+    import httpx
 
     base = f"https://graph.facebook.com/v21.0/{account}"
     headers = {"Content-Type": "application/json"}
@@ -127,12 +134,20 @@ def main() -> int:
     parser.add_argument("--live", action="store_true", help="actually launch (spends money)")
     args = parser.parse_args()
 
-    if args.post:
-        result = post_to_page(args.post)
-        print("POST:", result)
-    if args.ads:
-        result = build_ad_campaign(dry_run=not args.live)
-        print("ADS:", result)
+    try:
+        if args.post:
+            result = post_to_page(args.post, dry_run=not args.live)
+            print("POST:", result)
+            if not result.get("ok"):
+                return 1
+        if args.ads:
+            result = build_ad_campaign(dry_run=not args.live)
+            print("ADS:", result)
+            if not result.get("ok"):
+                return 1
+    except Exception:
+        print("Meta operation failed; no success confirmed", file=sys.stderr)
+        return 1
     if not args.post and not args.ads:
         parser.print_help()
         return 1

@@ -56,11 +56,12 @@ def gen_templated() -> dict:
 
 def gen_with_ai() -> dict:
     """Full AI copy (requires OPENAI_API_KEY). Falls back to templates on any failure."""
-    import httpx
-
     key = os.environ.get("OPENAI_API_KEY", "")
     if not key:
         return gen_templated()
+
+    import httpx
+
     prompts = [
         "เขียนสคริปต์ TikTok 30-45 วินาที ภาษาไทย โปรโมทสินค้าดิจิทัล 'AI Prompt Pack' ราคา 149 บาท เนื้อหา: สาธิต 1 พรอมต์ที่ใช้ทำงานจริง ลงท้าย CTA ให้คลิกลิงก์ในโปรไฟล์",
         "เขียนโพสต์ Facebook ให้ความรู้เรื่องการใช้ AI ทำงาน สำหรับกลุ่มฟรีแลนซ์ไทย 150-200 คำ ภาษาไทยเป็นกันเอง ไม่ใช่โฆษณาตรงๆ",
