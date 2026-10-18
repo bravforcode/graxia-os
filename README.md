@@ -17,14 +17,13 @@
   <a href="#quickstart"><img src="https://img.shields.io/badge/Quickstart-3_commands-0ea5e9?style=for-the-badge" /></a>
   <a href="https://github.com/bravforcode/graxia-os/actions"><img src="https://img.shields.io/github/actions/workflow/status/bravforcode/graxia-os/ci.yml?label=CI&style=for-the-badge" /></a>
   <img src="https://img.shields.io/badge/Coverage-Canonical_Tests-10b981?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/License-Private-0f172a?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-MIT-0f172a?style=for-the-badge" />
 </p>
 
 ---
 
 ### Demo
 
-> 🎬 **Demo coming soon** — 30s screen capture of the control plane in action will be added at `docs/demo.gif`
 
 **Control plane: opportunities → drafts → approvals → tasks → costs → event bus (React 18 + FastAPI)**
 
@@ -148,7 +147,6 @@ Full runbook: [`docs/SUPABASE_PRODUCTION.md`](docs/SUPABASE_PRODUCTION.md)
 ### Contact
 
 **Phirawit Jitnarong — Strategic Full-Stack & AI Engineer**
-`nxme176@gmail.com` · `092-551-0427` · [LinkedIn](https://www.linkedin.com/in/%E0%B8%9E%E0%B8%B5%E0%B8%A3%E0%B8%A7%E0%B8%B4%E0%B8%8A%E0%B8%8D%E0%B9%8C-%E0%B8%88%E0%B8%B4%E0%B8%95%E0%B8%93%E0%B8%A3%E0%B8%87%E0%B8%84%E0%B9%8C-0000393a4) · [Fastwork](https://fastwork.co/user/bravforcode?source=search)
+`nxme176@gmail.com` · [LinkedIn](https://www.linkedin.com/in/%E0%B8%9E%E0%B8%B5%E0%B8%A3%E0%B8%A7%E0%B8%B4%E0%B8%8A%E0%B8%8D%E0%B9%8C-%E0%B8%88%E0%B8%B4%E0%B8%95%E0%B8%93%E0%B8%A3%E0%B8%87%E0%B8%84%E0%B9%8C-0000393a4) · [Fastwork](https://fastwork.co/user/bravforcode?source=search)
 
-> Looking for a technical co-founder or full-time AI + Full-Stack hire? Let's build.
 

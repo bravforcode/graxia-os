@@ -12,7 +12,6 @@ Please report security vulnerabilities directly to **nxme176@gmail.com** with su
 
 - We will acknowledge within 48h and provide a timeline for a fix.
 - Please do not disclose publicly until a fix is released (coordinated disclosure, 90 days).
-- Redacted NDA-related repos (Predictive, Plexta) — do not include confidential data in reports.
 
 ## Scope
 
