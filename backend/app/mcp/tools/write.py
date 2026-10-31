@@ -505,7 +505,7 @@ async def handle_grant_delivery_access_manual(
 
     try:
         order_uuid = UUID(order_id)
-        prod_uuid = UUID(product_id)
+        UUID(product_id)  # validate only
     except (ValueError, TypeError):
         return MCPResponse.error_response(
             code="INVALID_PARAMS", message="Invalid order_id or product_id.",

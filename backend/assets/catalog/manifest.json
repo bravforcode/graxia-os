@@ -1,0 +1,211 @@
+{
+  "source_repository": "C:\\Users\\menum\\ai-factory",
+  "generated_by": "backend/scripts/import_ai_factory_assets.py",
+  "products": {
+    "ai-agent-starter-github": {
+      "file": "ai-agent-starter-github.md",
+      "sha256": "5f35f6ae556d1db3b4bfd60b1409df17f49353cfd9a203c0de18f56897b4b0db",
+      "bytes": 100389,
+      "sources": [
+        {
+          "source": "downloads/10-ai-agent-starter-github/README.md",
+          "sha256": "7c6464acff8b2aa24ebccebed512b7ab218256f7947fb520bf565fd1a9c526e5",
+          "bytes": 8726
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/ARCHITECTURE.md",
+          "sha256": "63fbef3bd8628eca650b43f5460a7d72c8d7a9beff815902d38c5ec3057ef200",
+          "bytes": 19269
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/DEPLOY.md",
+          "sha256": "072d3c3ada1cf905e422630051a38eeaa2f55de8de4366a2ac22135d79139fbc",
+          "bytes": 12556
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/EXAMPLES.md",
+          "sha256": "f7229e38c44a0077793ddca6f75e8589afae74f427807e79d472bdfcef4f522d",
+          "bytes": 10861
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/LICENSE",
+          "sha256": "635d3fbbd471f6977f13b9b15d05cb3010848c8ddc807c14667b59154b33fec0",
+          "bytes": 1086
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/prompts/system-prompt.md",
+          "sha256": "c3f43846fdb660b77a3c3577f3ba400d74b40d5c00aab773ecae6ec4e4f8bdeb",
+          "bytes": 10880
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/code/agent_loop.py",
+          "sha256": "2e80c0275ad3aa524fdb08cbe9a304112925fcb56cbc010d8031e6ae06c58290",
+          "bytes": 14467
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/code/memory.py",
+          "sha256": "ff0b7a84fb3a17a2c49d68ff8295a813203115e3a6324a3c2c016512a6950dc1",
+          "bytes": 6698
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/code/tools.py",
+          "sha256": "ed8bc28a70d5ff6848d9667c9a7bf30cd546757fbf6da8023e0a074c21891db6",
+          "bytes": 11043
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/code/requirements.txt",
+          "sha256": "042d7c3a7f2e3cb3422ef19d546a2af691e53e8ac1ddd500cb34482c91936651",
+          "bytes": 496
+        },
+        {
+          "source": "downloads/10-ai-agent-starter-github/code/tests/test_agent.py",
+          "sha256": "bb2b972f305ebe6969f87db5ae168f821af9e95b8136dca87fdbddb1d319e434",
+          "bytes": 3281
+        }
+      ]
+    },
+    "ai-automation-workflow": {
+      "file": "ai-automation-workflow.md",
+      "sha256": "82a4f6676f98d9fd0e38f9a3ebc26a2d6f57bc87bfb9a0f0fc01c62a0a63bc81",
+      "bytes": 33409,
+      "sources": [
+        {
+          "source": "downloads/05-ai-automation-workflow-guide.md",
+          "sha256": "4c882755ff945ecb95e483afcd1f68f8e9aa21db0d7811bc44b2f4752e8c120c",
+          "bytes": 33175
+        }
+      ]
+    },
+    "cold-email-template-pack": {
+      "file": "cold-email-template-pack.md",
+      "sha256": "d13c4f899b48c3997196b5f2bb3deca094cb2c15d49f5c47f1d5d3347f242873",
+      "bytes": 25164,
+      "sources": [
+        {
+          "source": "downloads/04-cold-email-template-pack.md",
+          "sha256": "59b915d071b629b22fe46aa616f3d1ac2861316e633309a5af6821b14526b8b9",
+          "bytes": 24932
+        }
+      ]
+    },
+    "content-calendar-90d": {
+      "file": "content-calendar-90d.md",
+      "sha256": "503a421abcd7111208e9b2b1b3e5a3d1c370172ec33d9d6d90ab03ad4dda3113",
+      "bytes": 20501,
+      "sources": [
+        {
+          "source": "downloads/08-content-calendar-90d.md",
+          "sha256": "ebd2a38a99ca936a7c69b5a0cfa0148a7e4644a8016110514fa77f137c3b3a40",
+          "bytes": 11615
+        },
+        {
+          "source": "downloads/08-content-calendar-90d.csv",
+          "sha256": "d3e5e08d9fa587a36d9cf94dcc323f2db21eb2203141c641c8a583d831212aab",
+          "bytes": 8598
+        }
+      ]
+    },
+    "cv-international-template": {
+      "file": "cv-international-template.md",
+      "sha256": "4c789bce57cb77a53948f1903915da201bbc97137f2d5f1408c0928baa77eb29",
+      "bytes": 21052,
+      "sources": [
+        {
+          "source": "downloads/06-cv-international-template.md",
+          "sha256": "10c7e9a7e86b783a36b6a55660e8a7eac4ec7bbbefa4dccc985b6ef3f4d1c5e5",
+          "bytes": 20818
+        }
+      ]
+    },
+    "finance-tracker-thb": {
+      "file": "finance-tracker-thb.md",
+      "sha256": "85cf519a02d761e11d3f51f1b0bdbb9b1373c30f7d7ebc5d06cca8e34b8ad6c7",
+      "bytes": 94832,
+      "sources": [
+        {
+          "source": "downloads/09-finance-tracker-thb.html",
+          "sha256": "6866eb12bbc3dcfc319648fd06fadc77fb8acf7ef8d7db2c193dd97462ac86f4",
+          "bytes": 94606
+        }
+      ]
+    },
+    "freelance-pricing-calculator": {
+      "file": "freelance-pricing-calculator.md",
+      "sha256": "c4b56ef7fd12be8a2f0800a1f4b57e211db806b775270146657f7f234e031cd7",
+      "bytes": 19852,
+      "sources": [
+        {
+          "source": "downloads/03-freelance-pricing-calculator.html",
+          "sha256": "a255570dc27733d104431aae85467b84c4feecc1a9aeba46ca47ab44c9b25076",
+          "bytes": 19608
+        }
+      ]
+    },
+    "n8n-sme-workflow-pack": {
+      "file": "n8n-sme-workflow-pack.md",
+      "sha256": "fe5782dd8f115a3781a758830df1105b44b1db065b9520c389df3e0f66d69747",
+      "bytes": 52798,
+      "sources": [
+        {
+          "source": "downloads/07-n8n-sme-workflow-pack/README.md",
+          "sha256": "0ebd7307f53c2c30c2569ff870cda6eced1d93955e1b2c6d7697b5c55874d603",
+          "bytes": 13069
+        },
+        {
+          "source": "downloads/07-n8n-sme-workflow-pack/01-line-oa-auto-reply.json",
+          "sha256": "cf64aa43c6a66f50e7f07d7e8baa8115f3a44a20caa82caf4cf63dade85ecac6",
+          "bytes": 9823
+        },
+        {
+          "source": "downloads/07-n8n-sme-workflow-pack/02-invoice-ocr-to-sheets.json",
+          "sha256": "bfea7d8b9fd3c08188eff4f1bb239e9d67cea1a83b7a732754c79daa900b6d14",
+          "bytes": 6558
+        },
+        {
+          "source": "downloads/07-n8n-sme-workflow-pack/03-daily-report-pos.json",
+          "sha256": "347ac2ff4a6c8876b4f0eb1ae5d95be40793f93d2070a1ee412f0a516c5e1c42",
+          "bytes": 6822
+        },
+        {
+          "source": "downloads/07-n8n-sme-workflow-pack/04-fb-lead-enrichment.json",
+          "sha256": "66c48d668880c16694b393295f810bb294003afc0a9174527b133d99778d73da",
+          "bytes": 9522
+        },
+        {
+          "source": "downloads/07-n8n-sme-workflow-pack/05-content-repurposing.json",
+          "sha256": "bec529f8e7ca2eeb62c8a9ce60177e6180812c9f31c6a79ce9b62e9c6418050c",
+          "bytes": 6324
+        }
+      ]
+    },
+    "obsidian-student-kit": {
+      "file": "obsidian-student-kit.md",
+      "sha256": "3c992a614807f5f6ab1b61e366df5b6db12b46031cf8fbbe0c402653015ebe5e",
+      "bytes": 11430,
+      "sources": [
+        {
+          "source": "downloads/02-obsidian-student-kit/00-README.md",
+          "sha256": "43be30d4de4d3df76e58790efcf122367b4d91a73431d4939b595b677027231e",
+          "bytes": 7592
+        },
+        {
+          "source": "downloads/02-obsidian-student-kit/01-course-note-template.md",
+          "sha256": "6c05f07e1087b65869600f66bbe85b79418180ef2fffb8742fb8875599acacda",
+          "bytes": 3518
+        }
+      ]
+    },
+    "prompt-pack-th": {
+      "file": "prompt-pack-th.md",
+      "sha256": "e2bec6d7e42fd3d8aaf76a4cd48e21bd6100690470114d5bbfd65ade84cac4a7",
+      "bytes": 92242,
+      "sources": [
+        {
+          "source": "downloads/01-prompt-pack-th.md",
+          "sha256": "ab49610017774dac506d265cdb8eb265ae8febfa4ab32022043531a69bb1dac9",
+          "bytes": 92030
+        }
+      ]
+    }
+  }
+}

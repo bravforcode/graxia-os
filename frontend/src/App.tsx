@@ -6,9 +6,8 @@ import Layout from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./i18n/LanguageContext";
-import ExitIntentPopup from "./components/ui/ExitIntentPopup";
-import SocialProofPopup from "./components/ui/SocialProofPopup";
 import LegalPage from "./pages/LegalPage";
+import PublicAnalyticsBridge from "./components/PublicAnalyticsBridge";
 
 const UnifiedDashboard = lazy(() => import("./pages/UnifiedDashboard"));
 const ApprovalQueue = lazy(() => import("./pages/ApprovalQueue"));
@@ -32,6 +31,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const StorePage = lazy(() => import("./pages/StorePage"));
 const StoreProductPage = lazy(() => import("./pages/StoreProductPage"));
+const SeoClusterPage = lazy(() => import("./pages/SeoClusterPage"));
+const LeadMagnetPage = lazy(() => import("./pages/LeadMagnetPage"));
 
 // Funnel Pages
 const ProductList = lazy(() => import("./pages/funnel/ProductList"));
@@ -58,6 +59,8 @@ export function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/store" element={<PageTransition><StorePage /></PageTransition>} />
         <Route path="/store/:slug" element={<PageTransition><StoreProductPage /></PageTransition>} />
+        <Route path="/guides/:slug" element={<PageTransition><SeoClusterPage /></PageTransition>} />
+        <Route path="/free/:slug" element={<PageTransition><LeadMagnetPage /></PageTransition>} />
         <Route path="/f/:organization_id/:slug" element={<PublicProductPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/delivery/:token" element={<DeliveryAccessPage />} />
@@ -113,8 +116,8 @@ function App() {
       >
         <LanguageProvider>
           <AuthProvider>
+            <PublicAnalyticsBridge />
             <AppRoutes />
-            <ExitIntentPopup />
             {/* SocialProofPopup disabled — was using fabricated demo data (audit #9) */}
           </AuthProvider>
         </LanguageProvider>

@@ -14,7 +14,7 @@ import logging
 import sys
 from uuid import UUID, uuid4
 
-from app.mcp.schemas import MCPAuthContext
+from app.mcp.schemas import MCPAuthContext, MCPResponse
 from app.mcp.registry import mcp_registry
 from app.mcp.errors import (
     ERR_INVALID_REQUEST,
@@ -53,7 +53,6 @@ async def handle_requests() -> None:
 
         method = raw_request.get("method", "")
         params = raw_request.get("params", {})
-        req_jsonrpc_id = raw_request.get("id")
 
         # Build auth context
         auth = MCPAuthContext(
@@ -67,10 +66,7 @@ async def handle_requests() -> None:
         if method == "tools/list":
             risk_level = params.get("risk_level") if isinstance(params, dict) else None
             tools = mcp_registry.list_tools(risk_level=risk_level)
-            response = MCPResponse(
-                ok=True,
-                data={"tools": tools},
-            ).ok_response(
+            response = MCPResponse.ok_response(
                 data={"tools": tools},
                 request_id=request_id,
                 organization_id=str(DEFAULT_ORG_ID),

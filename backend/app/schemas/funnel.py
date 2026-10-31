@@ -93,7 +93,10 @@ class DeliveryAssetRead(DeliveryAssetBase):
 
 
 class FunnelCheckoutCreate(BaseModel):
-    contact_id: Optional[UUID] = None
+    contact_id: Optional[UUID] = Field(
+        None,
+        description="Optional tenant contact; checkout validates its normalized email against customer_email.",
+    )
     customer_email: Optional[str] = None
     success_url: str
     cancel_url: str
@@ -191,6 +194,14 @@ class DeliveryAccessRead(BaseModel):
     created_at: datetime
 
 
+class DeliveryAccessPublic(BaseModel):
+    product_name: str
+    asset_title: Optional[str] = None
+    status: str
+    is_opened: bool
+    opened_at: Optional[datetime] = None
+
+
 class DeliveryAccessGrantResponse(BaseModel):
     access_id: UUID
     raw_token: str  # Only returned once at creation
@@ -215,6 +226,7 @@ class ConversionEventCreate(BaseModel):
     contact_id: Optional[UUID] = None
     order_id: Optional[UUID] = None
     session_id: Optional[str] = None
+    idempotency_key: Optional[str] = Field(None, max_length=255)
     source: Optional[str] = None
     medium: Optional[str] = None
     campaign: Optional[str] = None
@@ -259,6 +271,20 @@ class FunnelDailyAnalytics(BaseModel):
     revenue: float
 
 
+class FunnelAttributionRow(BaseModel):
+    source: Optional[str] = None
+    medium: Optional[str] = None
+    campaign: Optional[str] = None
+    product_id: Optional[UUID] = None
+    product_name: Optional[str] = None
+    plan: Optional[str] = None
+    views: int = 0
+    leads: int = 0
+    checkout_starts: int = 0
+    purchases: int = 0
+    revenue: float = 0.0
+
+
 # ── Lead Magnet ───────────────────────────────────────────────────────────
 
 
@@ -296,10 +322,19 @@ class LeadMagnetRead(LeadMagnetBase):
     updated_at: datetime
 
 
+class LeadMagnetPublic(BaseModel):
+    slug: str = Field(..., max_length=255)
+    title: str = Field(..., max_length=255)
+    description: Optional[str] = None
+
+
 class LeadCaptureRequest(BaseModel):
     organization_id: UUID
     email: str = Field(..., max_length=300)
     name: Optional[str] = Field(None, max_length=300)
+    marketing_consent: bool = False
+    consent_version: Optional[str] = Field(None, max_length=100)
+    session_id: Optional[str] = Field(None, max_length=255)
     source: Optional[str] = None
     medium: Optional[str] = None
     campaign: Optional[str] = None
@@ -310,6 +345,49 @@ class LeadCaptureResponse(BaseModel):
     contact_id: UUID
     raw_token: Optional[str] = None
     delivery_url: Optional[str] = None
+
+
+class FunnelRecommendationCreate(BaseModel):
+    recommendation_type: str = Field(..., max_length=50)
+    recommended_action: str
+    bottleneck: Optional[str] = Field(None, max_length=255)
+    expected_impact: Optional[str] = Field(None, max_length=255)
+    confidence: Optional[str] = Field(None, max_length=50)
+    effort: Optional[str] = Field(None, max_length=50)
+    risk: Optional[str] = Field(None, max_length=50)
+    reasoning: Optional[str] = None
+    draft_content: Optional[str] = None
+    metadata_json: Optional[dict[str, Any]] = None
+
+
+class FunnelRecommendationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    product_id: UUID
+    organization_id: UUID
+    recommendation_type: str
+    bottleneck: Optional[str] = None
+    recommended_action: str
+    expected_impact: Optional[str] = None
+    confidence: Optional[str] = None
+    effort: Optional[str] = None
+    risk: Optional[str] = None
+    reasoning: Optional[str] = None
+    draft_content: Optional[str] = None
+    rollback_note: Optional[str] = None
+    approval_request_id: Optional[UUID] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class UnsubscribeRequest(BaseModel):
+    token: str = Field(..., min_length=1, max_length=4096)
+
+
+class UnsubscribeResponse(BaseModel):
+    ok: bool = True
 
 
 # ── Coupon ────────────────────────────────────────────────────────────────

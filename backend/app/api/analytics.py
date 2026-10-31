@@ -92,7 +92,7 @@ async def list_dashboards(
     result = await db.execute(
         select(AnalyticsDashboard).where(
             (AnalyticsDashboard.owner_agent_id.is_(None)) | 
-            (AnalyticsDashboard.is_shared == True)
+            (AnalyticsDashboard.is_shared.is_(True))
         )
     )
     dashboards = result.scalars().all()

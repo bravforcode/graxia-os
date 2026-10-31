@@ -1,17 +1,18 @@
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select, and_
+from sqlalchemy import func, select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import LeadMagnet, FunnelOrder, FunnelOrderItem, DigitalProduct
+from app.models.funnel import LeadMagnet, FunnelOrder, FunnelOrderItem
 from app.models.contact import Contact
 from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.funnel_analytics_service import FunnelAnalyticsService
 from app.schemas.funnel import LeadMagnetCreate, LeadMagnetUpdate
+from app.core.email_identity import normalize_email
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,10 @@ class LeadMagnetService:
         source: Optional[str] = None,
         medium: Optional[str] = None,
         campaign: Optional[str] = None,
-        referrer: Optional[str] = None
+        referrer: Optional[str] = None,
+        marketing_consent: bool = False,
+        consent_version: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Tuple[Contact, Optional[str]]:
         # Find lead magnet
         lm = await self.get_lead_magnet_by_slug(organization_id, slug)
@@ -113,13 +117,15 @@ class LeadMagnetService:
 
         if lm.status != "published":
             raise ValueError(f"Lead magnet with slug {slug} is not published")
+        if marketing_consent and not consent_version:
+            raise ValueError("consent_version is required when marketing_consent is true")
 
         # Create/Get contact
         stmt = select(Contact).where(
             and_(
                 Contact.organization_id == organization_id,
                 Contact.email == email,
-                Contact.is_deleted == False
+                Contact.is_deleted.is_(False)
             )
         )
         result = await self.db.execute(stmt)
@@ -135,9 +141,18 @@ class LeadMagnetService:
                 email=email,
                 contact_type="lead",
                 relationship_strength=1,
+                marketing_consent=marketing_consent,
+                marketing_consent_at=datetime.now(timezone.utc) if marketing_consent else None,
+                consent_version=consent_version if marketing_consent else None,
             )
             self.db.add(contact)
             await self.db.flush()
+        elif marketing_consent:
+            contact.marketing_consent = True
+            contact.marketing_consent_at = datetime.now(timezone.utc)
+            contact.consent_version = consent_version
+            contact.marketing_unsubscribed = False
+            contact.marketing_unsubscribed_at = None
 
         # Increment opt-in count
         lm.opt_in_count += 1
@@ -150,12 +165,20 @@ class LeadMagnetService:
             event_type="lead_capture",
             product_id=lm.target_product_id,
             contact_id=contact.id,
-            session_id=None,
+            session_id=session_id,
             source=source,
             medium=medium,
             campaign=campaign,
             referrer=referrer,
-            metadata_json={"lead_magnet_id": str(lm.id), "lead_magnet_slug": slug}
+            metadata_json={
+                "lead_magnet_id": str(lm.id),
+                "lead_magnet_slug": slug,
+                "channel": "lead_magnet",
+            },
+            idempotency_key=(
+                f"lead_capture:{organization_id}:{email.lower()}:{slug}:{session_id}"
+                if session_id else None
+            ),
         )
 
         raw_token = None
@@ -202,3 +225,20 @@ class LeadMagnetService:
         await self.db.refresh(contact)
 
         return contact, raw_token
+
+    async def unsubscribe(self, organization_id: uuid.UUID, email: str) -> None:
+        stmt = (
+            update(Contact)
+            .where(
+                Contact.organization_id == organization_id,
+                func.lower(func.trim(Contact.email)) == normalize_email(email),
+                Contact.is_deleted.is_(False),
+            )
+            .values(
+                marketing_unsubscribed=True,
+                marketing_unsubscribed_at=datetime.now(timezone.utc),
+            )
+            .execution_options(synchronize_session=False)
+        )
+        await self.db.execute(stmt)
+        await self.db.commit()

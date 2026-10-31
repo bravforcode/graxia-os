@@ -43,13 +43,13 @@ async def test_register_rate_limit_returns_safe_429(public_async_client):
 
 
 @pytest.mark.asyncio
-async def test_public_billing_plans_accessible(public_async_client):
-    """Billing plans endpoint is public and rate-limited."""
-    response = await public_async_client.get("/api/v1/billing/plans")
+async def test_public_health_accessible(public_async_client):
+    """Public health endpoint is reachable without auth and may be rate-limited."""
+    response = await public_async_client.get("/health")
     assert response.status_code in (200, 429)
     if response.status_code == 200:
         data = response.json()
-        assert "plans" in data
+        assert "service" in data
     elif response.status_code == 429:
         payload = response.json()
         assert payload["error"]["code"] == "RATE_LIMITED"

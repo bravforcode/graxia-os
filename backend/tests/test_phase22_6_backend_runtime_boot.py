@@ -56,6 +56,13 @@ def _is_backend_alive() -> bool:
         return False
 
 
+@pytest.fixture(scope="module", autouse=True)
+def check_backend():
+    """Skip the live-runtime boot checks when no backend is listening."""
+    if not _is_backend_alive():
+        pytest.skip(f"Backend not running at {BACKEND_URL}")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # BOOT VERIFICATION TESTS
 # ══════════════════════════════════════════════════════════════════════════════

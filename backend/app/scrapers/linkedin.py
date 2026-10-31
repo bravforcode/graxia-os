@@ -152,6 +152,8 @@ class LinkedInScraper(BaseScraper):
             if not title or not url:
                 return None
             
+            # LinkedIn appends per-run tracking params (refId, position); drop them so one job is one URL
+            url = url.split("?", 1)[0]
             # Compute source hash for deduplication
             source_hash = self._compute_source_hash(url, title)
             

@@ -13,16 +13,16 @@ export default function LegalPage({ type }: { type: "privacy" | "terms" }) {
     ? [
         { h: th ? "ข้อมูลที่เราเก็บ" : "Data we collect",
           b: th
-            ? "เราเก็บอีเมลสำหรับการสั่งซื้อและส่งสินค้าดิจิทัล, ข้อมูลการชำระเงินผ่าน Stripe (เราไม่เก็บเลขบัตร), และข้อมูลการใช้งานพื้นฐาน (views/clicks) เพื่อปรับปรุงสินค้า"
-            : "We collect your email for orders and digital delivery, payment data via Stripe (we never store card numbers), and basic usage data (views/clicks) to improve our products." },
+            ? "เราเก็บอีเมลสำหรับคำขอซื้อหรือส่งมอบดิจิทัล และข้อมูล event แบบลดข้อมูลเพื่อวัด attribution โดยไม่ใส่ PII ใน metadata analytics"
+            : "We collect email for purchase or digital-delivery requests and minimized event data for attribution. Analytics metadata must not contain PII." },
         { h: th ? "การยินยอมและสิทธิ์ของคุณ (พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล)" : "Consent & your rights (PDPA)",
           b: th
-            ? "การส่งอีเมลของคุณถือเป็นการยินยอมให้เราประมวลผลข้อมูลตามนโยบายนี้ คุณสามารถขอเข้าถึง แก้ไข หรือลบข้อมูลได้ทุกเมื่อโดยติดต่อ support@aifactory.store"
-            : "Submitting your email constitutes consent to process data per this policy. You may request access, correction, or deletion anytime via support@aifactory.store." },
+            ? "การส่งอีเมลไม่ถือเป็นการยินยอม marketing โดยอัตโนมัติ ระบบจะส่ง nurture เมื่อคุณเลือกยินยอมพร้อม consent version เท่านั้น คุณสามารถขอเข้าถึง แก้ไข หรือลบข้อมูลได้ที่ support@graxia.store"
+            : "Submitting an email does not automatically grant marketing consent. Nurture requires explicit consent and a consent version. You may request access, correction, or deletion at support@graxia.store." },
         { h: th ? "การแชร์ข้อมูล" : "Data sharing",
           b: th
-            ? "เราแชร์ข้อมูลกับ Stripe (การชำระเงิน), Resend (การส่งอีเมล) เท่านั้น และไม่ขายข้อมูลของคุณ"
-            : "We share data only with Stripe (payments) and Resend (email delivery). We never sell your data." },
+            ? "เราแชร์ข้อมูลกับ provider ที่เปิดใช้งานตามวัตถุประสงค์ที่จำเป็นเท่านั้น และไม่ขายข้อมูลของคุณ"
+            : "We share data only with configured providers for necessary purposes. We do not sell your data." },
         { h: th ? "คุกกี้" : "Cookies",
           b: th
             ? "เราใช้ localStorage เพื่อจำภาษาที่คุณเลือกและคุกกี้ของ Stripe เพื่อการชำระเงินที่ปลอดภัย"
@@ -31,8 +31,8 @@ export default function LegalPage({ type }: { type: "privacy" | "terms" }) {
     : [
         { h: th ? "สินค้าดิจิทัล" : "Digital products",
           b: th
-            ? "สินค้าเป็นไฟล์ดิจิทัลที่ส่งทันทีหลังชำระเงินผ่านอีเมล ไม่สามารถคืนเงินได้หลังได้รับลิงก์ดาวน์โหลด ยกเว้นตามระยะเวลารับประกันที่ระบุบนสินค้า"
-            : "Products are digital files delivered by email immediately after payment. No refunds after the download link is issued, except within the guarantee period stated on the product." },
+            ? "สินค้าเป็นไฟล์ดิจิทัลที่ส่งตาม delivery asset หลัง event การซื้อได้รับการยืนยัน เงื่อนไขคืนเงินและการเข้าถึงให้ยึดตามที่ระบุบนหน้าสินค้า"
+            : "Products are delivered according to the configured delivery asset after a purchase event is verified. Refund and access terms are those stated on the product page." },
         { h: th ? "สิทธิ์การใช้งาน" : "License",
           b: th
             ? "ซื้อแล้วใช้ส่วนตัวหรือเชิงพาณิชย์ได้ ห้ามนำไปขายต่อหรือแจกจ่ายซ้ำโดยไม่ได้รับอนุญาต"
@@ -48,7 +48,7 @@ export default function LegalPage({ type }: { type: "privacy" | "terms" }) {
       <div className="sticky top-4 z-50 flex justify-center px-4">
         <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm text-slate-950">AI</div>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm text-slate-950">GX</div>
             <span className="font-serif font-bold text-lg text-slate-100">{t("brand.name")}</span>
           </Link>
           <Link to="/store" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
@@ -67,7 +67,7 @@ export default function LegalPage({ type }: { type: "privacy" | "terms" }) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-slate-500 mt-10">{th ? "อัปเดตล่าสุด: สิงหาคม 2026" : "Last updated: August 2026"}</p>
+        <p className="text-xs text-slate-500 mt-10">{th ? "อัปเดตล่าสุด: กันยายน 2026" : "Last updated: September 2026"}</p>
       </div>
     </div>
   );

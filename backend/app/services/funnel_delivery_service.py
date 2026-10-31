@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.funnel import FunnelOrder, FunnelOrderItem, DeliveryAsset, DeliveryAccess, DigitalProduct
 
@@ -23,7 +23,8 @@ class FunnelDeliveryService:
 
     async def grant_delivery_access_for_order(
         self, organization_id: UUID, order_id: UUID, 
-        expires_in_days: int = 30, max_downloads: int = 10
+        expires_in_days: int = 30, max_downloads: int = 10,
+        commit: bool = True,
     ) -> List[Tuple[DeliveryAccess, str]]:
         """
         Grant delivery access for all products in a paid order.
@@ -35,16 +36,20 @@ class FunnelDeliveryService:
                 FunnelOrder.id == order_id,
                 FunnelOrder.organization_id == organization_id
             )
-        )
+        ).with_for_update()
         result = await self.db.execute(stmt)
         order = result.scalar_one_or_none()
 
         if not order:
             logger.error(f"Order {order_id} not found for org {organization_id}")
+            if commit:
+                await self.db.commit()
             return []
         
         if order.status != "paid":
             logger.warning(f"Attempted to grant delivery for unpaid order {order_id}")
+            if commit:
+                await self.db.commit()
             return []
 
         # Load order items
@@ -61,7 +66,7 @@ class FunnelDeliveryService:
                 and_(
                     DeliveryAsset.product_id == item.product_id,
                     DeliveryAsset.organization_id == organization_id,
-                    DeliveryAsset.is_active == True
+                    DeliveryAsset.is_active.is_(True)
                 )
             )
             res = await self.db.execute(stmt)
@@ -72,7 +77,10 @@ class FunnelDeliveryService:
                 stmt = select(DeliveryAccess).where(
                     and_(
                         DeliveryAccess.order_id == order_id,
-                        DeliveryAccess.asset_id == asset.id
+                        or_(
+                            DeliveryAccess.asset_id == asset.id,
+                            DeliveryAccess.delivery_asset_id == asset.id,
+                        ),
                     )
                 )
                 res = await self.db.execute(stmt)
@@ -97,10 +105,12 @@ class FunnelDeliveryService:
                 self.db.add(access)
                 results.append((access, raw_token))
 
-        if results:
+        if commit:
             await self.db.commit()
             for access, _ in results:
                 await self.db.refresh(access)
+        elif results:
+            await self.db.flush()
         
         return results
 
@@ -156,7 +166,8 @@ class FunnelDeliveryService:
     async def get_delivery_payload(self, access: DeliveryAccess) -> dict:
         """Construct safe delivery payload for the customer."""
         # Load asset info
-        stmt = select(DeliveryAsset).where(DeliveryAsset.id == access.asset_id)
+        asset_id = access.delivery_asset_id or access.asset_id
+        stmt = select(DeliveryAsset).where(DeliveryAsset.id == asset_id)
         result = await self.db.execute(stmt)
         asset = result.scalar_one_or_none()
         

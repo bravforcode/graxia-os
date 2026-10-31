@@ -6,13 +6,15 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import AuthContext
-from app.auth.dependencies import get_auth_context, require_permission
+from app.auth.dependencies import require_permission
 from app.core.control_plane import (
     ApprovalAlreadyProcessedError,
     queue_approval_request,
     resolve_approval_batch,
     resolve_approval_request,
+    _trusted_approval_owner,
 )
+from app.core.errors import AppError
 from app.database import get_db
 from app.models.approval_request import ApprovalRequest
 from app.schemas.approval import (
@@ -71,14 +73,17 @@ async def approve_approval(
     auth: AuthContext = Depends(require_permission("approvals:resolve")),
     note: str = "",
 ) -> ApprovalDecisionResponse:
+    owner = _trusted_approval_owner(auth)
     # Verify org scope before resolving
     approval = await db.get(ApprovalRequest, approval_id)
     if approval is None or approval.organization_id != auth.organization_id:
         raise HTTPException(status_code=404, detail="Approval not found")
     try:
-        approval = await resolve_approval_request(approval_id, "approved", note=note or None)
+        approval = await resolve_approval_request(
+            approval_id, "approved", note=note or None, organization_id=owner,
+        )
     except ApprovalAlreadyProcessedError as exc:
-        raise HTTPException(status_code=409, detail="Approval already processed") from exc
+        raise AppError("CONFLICT", "Approval already processed", 409) from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(
@@ -95,14 +100,17 @@ async def reject_approval(
     auth: AuthContext = Depends(require_permission("approvals:resolve")),
     note: str = "",
 ) -> ApprovalDecisionResponse:
+    owner = _trusted_approval_owner(auth)
     # Verify org scope before resolving
     approval = await db.get(ApprovalRequest, approval_id)
     if approval is None or approval.organization_id != auth.organization_id:
         raise HTTPException(status_code=404, detail="Approval not found")
     try:
-        approval = await resolve_approval_request(approval_id, "rejected", note=note or None)
+        approval = await resolve_approval_request(
+            approval_id, "rejected", note=note or None, organization_id=owner,
+        )
     except ApprovalAlreadyProcessedError as exc:
-        raise HTTPException(status_code=409, detail="Approval already processed") from exc
+        raise AppError("CONFLICT", "Approval already processed", 409) from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(
@@ -122,7 +130,9 @@ async def approve_batch(
         batch_key,
         "approved",
         note=note or None,
-        organization_id=auth.organization_id,
+        organization_id=_trusted_approval_owner(auth),
+        audit_actor_id=auth.actor_id,
+        audit_source="api",
     )
     return ApprovalBatchResponse(status="approved", batch_key=batch_key, count=count)
 
@@ -137,7 +147,9 @@ async def reject_batch(
         batch_key,
         "rejected",
         note=note or None,
-        organization_id=auth.organization_id,
+        organization_id=_trusted_approval_owner(auth),
+        audit_actor_id=auth.actor_id,
+        audit_source="api",
     )
     return ApprovalBatchResponse(status="rejected", batch_key=batch_key, count=count)
 
@@ -148,6 +160,8 @@ async def create_approval_from_event(
     why_now: str = "",
     confidence: float = 0.5,
     metadata: dict | None = None,
+    *,
+    auth: AuthContext | None = None,
 ) -> ApprovalRequest:
     """Create an approval request from an event payload.
 
@@ -162,6 +176,7 @@ async def create_approval_from_event(
         Created ApprovalRequest instance
     """
     return await queue_approval_request(
+        auth=auth,
         title=what_action,
         action_type=action_type,
         subject_type=None,

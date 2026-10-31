@@ -50,7 +50,82 @@ class TestFunnelAnalytics:
         }
         res_bad = await public_async_client.post("/api/v1/funnel/events", json=bad_payload)
         assert res_bad.status_code == 400
-        assert "Invalid event type" in res_bad.json()["detail"]
+        assert "Invalid event type" in res_bad.json()["error"]["message"]
+
+    async def test_public_event_idempotency_and_metadata_redaction(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        """Repeated public events reuse one row and never persist email metadata."""
+        org = await OrganizationFactory.build(db_session)
+        payload = {
+            "organization_id": str(org.id),
+            "event_type": "checkout_start",
+            "session_id": "session-idempotent",
+            "idempotency_key": "checkout:session-idempotent:product-1",
+            "metadata_json": {
+                "cta": "buy_now",
+                "email": "private@example.com",
+                "content_id": "product-1",
+            },
+        }
+
+        first = await public_async_client.post("/api/v1/funnel/events", json=payload)
+        second = await public_async_client.post("/api/v1/funnel/events", json=payload)
+
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert first.json()["id"] == second.json()["id"]
+        stored = await db_session.get(ConversionEvent, UUID(first.json()["id"]))
+        assert stored is not None
+        assert stored.idempotency_key == payload["idempotency_key"]
+        assert stored.metadata_json == {"cta": "buy_now", "content_id": "product-1"}
+
+    async def test_attribution_summary_groups_events_and_revenue(
+        self, async_client: AsyncClient, db_session: AsyncSession
+    ):
+        """Admin attribution report groups funnel events by source and campaign."""
+        res_org = await db_session.execute(select(Organization))
+        org = res_org.scalars().first()
+        product = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="Attributed Product", slug="attributed",
+            price_amount=Decimal("149.00"), currency="THB", status="published"
+        )
+        db_session.add(product)
+        await db_session.flush()
+        order = FunnelOrder(
+            id=uuid4(), organization_id=org.id, status="paid",
+            subtotal_amount=Decimal("149.00"), total_amount=Decimal("149.00"),
+            currency="THB", paid_at=datetime.utcnow()
+        )
+        db_session.add(order)
+        await db_session.flush()
+        db_session.add(FunnelOrderItem(
+            organization_id=org.id, order_id=order.id, product_id=product.id,
+            quantity=1, unit_amount=Decimal("149.00"), total_amount=Decimal("149.00"),
+            currency="THB"
+        ))
+        db_session.add_all([
+            ConversionEvent(
+                organization_id=org.id, event_type="page_view", product_id=product.id,
+                source="google", medium="organic", campaign="prompt", session_id="s1",
+                occurred_at=datetime.utcnow()
+            ),
+            ConversionEvent(
+                organization_id=org.id, event_type="purchase", product_id=product.id,
+                order_id=order.id, source="google", medium="organic", campaign="prompt",
+                session_id="s1", occurred_at=datetime.utcnow()
+            ),
+        ])
+        await db_session.commit()
+
+        response = await async_client.get("/api/v1/funnel/analytics/attribution")
+
+        assert response.status_code == 200
+        rows = response.json()
+        row = next(item for item in rows if item["campaign"] == "prompt")
+        assert row["views"] == 1
+        assert row["purchases"] == 1
+        assert row["revenue"] == 149.0
 
     async def test_analytics_tenant_isolation(
         self, async_client: AsyncClient, db_session: AsyncSession

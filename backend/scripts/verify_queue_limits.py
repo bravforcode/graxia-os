@@ -163,7 +163,7 @@ async def check_queue_metrics():
         print_check("Queue metrics", False, f"Utilization is {metrics['queue_utilization_percent']}%, expected 75%")
         return False
     
-    print_check("Queue metrics", True, f"All metrics available and accurate")
+    print_check("Queue metrics", True, "All metrics available and accurate")
     print(f"  {Colors.YELLOW}→{Colors.RESET} Queue size: {metrics['queue_size']}/{metrics['max_queue_size']}")
     print(f"  {Colors.YELLOW}→{Colors.RESET} Utilization: {metrics['queue_utilization_percent']}%")
     print(f"  {Colors.YELLOW}→{Colors.RESET} Dropped events: {metrics['dropped_events']}")
@@ -258,7 +258,7 @@ async def check_configurable_queue_size():
             print_check("Configurable queue size", False, f"Queue size is {bus._max_queue_size}, expected {size}")
             return False
     
-    print_check("Configurable queue size", True, f"Queue size configurable via constructor")
+    print_check("Configurable queue size", True, "Queue size configurable via constructor")
     return True
 
 

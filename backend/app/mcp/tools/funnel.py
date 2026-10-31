@@ -14,12 +14,8 @@ from app.models.funnel import (
     DigitalProduct,
     DeliveryAsset,
     FunnelOrder,
-    FunnelOrderItem,
     DeliveryAccess,
     ConversionEvent,
-    LeadMagnet,
-    LeadCapture,
-    FunnelRecommendation,
 )
 from app.models.approval_request import ApprovalRequest
 from app.models.opportunity import Opportunity
@@ -126,7 +122,7 @@ async def handle_list_products(
     async with AsyncSessionLocal() as db:
         stmt = (
             select(DigitalProduct)
-            .where(DigitalProduct.organization_id == org_uuid, DigitalProduct.is_deleted == False)
+            .where(DigitalProduct.organization_id == org_uuid, DigitalProduct.is_deleted.is_(False))
             .order_by(DigitalProduct.created_at.desc())
             .limit(limit)
         )

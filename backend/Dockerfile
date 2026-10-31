@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install --default-timeout=120 --retries 10 -r requirements.txt
 
 # ── Runtime image ─────────────────────────────────────────────────────────────
 FROM python:3.12-slim AS runtime
@@ -33,10 +33,6 @@ COPY --from=builder /install /usr/local
 
 COPY . .
 
-# Validate production configuration at build time (L-10)
-# This will fail the build if production config is invalid
-RUN python scripts/validate_production_config.py || true
-
 RUN groupadd --gid 1001 graxia \
     && useradd --uid 1001 --gid 1001 --create-home --shell /usr/sbin/nologin graxia \
     && mkdir -p /app/logs /app/backups \
@@ -45,4 +41,7 @@ RUN groupadd --gid 1001 graxia \
 USER 1001:1001
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+# Production config is checked at start, not build time: env is injected at runtime.
+# Validator exit 1 = invalid config (refuse to start); 0 or 2 (not production) continue.
+# PORT: fly.toml sets 8080, compose uses 8000.
+CMD ["sh", "-c", "python scripts/validate_production_config.py; rc=$?; if [ \"$rc\" -eq 1 ]; then exit 1; fi; exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8000}\" --workers 1"]

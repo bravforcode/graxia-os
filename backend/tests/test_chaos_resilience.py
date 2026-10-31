@@ -120,5 +120,5 @@ async def test_rate_limit_blocks_excessive_login_attempts(public_async_client) -
     )
 
     assert response.status_code == 429
-    assert "locked" in response.json()["detail"].lower()
+    assert response.json()["error"]["code"] == "RATE_LIMITED"
     assert response.headers.get("Retry-After")

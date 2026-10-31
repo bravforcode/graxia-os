@@ -9,6 +9,7 @@ from sqlalchemy import desc, select
 from structlog import get_logger
 
 import app.database as database
+from app.config import settings
 from app.agents.base import BaseAgent
 from app.core.identity import identity
 from app.integrations.obsidian import get_obsidian

@@ -121,7 +121,6 @@ class IndexVerifier:
         expected_set = set(expected)
         
         missing = expected_set - found_indexes
-        extra = found_indexes - expected_set
         
         # Filter to show only our new indexes
         our_indexes = [idx for idx in indexes if idx["name"] in expected_set]
@@ -141,12 +140,12 @@ class IndexVerifier:
         
         # Print missing indexes
         if missing:
-            print(f"\n❌ Missing indexes:")
+            print("\n❌ Missing indexes:")
             for idx_name in missing:
                 print(f"   - {idx_name}")
         
         # Print summary
-        print(f"\n📊 Summary:")
+        print("\n📊 Summary:")
         print(f"   Expected: {len(expected)}")
         print(f"   Found: {len(our_indexes)}")
         print(f"   Missing: {len(missing)}")
@@ -258,13 +257,13 @@ class IndexVerifier:
         print("=" * 80)
         
         size_info = await self.get_database_size_info()
-        print(f"\n📊 Overall:")
+        print("\n📊 Overall:")
         print(f"   Database Size: {size_info['database_size']}")
         print(f"   Tables Size:   {size_info['tables_size']}")
         print(f"   Indexes Size:  {size_info['indexes_size']}")
         
         # Get table sizes
-        print(f"\n📊 Table Sizes:")
+        print("\n📊 Table Sizes:")
         table_sizes = await self.get_table_sizes()
         for table in table_sizes:
             print(f"\n   {table['table']}:")
@@ -315,7 +314,7 @@ class IndexVerifier:
             print(f"❌ Total Missing Indexes:  {total_missing}")
             return {"status": "failed", "results": results}
         else:
-            print(f"✅ All indexes verified successfully!")
+            print("✅ All indexes verified successfully!")
             return {"status": "passed", "results": results}
 
 

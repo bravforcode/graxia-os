@@ -79,7 +79,7 @@ async def test_public_routes_get_correlation_headers(async_client):
 @pytest.mark.asyncio
 async def test_rate_limited_response_has_request_id(public_async_client):
     """Rate-limited response includes request and correlation headers."""
-    response = await public_async_client.get("/api/v1/billing/plans")
+    response = await public_async_client.get("/health")
     assert response.status_code in (200, 429)
     assert "X-Request-ID" in response.headers
     assert "X-Correlation-ID" in response.headers

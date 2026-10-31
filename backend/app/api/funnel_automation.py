@@ -6,12 +6,13 @@ import logging
 from uuid import UUID
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth import get_current_user_from_token
 from app.middleware.tenant import get_org
+from app.models.funnel import BundleDeal, EmailSequence
 from app.services.coupon_service import CouponService
 from app.services.review_service import ReviewService
 from app.schemas.funnel import (
@@ -197,9 +198,6 @@ async def get_recent_reviews(
 # BUNDLES (in-memory, JSON-backed via model)
 # ══════════════════════════════════════════════════════════════════════════
 
-from app.models.funnel import BundleDeal, DigitalProduct
-from sqlalchemy import select, and_
-
 @router.get("/bundles", response_model=list[BundleRead])
 async def list_bundles(
     org=Depends(get_org),
@@ -324,8 +322,6 @@ async def get_public_bundles(
 # ══════════════════════════════════════════════════════════════════════════
 # EMAIL SEQUENCES
 # ══════════════════════════════════════════════════════════════════════════
-
-from app.models.funnel import EmailSequence
 
 @router.get("/email-sequences", response_model=list[EmailSequenceRead])
 async def list_email_sequences(

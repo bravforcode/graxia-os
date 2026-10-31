@@ -1,3 +1,23 @@
+import base64
+import hashlib
+
+
+def approval_batch_callback_ref(batch_key: str) -> str:
+    if not isinstance(batch_key, str) or not batch_key:
+        raise ValueError("approval_batch_key_invalid")
+    digest = hashlib.sha256(batch_key.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def is_approval_batch_callback_ref(value: str) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 43
+        and value.isascii()
+        and all(char.isalnum() or char in "-_" for char in value)
+    )
+
+
 def opportunity_keyboard(opp_id: str, review_after: str | None = None):
     try:
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -35,9 +55,10 @@ def approval_keyboard(approval_id: str, batch_key: str | None = None):
             InlineKeyboardButton("❌ Reject", callback_data=f"approval:reject:{approval_id}"),
         ]]
         if batch_key:
+            callback_ref = approval_batch_callback_ref(batch_key)
             buttons.append([
-                InlineKeyboardButton("✅ Approve Batch", callback_data=f"approvalbatch:approve:{batch_key}"),
-                InlineKeyboardButton("❌ Reject Batch", callback_data=f"approvalbatch:reject:{batch_key}"),
+                InlineKeyboardButton("✅ Approve Batch", callback_data=f"approvalbatch:a:{callback_ref}"),
+                InlineKeyboardButton("❌ Reject Batch", callback_data=f"approvalbatch:r:{callback_ref}"),
             ])
         return InlineKeyboardMarkup(buttons)
     except ImportError:

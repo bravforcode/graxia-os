@@ -12,16 +12,13 @@ Enterprise-grade GraphQL API with:
 import asyncio
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import strawberry
 from strawberry.extensions import QueryDepthLimiter
 from strawberry.federation import Schema
 from strawberry.types import Info
 
-from app.models.user import User
-from app.models.organization import Organization
-from app.models.opportunity import Opportunity
 
 
 # ---------------------------------------------------------------------------

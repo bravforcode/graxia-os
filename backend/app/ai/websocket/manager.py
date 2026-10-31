@@ -33,7 +33,7 @@ class WebSocketManager:
         for connection in self.active_connections:
             try:
                 await connection.send_text(message.json())
-            except:
+            except Exception:
                 pass
 
     async def handle_chat(self, message: WSMessage) -> WSResponse:
@@ -164,5 +164,5 @@ class WebSocketManager:
 
         try:
             await websocket.send_text(response.json())
-        except:
+        except Exception:
             pass

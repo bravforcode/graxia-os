@@ -6,7 +6,6 @@ getting summaries, and managing cache.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 
 from app.context_engine.cache import ContextCache

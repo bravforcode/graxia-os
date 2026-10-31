@@ -1,14 +1,14 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+import logging
 from typing import Annotated, Any, TypedDict, cast
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import desc, func, select
 
 from app.config import settings
 from app.core.advanced_health import health_checker as advanced_health_checker
 from app.core.control_plane import create_run, mark_run_completed, mark_run_failed, mark_run_started
-from app.core.event_bus import event_bus
 from app.core.identity import WeightHistoryEntry, identity
 from app.core.llm import llm_client
 from app.core.redis_circuit_breaker import openclaw_circuit_breaker, redis_circuit_breaker
@@ -25,6 +25,7 @@ from app.models.scraper_health import ScraperHealth
 from app.tasks.queues import get_queue_depths
 
 router = APIRouter(prefix="/system", tags=["system"])
+logger = logging.getLogger(__name__)
 
 WeightHistoryLimit = Annotated[int, Query(ge=1, le=50)]
 AuditLogLimit = Annotated[int, Query(ge=1, le=100)]
@@ -43,7 +44,6 @@ class HealthResponse(TypedDict):
     gemini_calls_today: int
     scraper_summary: ScraperSummary
     readiness: dict[str, Any]
-    event_stats: dict[str, int]
 
 
 class CostsResponse(TypedDict):
@@ -139,18 +139,37 @@ class StatsResponse(TypedDict):
 
 
 def _active_ai_provider() -> str:
-    if settings.HAS_REAL_OPENCLAW_KEY:
-        base_url = (settings.OPENCLAW_BASE_URL or "").lower()
-        if "openrouter" in base_url:
-            return "OpenRouter"
-        if "groq" in base_url:
-            return "Groq"
-        if "openclaw" in base_url:
-            return "OpenClaw"
-        return "OpenAI-compatible"
-    if settings.HAS_REAL_GEMINI_KEY:
-        return "Gemini"
-    return "Not configured"
+    provider = llm_client.provider
+    return {
+        "openai": "OpenAI",
+        "openclaw": "OpenClaw",
+        "gemini": "Gemini",
+    }.get(provider, "Not configured")
+
+
+def _readiness_with_llm_provider(readiness: dict[str, Any]) -> dict[str, Any]:
+    provider_status = llm_client.get_provider_readiness()
+    issues = [
+        issue
+        for issue in readiness.get("issues", [])
+        if not str(issue).startswith("LLM provider:")
+    ]
+    if not provider_status["configured"]:
+        issues.append("LLM provider: selected provider configuration is incomplete")
+    elif not provider_status["ready"]:
+        issues.append(f"LLM provider: provider status is {provider_status['status']}")
+
+    result = {**readiness, "llm_provider": provider_status, "issues": issues}
+    if not provider_status["ready"]:
+        result["is_ready"] = False
+        if result.get("mode") in {"booting", "full"}:
+            result["mode"] = "degraded"
+    elif not result.get("is_ready") and not issues:
+        # The only startup blocker was the provider's initial unverified state.
+        result["is_ready"] = True
+        if result.get("mode") in {"booting", "blocked"}:
+            result["mode"] = "full"
+    return result
 
 
 @router.get("/stats")
@@ -318,8 +337,8 @@ async def get_system_stats() -> StatsResponse:
 
 @router.get("/health")
 async def health() -> HealthResponse:
-    call_count = await llm_client.get_call_count_today()
-    readiness = get_runtime_state()
+    call_count = await llm_client.get_call_count_today("gemini")
+    readiness = _readiness_with_llm_provider(get_runtime_state())
     try:
         async with AsyncSessionLocal() as db:
             scrapers = list(
@@ -343,17 +362,22 @@ async def health() -> HealthResponse:
             "total": len(scrapers),
         },
         "readiness": readiness,
-        "event_stats": event_bus.get_event_stats(),
     }
 
 
 @router.get("/costs")
 async def costs() -> CostsResponse:
     router_summary = llm_client.get_router_summary()
+    try:
+        daily_cost = await llm_client.get_cost_today_usd()
+        monthly_cost = await llm_client.get_cost_month_usd()
+    except Exception as exc:
+        logger.warning("Cost totals are unavailable: %s", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Cost tracking data unavailable") from None
     return {
-        "cost_today_usd": llm_client.get_cost_today_usd(),
-        "cost_month_usd": llm_client.get_cost_month_usd(),
-        "calls_today": await llm_client.get_call_count_today(),
+        "cost_today_usd": daily_cost,
+        "cost_month_usd": monthly_cost,
+        "calls_today": await llm_client.get_total_call_count_today(),
         "cost_paused": llm_client.is_cost_paused(),
         "llm_degraded": llm_client.is_degraded(),
         "routing_enabled": bool(router_summary["routing_enabled"]),
@@ -505,6 +529,7 @@ async def trigger_scan() -> TriggerResponse:
     from app.tasks.daily_scan import run_daily_scan
 
     run = await create_run(
+        organization_id=settings.AUTOMATION_ORGANIZATION_ID,
         name="Manual daily scan",
         task_type="daily_scan",
         trigger_source="api",
@@ -531,6 +556,7 @@ async def trigger_brief() -> TriggerResponse:
     from app.agents.briefer import briefer_agent
 
     run = await create_run(
+        organization_id=settings.AUTOMATION_ORGANIZATION_ID,
         name="Manual brief",
         task_type="morning_brief",
         trigger_source="api",
@@ -593,7 +619,7 @@ async def health_detailed() -> DetailedHealthResponse:
         "degraded": llm_client.is_degraded(),
         "cost_paused": llm_client.is_cost_paused(),
         "using_openclaw": llm_client._using_openclaw(),
-        "calls_today": await llm_client.get_call_count_today(),
+        "calls_today": await llm_client.get_total_call_count_today(),
     }
 
     # Determine overall status
@@ -615,11 +641,6 @@ async def health_detailed() -> DetailedHealthResponse:
             "all_circuits_closed": all(cb["state"] == "CLOSED" for cb in cb_states.values()),
         }
     }
-
-@router.get("/debug-sentry")
-async def debug_sentry():
-    """Trigger a ValueError to verify Sentry error capturing."""
-    raise ValueError("Sentry Verification Error")
 
 @router.post("/health/predictive-test")
 async def predictive_test(request: dict[str, Any]) -> dict[str, Any]:

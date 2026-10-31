@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Plus, 
@@ -30,11 +30,7 @@ export default function ProductList() {
 
   const organizationId = user?.organization_id || "";
 
-  useEffect(() => {
-    fetchData();
-  }, [includeArchived]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [prodsData, statsData] = await Promise.all([
@@ -50,7 +46,11 @@ export default function ProductList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [includeArchived]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const handlePublish = async (id: string) => {
     if (!confirm("Are you sure you want to publish this product? This will make the product live.")) return;

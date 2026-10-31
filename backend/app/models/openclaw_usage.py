@@ -27,7 +27,7 @@ class OpenClawUsage(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     platform: Mapped[str] = mapped_column(String(50), nullable=False)
     action: Mapped[str] = mapped_column(String(50), nullable=False)
-    cost_usd: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(20, 12), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), default=lambda: datetime.now(UTC), index=True
     )

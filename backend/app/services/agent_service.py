@@ -4,7 +4,7 @@ Core service for managing agents, teams, reputation, and marketplace
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -704,7 +704,7 @@ class AgentService:
         result = await self.db.execute(
             select(AgentWishlist)
             .where(AgentWishlist.agent_id == agent_id)
-            .where(AgentWishlist.is_fulfilled == False)
+            .where(AgentWishlist.is_fulfilled.is_(False))
             .order_by(AgentWishlist.priority)
         )
         return list(result.scalars().all())

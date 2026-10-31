@@ -37,7 +37,7 @@ class KnowledgeRepository:
     async def search_semantic(self, query_vec: list[float], limit: int = 5, category: str | None = None, project_id: str | None = None):
         stmt = (
             select(KnowledgeItem, KnowledgeItem.embedding.cosine_distance(query_vec).label("distance"))
-            .where(KnowledgeItem.is_active == True)
+            .where(KnowledgeItem.is_active.is_(True))
         )
         
         if category:

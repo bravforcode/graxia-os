@@ -14,18 +14,16 @@ Features:
 - Cache analytics and hit rate monitoring
 """
 
+import asyncio
 import hashlib
-import json
 import logging
 import pickle
-import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import wraps
 from typing import Any, Callable, Generic, TypeVar, Optional
 
-from app.config import settings
 from app.core.redis_pool import get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -510,7 +508,3 @@ def get_cache_manager() -> CacheManager:
             enable_l3=False
         )
     return get_cache_manager._instance
-
-
-# Import asyncio for the lock
-import asyncio

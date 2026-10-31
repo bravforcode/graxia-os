@@ -156,7 +156,7 @@ def assert_no_live_providers(
 
     if violations:
         raise RuntimeError(
-            f"Provider guard violation — live provider(s) detected:\n"
+            "Provider guard violation — live provider(s) detected:\n"
             + "\n".join(f"  - {v}" for v in violations)
         )
 

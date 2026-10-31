@@ -14,14 +14,11 @@ Usage:
 import hashlib
 import hmac
 import sys
-import time
 from pathlib import Path
 
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.config import settings
-from app.middleware.auth import AuthMiddleware
 
 
 def test_hmac_signature_generation():

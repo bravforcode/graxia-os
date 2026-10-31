@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -33,12 +33,7 @@ export default function ApprovalDetailPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    loadApproval();
-  }, [id]);
-
-  async function loadApproval() {
+  const loadApproval = useCallback(async () => {
     setLoading(true);
     try {
       const result = await getApprovalById(id!);
@@ -47,7 +42,12 @@ export default function ApprovalDetailPage() {
       setApproval(null);
     }
     setLoading(false);
-  }
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    void loadApproval();
+  }, [id, loadApproval]);
 
   async function handleApprove() {
     if (!id) return;

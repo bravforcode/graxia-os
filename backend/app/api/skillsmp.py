@@ -12,6 +12,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core.agent_skill_bridge import get_agent_skill_bridge
 from app.core.skill_learning_engine import SkillLearningEngine
 from app.core.skill_recommender import SkillRecommender
 from app.database import get_db
@@ -728,8 +729,6 @@ async def get_stats(
 
 
 # ============== Agent Learning Endpoints ==============
-
-from app.core.agent_skill_bridge import get_agent_skill_bridge
 
 
 class AgentSkillQueryRequest(BaseModel):

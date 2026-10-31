@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, FunnelOrderItem, DeliveryAsset, DeliveryAccess
 from app.models.organization import Organization
+from app.services.funnel_delivery_service import FunnelDeliveryService
 from tests.factories import OrganizationFactory, UserFactory
 
 @pytest.mark.asyncio
@@ -69,6 +70,63 @@ class TestFunnelDelivery:
         assert access.product_id == prod.id
         assert access.asset_id == asset.id
         assert access.access_token_hash == hashlib.sha256(raw_token.encode()).hexdigest()
+
+    async def test_grant_reuses_delivery_asset_id_only_access(
+        self, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="Existing access product",
+            slug=f"existing-access-{uuid4().hex}", price_amount=Decimal("5.00"),
+            currency="THB", status="published",
+        )
+        asset = DeliveryAsset(
+            id=uuid4(), organization_id=org.id, product_id=product.id,
+            title="Existing asset", asset_type="text", content_body="content",
+            is_active=True,
+        )
+        order = FunnelOrder(
+            id=uuid4(), organization_id=org.id, status="paid",
+            subtotal_amount=Decimal("5.00"), total_amount=Decimal("5.00"),
+            currency="THB",
+        )
+        db_session.add_all([product, asset, order])
+        await db_session.flush()
+        existing_token_hash = hashlib.sha256(
+            secrets.token_urlsafe(32).encode()
+        ).hexdigest()
+        existing_access = DeliveryAccess(
+            organization_id=org.id, order_id=order.id, product_id=product.id,
+            asset_id=None, delivery_asset_id=asset.id,
+            access_token_hash=existing_token_hash,
+            status="active", max_downloads=3, download_count=0,
+        )
+        db_session.add_all([
+            FunnelOrderItem(
+                organization_id=org.id, order_id=order.id, product_id=product.id,
+                quantity=1, unit_amount=Decimal("5.00"),
+                total_amount=Decimal("5.00"), currency="THB",
+            ),
+            existing_access,
+        ])
+        await db_session.commit()
+
+        grants = await FunnelDeliveryService(db_session).grant_delivery_access_for_order(
+            org.id, order.id
+        )
+
+        assert grants == []
+        accesses = (
+            await db_session.execute(
+                select(DeliveryAccess).where(DeliveryAccess.order_id == order.id)
+            )
+        ).scalars().all()
+        assert len(accesses) == 1
+        assert accesses[0].id == existing_access.id
+        assert accesses[0].asset_id is None
+        assert accesses[0].delivery_asset_id == asset.id
+        assert accesses[0].access_token_hash == existing_token_hash
+        assert accesses[0].status == "active"
 
     async def test_unpaid_order_cannot_grant_access(
         self, async_client: AsyncClient, db_session: AsyncSession
@@ -136,6 +194,47 @@ class TestFunnelDelivery:
         assert resp.status_code == 404
         # App wraps HTTPException errors in {"error": {code, message}} (safe-errors design)
         assert resp.json()["error"]["code"] == "NOT_FOUND"
+
+    async def test_customer_token_payload_resolves_delivery_asset_id_only(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="New mapping product",
+            slug="p-delivery-asset-id-only", price_amount=Decimal("5.00"),
+            currency="THB", status="published",
+        )
+        asset = DeliveryAsset(
+            id=uuid4(), organization_id=org.id, product_id=product.id,
+            title="Mapped asset", asset_type="text", content_body="delivery payload",
+            is_active=True,
+        )
+        order = FunnelOrder(
+            id=uuid4(), organization_id=org.id, status="paid",
+            subtotal_amount=Decimal("5.00"), total_amount=Decimal("5.00"),
+            currency="THB",
+        )
+        db_session.add_all([product, asset, order])
+        await db_session.flush()
+
+        raw_token = secrets.token_urlsafe(32)
+        access = DeliveryAccess(
+            id=uuid4(), organization_id=org.id, order_id=order.id,
+            product_id=product.id, asset_id=None, delivery_asset_id=asset.id,
+            access_token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+            status="active", max_downloads=3, download_count=0,
+        )
+        db_session.add(access)
+        await db_session.commit()
+
+        response = await public_async_client.get(
+            f"/api/v1/funnel/delivery/{raw_token}"
+        )
+
+        assert response.status_code == 200
+        assert response.json()["product_name"] == product.name
+        assert response.json()["asset_title"] == asset.title
+        assert response.json()["content_body"] == "delivery payload"
 
     async def test_expired_token_fails(
         self, public_async_client: AsyncClient, db_session: AsyncSession

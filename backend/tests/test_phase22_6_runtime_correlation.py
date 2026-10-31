@@ -84,7 +84,7 @@ class TestHealthCorrelation:
     def test_c002_404_has_request_id_in_body(self):
         """C002: 404 error response includes request_id in body."""
         status, body, _ = _curl("/nonexistent-c002-test-route")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         rid = error.get("request_id", "")
@@ -96,7 +96,7 @@ class TestHealthCorrelation:
     def test_c003_404_has_correlation_id_in_body(self):
         """C003: 404 error response includes correlation_id in body."""
         status, body, _ = _curl("/nonexistent-c003-test")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         cid = error.get("correlation_id", "")
@@ -105,7 +105,7 @@ class TestHealthCorrelation:
     def test_c004_request_id_format(self):
         """C004: request_id in 404 body follows req_<hex> format."""
         status, body, _ = _curl("/nonexistent-c004")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         rid = error.get("request_id", "")
@@ -122,21 +122,21 @@ class TestSafeErrorCorrelation:
     """C005-C008: request_id/correlation_id in safe error responses."""
 
     def test_c005_404_safe_error_body_structure(self):
-        """C005: 404 response has error.code + error.message + error.request_id."""
+        """C005: 403 response has error.code + error.message + error.request_id."""
         status, body, _ = _curl("/nonexistent-route-xyz-99999")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         assert "code" in error, "No error.code in 404"
         assert "message" in error, "No error.message in 404"
         assert "request_id" in error, "No error.request_id in 404"
-        assert error["code"] == "NOT_FOUND"
-        assert "Resource not found" in error["message"]
+        assert error["code"] == "FORBIDDEN"
+        assert error["message"] == "Forbidden"
 
     def test_c006_404_has_correlation_id_in_body(self):
         """C006: 404 response includes correlation_id in body."""
         status, body, _ = _curl("/another-nonexistent-path-88888")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         cid = error.get("correlation_id", "")
@@ -145,7 +145,7 @@ class TestSafeErrorCorrelation:
     def test_c007_404_safe_error_no_stack_leak(self):
         """C007: 404 error does not leak stack traces, file paths, SQL, or tokens."""
         status, body, _ = _curl("/leak-test-99999-xxxxx")
-        assert status == 404
+        assert status == 403
         assert body is not None
         body_str = json.dumps(body).lower()
 
@@ -170,7 +170,7 @@ class TestSafeErrorCorrelation:
     def test_c008_request_id_header_matches_body(self):
         """C008: Header request_id matches error body request_id (from same request)."""
         status, body, headers = _curl("/notfound-endpoint-77777")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         body_rid = error.get("request_id", "")
@@ -199,22 +199,22 @@ class TestObservabilityConsistency:
     def test_c010_404_body_has_request_id_and_correlation_id(self):
         """C010: 404 body has both request_id and correlation_id."""
         status, body, _ = _curl("/missing-resource-44444")
-        assert status == 404
+        assert status == 403
         assert body is not None
         error = body.get("error", {})
         assert error.get("request_id", ""), "No request_id"
         assert error.get("correlation_id", ""), "No correlation_id"
 
     def test_c011_safe_404_structure_consistent(self):
-        """C011: All 404 responses have same structure."""
+        """C011: All unknown-route denials have same structure."""
         paths = ["/a", "/b", "/c-test-xyz"]
         for path in paths:
             status, body, _ = _curl(path)
-            assert status == 404
+            assert status == 403
             assert body is not None
             error = body.get("error", {})
-            assert error.get("code") == "NOT_FOUND"
-            assert "Resource not found" in error.get("message", "")
+            assert error.get("code") == "FORBIDDEN"
+            assert error.get("message") == "Forbidden"
             assert error.get("request_id", "").startswith("req_")
 
     def test_c012_correlation_id_in_404(self):

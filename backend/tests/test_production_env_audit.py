@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
-from scripts.ops.production_env_audit import audit_production_env
+from app.ops.production_env_audit import audit_production_env
 
 WRITABLE_TEMP_ROOT = Path("C:/Users/menum/.codex/memories/tmp/bravos-prodready-tests")
 

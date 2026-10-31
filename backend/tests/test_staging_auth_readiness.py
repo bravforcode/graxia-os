@@ -6,6 +6,23 @@ import pytest
 
 
 @pytest.mark.asyncio
+async def test_staging_readiness_rejects_unauthenticated_request(public_async_client):
+    response = await public_async_client.get("/api/v1/health/readiness/staging")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_staging_readiness_rejects_invalid_bearer_token(public_async_client):
+    response = await public_async_client.get(
+        "/api/v1/health/readiness/staging",
+        headers={"Authorization": "Bearer invalid.invalid.invalid"},
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_staging_readiness_endpoint_returns_checks(async_client):
     """Staging readiness endpoint returns all security check fields."""
     response = await async_client.get("/api/v1/health/readiness/staging")
@@ -48,8 +65,15 @@ async def test_staging_readiness_has_runtime_info(async_client):
 
 
 @pytest.mark.asyncio
-async def test_staging_readiness_production_live_providers_disabled(async_client):
+async def test_staging_readiness_production_live_providers_disabled(
+    async_client, monkeypatch
+):
     """Production live providers should be disabled (stripe, email, google)."""
+    monkeypatch.setattr("app.api.health.settings.ALLOW_LIVE_STRIPE", False)
+    monkeypatch.setattr("app.api.health.settings.STRIPE_SECRET_KEY", "")
+    monkeypatch.setattr("app.api.health.settings.ALLOW_REAL_EMAIL_SEND", False)
+    monkeypatch.setattr("app.api.health.settings.RESEND_API_KEY", "")
+
     response = await async_client.get("/api/v1/health/readiness/staging")
     assert response.status_code == 200
     payload = response.json()
@@ -71,15 +95,16 @@ async def test_staging_readiness_not_ready_in_test_env(async_client):
 
 
 @pytest.mark.asyncio
-async def test_staging_readiness_permissions_ok(async_client):
-    """Staging readiness permission check should pass."""
+async def test_staging_readiness_permissions_unverified(async_client):
+    """Unprobed permission and boundary checks must block readiness."""
     response = await async_client.get("/api/v1/health/readiness/staging")
     assert response.status_code == 200
     payload = response.json()
 
-    assert payload["checks"]["permissions_ok"] is True
-    assert payload["checks"]["org_boundary_ok"] is True
+    assert payload["checks"]["permissions_ok"] is False
+    assert payload["checks"]["org_boundary_ok"] is False
     assert payload["checks"]["auth_context_middleware"] is True
+    assert payload["staging_ready"] is False
 
 
 @pytest.mark.asyncio
@@ -120,7 +145,7 @@ async def test_local_agent_endpoint_returns_ready_flags(async_client):
     assert response.status_code == 200
     payload = response.json()
 
-    assert payload["FULL_LOCAL_AGENT_READY"] is True
+    assert payload["FULL_LOCAL_AGENT_READY"] is False
     assert payload["STAGING_READY"] is False
     assert payload["PRODUCTION_READY"] is False
     assert "LOCAL_FUNNEL_READY" in payload

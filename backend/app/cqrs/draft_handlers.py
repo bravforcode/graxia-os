@@ -2,9 +2,9 @@
 Draft Command and Query Handlers
 """
 import logging
-from datetime import UTC, datetime
 
 from app.core.result import Result, err, ok
+from app.core.control_plane import _trusted_approval_owner, mark_subject_approvals_resolved
 from app.cqrs.commands import ApproveDraftCommand, RejectDraftCommand
 from app.cqrs.handlers import CommandHandler, QueryHandler
 from app.cqrs.queries import GetDraftQuery, ListDraftsQuery
@@ -19,38 +19,29 @@ logger = logging.getLogger(__name__)
 class ApproveDraftHandler(CommandHandler[ApproveDraftCommand, ContentDraft]):
     """Handler for approving drafts."""
     
+    def __init__(self, *, auth=None):
+        self._auth = auth
+
     async def handle(self, command: ApproveDraftCommand) -> Result[ContentDraft, Exception]:
         """Approve draft."""
         try:
+            owner = _trusted_approval_owner(self._auth)
             async with AsyncUnitOfWork() as uow:
                 session = uow.session
                 repo = DraftRepository(session)
                 
                 # Get draft
                 draft = await repo.get_by_id(command.draft_id)
-                if not draft:
+                if not draft or draft.organization_id != owner:
                     return err(ValueError(f"Draft not found: {command.draft_id}"))
                 
-                # Update status
-                draft.status = "approved"
-                draft.approved_at = datetime.now(UTC)
-                draft.updated_at = datetime.now(UTC)
-                
-                # Save
-                draft = await repo.update(draft)
+                consumed = await mark_subject_approvals_resolved(
+                    "content_draft", command.draft_id, "approved", auth=self._auth,
+                )
+                if not consumed:
+                    return err(ValueError("approval_not_pending"))
+                await session.refresh(draft)
 
-                
-                # Mark approvals resolved
-                from app.core.control_plane import mark_subject_approvals_resolved
-                await mark_subject_approvals_resolved("content_draft", command.draft_id, "approved")
-                
-                # Emit event
-                from app.core.event_bus import event_bus
-                await event_bus.emit("draft.approved", {
-                    "draft_id": str(draft.id),
-                    "draft_type": draft.type,
-                })
-                
                 logger.info(f"Approved draft: {draft.id}")
                 return ok(draft)
                 
@@ -62,36 +53,30 @@ class ApproveDraftHandler(CommandHandler[ApproveDraftCommand, ContentDraft]):
 class RejectDraftHandler(CommandHandler[RejectDraftCommand, ContentDraft]):
     """Handler for rejecting drafts."""
     
+    def __init__(self, *, auth=None):
+        self._auth = auth
+
     async def handle(self, command: RejectDraftCommand) -> Result[ContentDraft, Exception]:
         """Reject draft."""
         try:
+            owner = _trusted_approval_owner(self._auth)
             async with AsyncUnitOfWork() as uow:
                 session = uow.session
                 repo = DraftRepository(session)
                 
                 # Get draft
                 draft = await repo.get_by_id(command.draft_id)
-                if not draft:
+                if not draft or draft.organization_id != owner:
                     return err(ValueError(f"Draft not found: {command.draft_id}"))
                 
-                # Update status
-                draft.status = "rejected"
-                draft.rejection_reason = command.reason
-                draft.updated_at = datetime.now(UTC)
-                
-                # Save
-                draft = await repo.update(draft)
-
-                
-                # Mark approvals resolved
-                from app.core.control_plane import mark_subject_approvals_resolved
-                await mark_subject_approvals_resolved(
-                    "content_draft",
-                    command.draft_id,
-                    "rejected",
-                    note=command.reason or None
+                consumed = await mark_subject_approvals_resolved(
+                    "content_draft", command.draft_id, "rejected",
+                    note=command.reason or None, auth=self._auth,
                 )
-                
+                if not consumed:
+                    return err(ValueError("approval_not_pending"))
+                await session.refresh(draft)
+
                 logger.info(f"Rejected draft: {draft.id}")
                 return ok(draft)
                 

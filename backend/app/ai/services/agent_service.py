@@ -141,7 +141,7 @@ class AgentService:
             if config.get("url") and config["url"] != "internal":
                 response = await self.http_client.get(f"{config['url']}/health", timeout=5.0)
                 online = response.status_code == 200
-        except:
+        except Exception:
             online = False
 
         # Get capabilities based on agent type

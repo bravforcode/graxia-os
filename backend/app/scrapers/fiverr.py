@@ -61,7 +61,7 @@ class FiverrScraper(BaseScraper):
                 self.use_openclaw = False
         
         # Fallback to basic HTTP
-        return await self._safe_fetch(url)
+        return await self._safe_fetch(url, headers={"Referer": "https://www.fiverr.com/"})
     
     async def parse(self, response: httpx.Response) -> list[dict]:
         """Parse gig listings (as proxy for demand/opportunities)."""

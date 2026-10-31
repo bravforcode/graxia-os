@@ -10,7 +10,6 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 from uuid import uuid4
 
 from app.context_engine.diff_protocol import DiffProtocol
@@ -27,7 +26,7 @@ from app.context_engine.schemas import (
     ProjectFileInfo,
     ProjectIndex,
 )
-from app.context_engine.token_estimator import estimate_file_tokens, estimate_text_tokens
+from app.context_engine.token_estimator import estimate_text_tokens
 
 logger = logging.getLogger(__name__)
 

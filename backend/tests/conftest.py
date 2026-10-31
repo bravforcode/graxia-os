@@ -1,6 +1,5 @@
 import os
 import sys
-import uuid
 from pathlib import Path
 
 # Ensure project root is on sys.path for imports from scripts/ops/
@@ -54,14 +53,20 @@ if not _is_safe_test_db_url(_original_db_url) and not os.environ.get("ALLOW_UNSA
         f"production or staging database. Set ALLOW_UNSAFE_TEST_DB=1 to override (NOT RECOMMENDED)."
     )
 
-# Use a unique DB for each test process to avoid concurrency issues
-_test_db_id = uuid.uuid4().hex[:8]
-_test_db_path = str(_project_root / "backend" / "tests" / f"test_{_test_db_id}.db")
-
+# Use an in-memory DB so test runs leave no database artifacts. SQLAlchemy uses
+# a single-connection pool for async SQLite memory URLs, preserving it for the
+# session engine while setup_database recreates tables between tests.
 # Force REAL services for Phase 9 tests
 os.environ["TESTING"] = "true"
-os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_test_db_path}"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["REDIS_ENABLED"] = "false"
+# Keep the Stripe readiness gate closed even if the workstation .env opts in.
+os.environ["ALLOW_LIVE_STRIPE"] = "false"
+os.environ["STRIPE_SECRET_KEY"] = "sk_test"
+
+# Keep email consent closed and discard workstation provider credentials.
+os.environ["ALLOW_REAL_EMAIL_SEND"] = "false"
+os.environ["RESEND_API_KEY"] = ""
 # Clear broker URLs so services that guard on them (e.g. funnel checkout's
 # abandoned-cart scheduling) skip apply_async instead of retrying a dead
 # Redis connection for ~100s per test.
@@ -104,11 +109,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 @pytest_asyncio.fixture(scope="session")
-def engine():
-    # Force recreate engine with test settings
-    import importlib
-    importlib.reload(app.database)
-    return app.database.engine
+async def engine():
+    # Reuse the engine created with the in-memory test settings above.
+    try:
+        yield app.database.engine
+    finally:
+        await app.database.engine.dispose()
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_database(engine):

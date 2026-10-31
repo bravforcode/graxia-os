@@ -16,20 +16,18 @@ import hashlib
 import hmac
 import json
 import logging
-import secrets
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Optional
 from uuid import uuid4
 
 import aiohttp
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text, func
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.models.base import Base
-from app.core.redis_pool import get_redis_client
 from app.core.circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger(__name__)

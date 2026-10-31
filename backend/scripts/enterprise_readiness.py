@@ -19,7 +19,7 @@ if str(BACKEND_ROOT) not in sys.path:
 from app.config import settings
 from app.database import AsyncSessionLocal
 
-from scripts.production_env_audit import audit_production_env
+from app.ops.production_env_audit import audit_production_env
 
 
 def parse_args() -> argparse.Namespace:

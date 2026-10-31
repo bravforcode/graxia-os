@@ -1,12 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, Star, Users, Download, Check, ChevronDown,
-  ShieldCheck, Award, Clock, ArrowRight, CheckCircle, Gift,
+  ShieldCheck, ArrowRight, CheckCircle, Gift,
   TrendingUp, Globe,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../data/products";
+import { PRODUCTS, STORE_ORG_ID, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 import { SkeletonProductDetail } from "../components/ui/Skeleton";
@@ -16,23 +16,10 @@ export default function StoreProductPage() {
   const [product, setProduct] = useState<ProductCatalogItem | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { locale, toggle, t } = useLang();
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 47, seconds: 33 });
 
   useEffect(() => {
     if (slug) { const found = PRODUCTS.find((p) => p.slug === slug); setProduct(found || null); }
   }, [slug]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const [isPageLoading, setIsPageLoading] = useState(true);
 
@@ -71,7 +58,7 @@ export default function StoreProductPage() {
         "@context": "https://schema.org", "@type": "Product",
         name: product.name, description: product.shortDescription, image: product.coverImageUrl,
         offers: { "@type": "Offer", price: product.priceAmount, priceCurrency: product.currency, availability: "https://schema.org/InStock" },
-        aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount },
+        ...(product.reviewCount > 0 && product.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount } } : {}),
       }) }} />
 
       {/* Background */}
@@ -125,17 +112,15 @@ export default function StoreProductPage() {
 
             <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl">{getLocalizedShortDescription(product, locale)}</p>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
-                {[...Array(5)].map((_, i) => <Star key={i} size={14} className="fill-amber-400 text-amber-400" />)}
-                <span className="text-slate-300 font-semibold ms-1">{product.rating}</span>
-                <span className="text-slate-500">({product.reviewCount.toLocaleString()} {t("store.reviews")})</span>
-              </div>
-              <span className="text-slate-600">·</span>
-              <div className="flex items-center gap-1.5 text-slate-400"><Users size={14} /><span>{formatSalesCount(product.salesCount)} {t("featured.sold")}</span></div>
-              <span className="text-slate-600">·</span>
-              <span className="text-slate-400">{t("store.updated")} {new Date(product.lastUpdated).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { month: "short", year: "numeric" })}</span>
-            </div>
+              {(product.reviewCount > 0 || product.salesCount > 0) && <div className="flex flex-wrap items-center gap-4 text-sm">
+                {product.reviewCount > 0 && <div className="flex items-center gap-1.5">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={14} className="fill-amber-400 text-amber-400" />)}
+                  <span className="text-slate-300 font-semibold ms-1">{product.rating}</span>
+                  <span className="text-slate-500">({product.reviewCount.toLocaleString()} {t("store.reviews")})</span>
+                </div>}
+                {product.salesCount > 0 && <div className="flex items-center gap-1.5 text-slate-400"><Users size={14} /><span>{formatSalesCount(product.salesCount)} {t("featured.sold")}</span></div>}
+                <span className="text-slate-400">{t("store.updated")} {new Date(product.lastUpdated).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { month: "short", year: "numeric" })}</span>
+              </div>}
 
             <div className="space-y-3 pt-2">
               <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">{t("product.whatsIncluded")}</h3>
@@ -162,12 +147,11 @@ export default function StoreProductPage() {
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
-                  <span className="text-sm text-slate-500 line-through">{formatPrice(Math.round(product.priceAmount * 1.5))}</span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")} · {product.guaranteeDays}{t("store.dayGuarantee")}</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")}</p>
               </div>
 
-              <Link to={`/f/demo/${product.slug}`}
+              <Link to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-glow-md transition-all duration-200 flex items-center justify-center gap-2 group text-sm ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}>
                 {t("product.getInstantAccess")}
                 <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
@@ -177,25 +161,12 @@ export default function StoreProductPage() {
                 {[
                   { icon: CheckCircle, text: t("product.instantAccess") },
                   { icon: ShieldCheck, text: t("product.stripeEncrypted") },
-                  { icon: Award, text: `${product.guaranteeDays}{t("store.dayMoneyBack")}` },
-                  { icon: TrendingUp, text: `${formatSalesCount(product.salesCount)} ${t("product.happyCustomers")}` },
+                  ...(product.salesCount > 0 ? [{ icon: TrendingUp, text: `${formatSalesCount(product.salesCount)} ${t("product.happyCustomers")}` }] : []),
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-center gap-2"><Icon size={14} className="text-emerald-500" /><span>{text}</span></div>
                 ))}
               </div>
 
-              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-semibold">
-                  <Clock size={12} />{t("product.limitedOffer")}
-                </div>
-                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-white font-bold">
-                  <span>{String(timeLeft.hours).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
-                  <span>{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
-                  <span>{String(timeLeft.seconds).padStart(2, "0")}</span>
-                </div>
-              </div>
             </div>
 
             {/* Lead Magnet */}
@@ -288,17 +259,17 @@ export default function StoreProductPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1),transparent_70%)]" />
             <div className="relative z-10 space-y-4">
               <h2 className="text-2xl md:text-3xl font-display font-extrabold text-white">{t("product.readyToStart")}</h2>
-              <p className="text-slate-400 max-w-md mx-auto text-sm">
+              {product.salesCount > 0 && <p className="text-slate-400 max-w-md mx-auto text-sm">
                 {formatSalesCount(product.salesCount)} {t("product.joinCustomers")}
-              </p>
-              <Link to={`/f/demo/${product.slug}`}
+              </p>}
+              <Link to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-glow-md transition-all duration-200 ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}>
                 {t("product.buyNow")} — {formatPrice(product.priceAmount)}
                 <ArrowRight size={18} />
               </Link>
               <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <ShieldCheck size={12} className="text-emerald-500/60" />
-                {product.guaranteeDays}{t("store.dayMoneyBack")} · {t("store.trust2")}
+                {t("store.trust2")}
               </div>
             </div>
           </div>

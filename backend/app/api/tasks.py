@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.time_utils import business_day_bounds_utc
 from app.database import get_db
 from app.middleware.auth import get_current_user_from_token
+from app.models.user import User
 from app.models.assistant_task import AssistantTask
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])

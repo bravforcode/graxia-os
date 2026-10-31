@@ -2,14 +2,23 @@ import logging
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.tenant import get_org
 from app.models.organization import Organization
-from app.services.funnel_product_service import FunnelProductService
-from app.services.funnel_checkout_service import FunnelCheckoutService
+from app.models.contact import Contact
+from app.services.funnel_product_service import (
+    FunnelProductConflictError,
+    FunnelProductService,
+)
+from app.services.funnel_checkout_service import (
+    FunnelCheckoutService,
+    NoActiveDeliveryAssetError,
+)
+from app.services.automation_email_service import normalize_email_address
 from app.schemas.funnel import (
     DigitalProductRead,
     DigitalProductCreate,
@@ -30,6 +39,31 @@ async def get_funnel_service(db: AsyncSession = Depends(get_db)) -> FunnelProduc
 
 async def get_checkout_service(db: AsyncSession = Depends(get_db)) -> FunnelCheckoutService:
     return FunnelCheckoutService(db)
+
+
+async def _validate_checkout_contact(
+    db: AsyncSession, organization_id: UUID, payload: FunnelCheckoutCreate
+) -> None:
+    if payload.contact_id is None:
+        return
+
+    contact = await db.scalar(
+        select(Contact).where(
+            Contact.id == payload.contact_id,
+            Contact.organization_id == organization_id,
+            Contact.is_deleted.is_(False),
+        )
+    )
+    if (
+        contact is None
+        or normalize_email_address(contact.email) is None
+        or normalize_email_address(contact.email)
+        != normalize_email_address(payload.customer_email)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="contact_id must identify a tenant contact with the same customer_email",
+        )
 
 # Products Endpoints
 
@@ -73,7 +107,10 @@ async def update_product(
     service: FunnelProductService = Depends(get_funnel_service),
 ):
     """Update product details."""
-    product = await service.update_product(org.id, product_id, payload)
+    try:
+        product = await service.update_product(org.id, product_id, payload)
+    except FunnelProductConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -85,7 +122,10 @@ async def publish_product(
     service: FunnelProductService = Depends(get_funnel_service),
 ):
     """Publish a digital product."""
-    product = await service.publish_product(org.id, product_id)
+    try:
+        product = await service.publish_product(org.id, product_id)
+    except FunnelProductConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not product:
         # If product exists but validation failed, we might want 400, 
         # but if it doesn't exist, 404. Service returns None for both.
@@ -124,15 +164,21 @@ async def delete_product(
 async def create_checkout_session(
     product_id: UUID,
     payload: FunnelCheckoutCreate,
+    db: AsyncSession = Depends(get_db),
     org: Organization = Depends(get_org),
     service: FunnelCheckoutService = Depends(get_checkout_service),
 ):
     """Create a Stripe checkout session for a product."""
-    result = await service.create_checkout_session(
-        organization_id=org.id,
-        product_id=product_id,
-        payload=payload,
-    )
+    await _validate_checkout_contact(db, org.id, payload)
+    try:
+        result = await service.create_checkout_session(
+            organization_id=org.id,
+            product_id=product_id,
+            payload=payload,
+            contact_id=payload.contact_id,
+        )
+    except NoActiveDeliveryAssetError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not result:
         raise HTTPException(status_code=404, detail="Product not found or not published")
     return result
@@ -182,7 +228,10 @@ async def update_asset(
     service: FunnelProductService = Depends(get_funnel_service),
 ):
     """Update delivery asset details."""
-    asset = await service.update_delivery_asset(org.id, asset_id, payload)
+    try:
+        asset = await service.update_delivery_asset(org.id, asset_id, payload)
+    except FunnelProductConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     return asset
@@ -194,7 +243,10 @@ async def deactivate_asset(
     service: FunnelProductService = Depends(get_funnel_service),
 ):
     """Deactivate a delivery asset."""
-    success = await service.deactivate_delivery_asset(org.id, asset_id)
+    try:
+        success = await service.deactivate_delivery_asset(org.id, asset_id)
+    except FunnelProductConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not success:
         raise HTTPException(status_code=404, detail="Asset not found")
     return await service.get_delivery_asset(org.id, asset_id)
@@ -206,26 +258,36 @@ async def deactivate_asset(
 async def get_public_product_by_slug(
     organization_id: UUID,
     slug: str,
+    response: Response,
     service: FunnelProductService = Depends(get_funnel_service),
 ):
     """Retrieve a published product by organization and slug."""
     product = await service.get_product_by_slug(organization_id, slug)
     if not product or product.status != "published":
         raise HTTPException(status_code=404, detail="Product not found or not published")
+    response.headers["Cache-Control"] = (
+        "public, s-maxage=300, stale-while-revalidate=3600"
+    )
     return product
 
 @router.post("/public/products/{product_id}/checkout", response_model=FunnelCheckoutRead)
 async def create_public_checkout_session(
     product_id: UUID,
     payload: FunnelCheckoutCreatePublic,
+    db: AsyncSession = Depends(get_db),
     service: FunnelCheckoutService = Depends(get_checkout_service),
 ):
     """Create a Stripe checkout session for a public buyer (tenant isolated)."""
-    result = await service.create_checkout_session(
-        organization_id=payload.organization_id,
-        product_id=product_id,
-        payload=payload,
-    )
+    await _validate_checkout_contact(db, payload.organization_id, payload)
+    try:
+        result = await service.create_checkout_session(
+            organization_id=payload.organization_id,
+            product_id=product_id,
+            payload=payload,
+            contact_id=payload.contact_id,
+        )
+    except NoActiveDeliveryAssetError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not result:
         raise HTTPException(status_code=404, detail="Product not found or not published")
     return result

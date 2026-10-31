@@ -44,7 +44,7 @@ async def lifespan(fastapi_app: FastAPI):
 
         wire_event_handlers()
         try:
-            await seed_admin_user()
+            await seed_admin_user(redis_client=getattr(fastapi_app.state, "redis", None))
         except Exception as e:
             logger.warning(f"Seeding admin user failed (non-blocking): {e}")
 

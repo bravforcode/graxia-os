@@ -21,7 +21,10 @@ class Scorer(BaseAgent):
     async def _score_opportunity(self, opp_id: uuid.UUID) -> None:
         from sqlalchemy import select
 
+        from app.config import settings
         from app.core.identity import identity
+        from app.core.laya_client import laya_client_from_settings
+        from app.core.laya_priority import laya_action_priority
         from app.core.scoring import score_heuristic
         from app.database import AsyncSessionLocal
         from app.models.knowledge import KnowledgeItem
@@ -38,10 +41,9 @@ class Scorer(BaseAgent):
 
             if not self.llm.is_degraded():
                 # Fetch relevant playbooks
-                tags = opp.tags or []
                 playbook_ctx = ""
                 try:
-                    q = await db.execute(select(KnowledgeItem).where(KnowledgeItem.category == "playbook", KnowledgeItem.is_active == True).limit(5))
+                    q = await db.execute(select(KnowledgeItem).where(KnowledgeItem.category == "playbook", KnowledgeItem.is_active.is_(True)).limit(5))
                     playbooks = q.scalars().all()
                     if playbooks:
                         playbook_ctx = "\nRelevant playbooks:\n" + "\n".join(f"- {p.title}" for p in playbooks)
@@ -95,6 +97,11 @@ Return ONLY valid JSON:
                     opp_data["days_until_deadline"] = (opp.deadline - date.today()).days
                 score_data = score_heuristic(opp_data, weights)
                 was_fallback = True
+                if settings.LAYA_BASE_URL:
+                    laya_priority = await laya_action_priority(laya_client_from_settings(), opp_data)
+                    if laya_priority:
+                        score_data["action_priority"] = laya_priority
+                        score_data["scoring_rationale"] += " Action priority from Laya System-1."
 
             opp.money_score = score_data.get("money_score")
             opp.brand_score = score_data.get("brand_score")

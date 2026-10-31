@@ -20,11 +20,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import (
     ConversionEvent,
-    DeliveryAccess,
     DigitalProduct,
     FunnelCheckoutSession,
     FunnelOrder,
-    FunnelOrderItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -306,7 +304,7 @@ class FunnelAIRecommendationService:
                 .where(
                     and_(
                         DeliveryAsset.product_id == UUID(product["id"]),
-                        DeliveryAsset.is_active == True,
+                        DeliveryAsset.is_active.is_(True),
                     )
                 )
             )
@@ -505,7 +503,7 @@ class FunnelAIRecommendationService:
                 ),
                 priority=RecommendationPriority.HIGH,
                 category=RecommendationCategory.CONVERSION,
-                impact_estimate=f"2x lead capture → 2x email pipeline",
+                impact_estimate="2x lead capture → 2x email pipeline",
                 effort="medium",
                 metric_trigger="lead_conversion_rate",
                 metric_value=lcr,
@@ -635,7 +633,6 @@ class FunnelAIRecommendationService:
         """Analyze pricing signals."""
         recs = []
         aov = metrics["aov"]
-        revenue = metrics["total_revenue"]
 
         if aov < 20 and metrics["sales_count"] >= 5:
             recs.append(FunnelRecommendation(

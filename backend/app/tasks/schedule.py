@@ -29,16 +29,6 @@ BEAT_SCHEDULE = {
         "schedule": timedelta(minutes=15),
         "options": {"queue": DEFAULT_QUEUE},
     },
-    "morning-briefing": {
-        "task": "tasks.morning_briefing.run",
-        "schedule": crontab(hour=8, minute=0),
-        "options": {"queue": DEFAULT_QUEUE},
-    },
-    "follow-up-check": {
-        "task": "tasks.follow_up_check.run",
-        "schedule": crontab(hour=9, minute=0),
-        "options": {"queue": DEFAULT_QUEUE},
-    },
     "job-discovery-frequent": {
         "task": "tasks.job_discovery.run",
         "schedule": timedelta(minutes=20),
@@ -54,11 +44,6 @@ BEAT_SCHEDULE = {
         "schedule": timedelta(minutes=30),
         "options": {"queue": DEFAULT_QUEUE},
     },
-    "outreach-email": {
-        "task": "tasks.outreach.email",
-        "schedule": timedelta(hours=1),
-        "options": {"queue": DEFAULT_QUEUE},
-    },
     "leadgen-frequent": {
         "task": "tasks.leadgen.run",
         "schedule": timedelta(minutes=30),
@@ -68,11 +53,6 @@ BEAT_SCHEDULE = {
         "task": "tasks.crm.sync",
         "schedule": timedelta(hours=12),
         "options": {"queue": BACKGROUND_QUEUE},
-    },
-    "weekly-review": {
-        "task": "tasks.weekly_review.run",
-        "schedule": crontab(day_of_week="sunday", hour=9, minute=30),
-        "options": {"queue": DEFAULT_QUEUE},
     },
     "weekly-strategy": {
         "task": "tasks.maintenance.weekly_strategy",

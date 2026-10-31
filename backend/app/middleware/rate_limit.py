@@ -51,7 +51,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     DELIVERY_RULE = RateLimitRule("delivery", 30, 60)
 
     async def dispatch(self, request: Request, call_next: Callable):
-        if request.url.path == "/health":
+        if request.url.path in ("/health", "/health/live", "/health/ready"):
             return await call_next(request)
 
         redis_client = getattr(request.app.state, "redis", None)

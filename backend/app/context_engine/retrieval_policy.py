@@ -6,7 +6,6 @@ service name, test name, or MCP tool name.
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from app.context_engine.schemas import ProjectFileInfo, ProjectIndex
 

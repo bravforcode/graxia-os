@@ -1,5 +1,5 @@
 import pytest
-from uuid import uuid4
+from uuid import uuid4, UUID
 from decimal import Decimal
 from datetime import UTC, datetime
 
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.funnel import LeadMagnet, DigitalProduct, DeliveryAsset, FunnelOrder, DeliveryAccess
 from app.models.contact import Contact
 from app.models.organization import Organization
+from app.services.unsubscribe_tokens import create_unsubscribe_token
 from tests.factories import OrganizationFactory
 
 @pytest.mark.asyncio
@@ -204,6 +205,67 @@ class TestLeadMagnetAPI:
         assert access.product_id == product.id
         assert access.asset_id == asset.id
 
+        contact = await db_session.get(Contact, UUID(data["contact_id"]))
+        assert contact.marketing_consent is False
+
+    async def test_public_capture_lead_records_explicit_marketing_consent(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        """Marketing consent is stored only when explicitly granted."""
+        org = Organization(id=uuid4(), name="Consent Org", slug="consent-org", status="active")
+        db_session.add(org)
+        await db_session.flush()
+        lm = LeadMagnet(
+            id=uuid4(), organization_id=org.id, name="Consent Magnet", slug="consent-magnet",
+            status="published", opt_in_count=0
+        )
+        db_session.add(lm)
+        await db_session.commit()
+
+        response = await public_async_client.post(
+            f"/api/v1/public/funnel/lead-magnets/{lm.slug}/capture",
+            json={
+                "organization_id": str(org.id),
+                "email": "consent@example.com",
+                "marketing_consent": True,
+                "consent_version": "organic-v1",
+                "session_id": "consent-session",
+                "source": "google",
+                "medium": "organic",
+                "campaign": "lead-magnet",
+            },
+        )
+
+        assert response.status_code == 201, response.text
+        contact = await db_session.get(Contact, UUID(response.json()["contact_id"]))
+        assert contact.marketing_consent is True
+        assert contact.consent_version == "organic-v1"
+        assert contact.marketing_consent_at is not None
+
+    async def test_public_unsubscribe_suppresses_marketing(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        org = Organization(id=uuid4(), name="Unsubscribe Org", slug="unsubscribe-org", status="active")
+        contact = Contact(
+            id=uuid4(), organization_id=org.id, name="Opted In", email="stop@example.com",
+            contact_type="lead", relationship_strength=1, marketing_consent=True,
+            consent_version="organic-v1",
+        )
+        db_session.add(org)
+        await db_session.flush()
+        db_session.add(contact)
+        await db_session.commit()
+        token = create_unsubscribe_token(org.id, contact.email)
+
+        response = await public_async_client.post(
+            "/api/v1/public/funnel/unsubscribe",
+            json={"token": token},
+        )
+
+        assert response.status_code == 200
+        await db_session.refresh(contact)
+        assert contact.marketing_unsubscribed is True
+
     async def test_public_capture_lead_idempotent(
         self, public_async_client: AsyncClient, db_session: AsyncSession
     ):
@@ -316,4 +378,8 @@ class TestLeadMagnetAPI:
             json=payload
         )
         assert response.status_code == 400
-        assert "not published" in response.json()["detail"]
+        error = response.json()["error"]
+        assert error["code"] == "INTERNAL_ERROR"
+        assert error["message"] == "Internal server error"
+        assert "request_id" in error
+        assert "correlation_id" in error

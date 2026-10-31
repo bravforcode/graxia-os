@@ -17,7 +17,7 @@ import asyncio
 import json
 import statistics
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -105,21 +105,21 @@ class QueryBenchmark:
         query1 = select(Opportunity).where(
             Opportunity.user_id == user_id,
             Opportunity.status == "found",
-            Opportunity.is_deleted == False
+            Opportunity.is_deleted.is_(False)
         )
         await self.run_query_benchmark("opportunities_user_status", query1)
         
         # Query 2: Filter by status and order by score
         query2 = select(Opportunity).where(
             Opportunity.status == "scored",
-            Opportunity.is_deleted == False
+            Opportunity.is_deleted.is_(False)
         ).order_by(Opportunity.total_score.desc())
         await self.run_query_benchmark("opportunities_status_score", query2)
         
         # Query 3: User's opportunity feed (ordered by created_at)
         query3 = select(Opportunity).where(
             Opportunity.user_id == user_id,
-            Opportunity.is_deleted == False
+            Opportunity.is_deleted.is_(False)
         ).order_by(Opportunity.found_at.desc()).limit(50)
         await self.run_query_benchmark("opportunities_user_feed", query3)
         
@@ -127,7 +127,7 @@ class QueryBenchmark:
         query4 = select(Opportunity).where(
             Opportunity.user_id == user_id,
             Opportunity.decision == "do_now",
-            Opportunity.is_deleted == False
+            Opportunity.is_deleted.is_(False)
         )
         await self.run_query_benchmark("opportunities_user_decision", query4)
     
@@ -153,14 +153,14 @@ class QueryBenchmark:
         query1 = select(Contact).where(
             Contact.user_id == user_id,
             Contact.company == company,
-            Contact.is_deleted == False
+            Contact.is_deleted.is_(False)
         )
         await self.run_query_benchmark("contacts_user_company", query1)
         
         # Query 2: Get user's active contacts
         query2 = select(Contact).where(
             Contact.user_id == user_id,
-            Contact.is_deleted == False
+            Contact.is_deleted.is_(False)
         ).limit(100)
         await self.run_query_benchmark("contacts_user_active", query2)
         
@@ -173,7 +173,7 @@ class QueryBenchmark:
         if email:
             query3 = select(Contact).where(
                 Contact.email == email,
-                Contact.is_deleted == False
+                Contact.is_deleted.is_(False)
             )
             await self.run_query_benchmark("contacts_email_lookup", query3)
         
@@ -181,7 +181,7 @@ class QueryBenchmark:
         query4 = select(Contact).where(
             Contact.user_id == user_id,
             Contact.contact_type == "client",
-            Contact.is_deleted == False
+            Contact.is_deleted.is_(False)
         )
         await self.run_query_benchmark("contacts_user_type", query4)
     

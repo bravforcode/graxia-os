@@ -10,7 +10,6 @@ from app.mcp.schemas import MCPToolDefinition, MCPResponse, MCPAuthContext
 from app.mcp.errors import (
     ERR_TOOL_NOT_FOUND,
     ERR_INTERNAL,
-    ERR_HANDLER_ERROR,
     ERR_DANGEROUS_BLOCKED,
     ERR_AUTH_REQUIRED,
     ERR_PERMISSION_DENIED,

@@ -1,14 +1,18 @@
+import httpx
 import logging
 import time
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import Literal
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, EmailStr
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.config import settings
+from app.core.errors import AppError, RateLimitedError
+from app.core.email_identity import normalize_email
 from app.core.auth import (
     create_access_token,
     create_refresh_token,
@@ -28,6 +32,7 @@ from app.middleware.auth import (
 from app.middleware.security import generate_csrf_token
 from app.models.user import User
 from app.services.audit_service import log_audit_event
+from app.services.invitation_service import consume_invitation, issue_invitation, revoke_invitation
 from app.services.risk_engine import RiskEngine
 from app.services.session_service import RefreshTokenReuseDetected, SessionService
 
@@ -50,7 +55,7 @@ def _check_rate_limit(identifier: str) -> None:
     attempts = _login_attempts.get(identifier, [])
     attempts = [t for t in attempts if now - t < LOGIN_WINDOW]
     if len(attempts) >= LOGIN_RATE_LIMIT:
-        raise HTTPException(status_code=429, detail="Too many login attempts. Try again later.")
+        raise RateLimitedError(retry_after_seconds=max(1, int(LOGIN_WINDOW - (now - attempts[0]))))
     attempts.append(now)
     _login_attempts[identifier] = attempts
 
@@ -59,11 +64,18 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     full_name: str | None = None
+    invite_token: str | None = None
 
 
 class SocialLoginRequest(BaseModel):
     token: str
     provider: str
+    invite_token: str | None = None
+
+
+class InvitationRequest(BaseModel):
+    email: EmailStr
+    role: Literal["operator", "viewer"]
 
 
 class Token(BaseModel):
@@ -185,8 +197,154 @@ def _build_auth_payloads(
 
 
 async def _lookup_user_by_email(db, email: str) -> User | None:
-    result = await db.execute(select(User).where(User.email == email))
+    normalized_email = normalize_email(email)
+    result = await db.execute(
+        select(User)
+        .where(func.lower(func.trim(User.email)) == normalized_email)
+        .limit(2)
+    )
+    users = list(result.scalars().all())
+    return users[0] if len(users) == 1 else None
+
+
+async def _lookup_user_by_provider_id(db, provider_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.provider_id == provider_id))
     return result.scalar_one_or_none()
+
+
+async def _lookup_users_by_canonical_email(db, email: str) -> list[User]:
+    normalized_email = normalize_email(email)
+    result = await db.execute(
+        select(User)
+        .where(func.lower(func.trim(User.email)) == normalized_email)
+        .limit(2)
+    )
+    users = list(result.scalars().all())
+    if len(users) > 1:
+        raise AppError(
+            code="SOCIAL_EMAIL_CONFLICT",
+            message="The verified social email is linked to multiple accounts.",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    return users
+
+
+async def _fetch_supabase_user(access_token: str) -> dict:
+    supabase_url = settings.SUPABASE_URL.rstrip("/")
+    anon_key = settings.SUPABASE_ANON_KEY
+    if not supabase_url.startswith("https://") or not anon_key:
+        raise AppError(
+            code="SOCIAL_AUTH_UNAVAILABLE",
+            message="Social sign-in is temporarily unavailable.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0, follow_redirects=False) as client:
+            response = await client.get(
+                f"{supabase_url}/auth/v1/user",
+                headers={
+                    "apikey": anon_key,
+                    "Authorization": f"Bearer {access_token}",
+                },
+            )
+    except httpx.RequestError as exc:
+        raise AppError(
+            code="SOCIAL_AUTH_UNAVAILABLE",
+            message="Social sign-in is temporarily unavailable.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from exc
+
+    if response.status_code in {401, 403}:
+        raise AppError(
+            code="AUTH_INVALID",
+            message="The social sign-in session is invalid or expired.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    if response.status_code != 200:
+        raise AppError(
+            code="SOCIAL_AUTH_UNAVAILABLE",
+            message="Social sign-in is temporarily unavailable.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    try:
+        canonical_user = response.json()
+    except ValueError as exc:
+        raise AppError(
+            code="SOCIAL_AUTH_UNAVAILABLE",
+            message="Social sign-in is temporarily unavailable.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from exc
+    if not isinstance(canonical_user, dict):
+        raise AppError(
+            code="SOCIAL_AUTH_UNAVAILABLE",
+            message="Social sign-in is temporarily unavailable.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return canonical_user
+
+
+def _confirmed_social_identity(
+    *,
+    decoded: dict,
+    canonical_user: dict,
+    requested_provider: str,
+) -> tuple[str, str, dict]:
+    subject = decoded.get("sub")
+    canonical_subject = canonical_user.get("id")
+    if (
+        not isinstance(subject, str)
+        or not subject.strip()
+        or canonical_subject != subject
+    ):
+        raise AppError(
+            code="AUTH_INVALID",
+            message="The social sign-in identity could not be verified.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    email = canonical_user.get("email")
+    if (
+        not isinstance(email, str)
+        or not email.strip()
+        or email.strip() != email
+        or "@" not in email
+        or not canonical_user.get("email_confirmed_at")
+    ):
+        raise AppError(
+            code="SOCIAL_EMAIL_UNVERIFIED",
+            message="Confirm your email with the identity provider before signing in.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    app_metadata = canonical_user.get("app_metadata")
+    app_metadata = app_metadata if isinstance(app_metadata, dict) else {}
+    provider_names = app_metadata.get("providers")
+    if not isinstance(provider_names, list):
+        provider_names = []
+    primary_provider = app_metadata.get("provider")
+    if isinstance(primary_provider, str):
+        provider_names.append(primary_provider)
+    identities = canonical_user.get("identities")
+    if isinstance(identities, list):
+        provider_names.extend(
+            identity.get("provider")
+            for identity in identities
+            if isinstance(identity, dict) and isinstance(identity.get("provider"), str)
+        )
+    if (
+        requested_provider not in {"google", "facebook"}
+        or requested_provider not in provider_names
+    ):
+        raise AppError(
+            code="AUTH_INVALID",
+            message="The social sign-in provider could not be verified.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    user_metadata = canonical_user.get("user_metadata")
+    user_metadata = user_metadata if isinstance(user_metadata, dict) else {}
+    return subject, normalize_email(email), user_metadata
 
 
 def _is_database_unavailable_error(exc: Exception) -> bool:
@@ -297,16 +455,29 @@ async def get_current_user(request: Request, db=Depends(get_db)) -> User:
     "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
 )
 async def register(
-    user_data: UserRegister, request: Request, response: Response, db=Depends(get_db)
+    user_data: UserRegister,
+    request: Request,
+    response: Response,
+    db=Depends(get_db),
 ):
+    _check_rate_limit(f"register:{user_data.email.lower()}")
+    if not user_data.invite_token:
+        raise AppError(
+            code="PASSWORD_REGISTRATION_DISABLED",
+            message=(
+                "Password registration is disabled. Continue with Google or sign in "
+                "to an existing account."
+            ),
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+    email = normalize_email(user_data.email)
     try:
-        existing_user = await _lookup_user_by_email(db, user_data.email)
+        existing_matches = await _lookup_users_by_canonical_email(db, email)
     except Exception as exc:
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
-    _check_rate_limit(user_data.email)
-    if existing_user:
+    if existing_matches:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
@@ -315,15 +486,19 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 12 characters",
         )
-
+    try:
+        invitation = await consume_invitation(db, user_data.invite_token, email)
+    except Exception:
+        await db.rollback()
+        raise
     user = User(
         id=uuid4(),
-        email=user_data.email,
+        email=email,
         hashed_password=get_password_hash(user_data.password),
         full_name=user_data.full_name,
-        role="user",
+        role=invitation.role,
+        organization_id=invitation.organization_id,
         is_active=True,
-        totp_enabled=False,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
@@ -332,6 +507,7 @@ async def register(
         await db.commit()
         await db.refresh(user)
     except Exception as exc:
+        await db.rollback()
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
@@ -344,47 +520,36 @@ async def register(
         session_service=session_service,
         db=db,
     )
-    await session_service.record_successful_login(
-        user_id=str(user.id),
-        identifier=f"login:{user.email.lower()}",
-        device_id=get_device_fingerprint(request),
-    )
-    try:
-        await log_audit_event(
-            db=db,
-            action="auth.register",
-            event_type="register",
-            event_category="auth",
-            metadata={"email": user.email},
-            user_id=str(user.id),
-            session_id=decode_access_token(auth_response.access_token).get(
-                "session_id"
-            ),
-            ip_address=get_client_ip(request),
-            user_agent=request.headers.get("user-agent"),
-            request_path=str(request.url.path),
-            request_method=request.method,
-        )
-        await db.commit()
-    except Exception as exc:
-        logger.warning("Auth register audit logging skipped: %s", exc)
-
-    # ── AUTOMATION: Welcome email ──
-    try:
-        if user.organization_id:
-            from app.services.automation_email_service import AutomationEmailService
-
-            automation_svc = AutomationEmailService(db)
-            await automation_svc.trigger_welcome(
-                organization_id=user.organization_id,
-                customer_email=user.email,
-                customer_name=user.full_name or user.email.split("@")[0],
-            )
-    except Exception as exc:
-        logger.warning("Welcome email automation skipped: %s", exc)
-
-    logger.info("New user registered: %s", user.email)
+    logger.info("New user registered via invitation: %s", user.email)
     return auth_response
+
+
+@router.post("/invitations", status_code=status.HTTP_201_CREATED)
+async def create_invitation(
+    payload: InvitationRequest,
+    owner: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    invitation, token = await issue_invitation(db, owner, payload.email, payload.role)
+    await db.commit()
+    return {
+        "id": str(invitation.id),
+        "email": invitation.email,
+        "role": invitation.role,
+        "expires_at": invitation.expires_at,
+        "invite_token": token,
+    }
+
+
+@router.delete("/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_invitation(
+    invitation_id: UUID,
+    owner: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    await revoke_invitation(db, owner, invitation_id)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/social-login", response_model=AuthResponse)
@@ -395,6 +560,13 @@ async def social_login(
     db=Depends(get_db),
 ):
     import jwt as pyjwt
+
+    if payload.provider not in {"google", "facebook"}:
+        raise AppError(
+            code="SOCIAL_PROVIDER_UNSUPPORTED",
+            message="This social sign-in provider is not supported.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
         # Supabase JWTs are signed with a secret.
@@ -418,32 +590,60 @@ async def social_login(
             detail="Invalid social login token",
         )
 
-    email = decoded.get("email")
     supabase_uid = decoded.get("sub")
-    user_metadata = decoded.get("user_metadata", {})
+    if not isinstance(supabase_uid, str) or not supabase_uid.strip():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid social login token",
+        )
+    canonical_user = await _fetch_supabase_user(payload.token)
+    supabase_uid, email, user_metadata = _confirmed_social_identity(
+        decoded=decoded,
+        canonical_user=canonical_user,
+        requested_provider=payload.provider,
+    )
     full_name = user_metadata.get("full_name") or user_metadata.get("name")
     avatar_url = user_metadata.get("avatar_url") or user_metadata.get("picture")
 
-    if not email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Social login provider did not return an email",
-        )
-
     try:
-        user = await _lookup_user_by_email(db, email)
+        user = await _lookup_user_by_provider_id(db, supabase_uid)
+        email_matches = await _lookup_users_by_canonical_email(db, email)
     except Exception as exc:
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
 
+    email_owner = email_matches[0] if email_matches else None
+    if user is not None and email_owner is not None and email_owner.id != user.id:
+        raise AppError(
+            code="SOCIAL_ACCOUNT_LINK_REQUIRED",
+            message=(
+                "This social account is not linked to the account that owns this email."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
+        )
+    if user is None and email_owner is not None:
+        raise AppError(
+            code="SOCIAL_ACCOUNT_LINK_REQUIRED",
+            message=(
+                "This social account is not linked to the account that owns this email."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    new_user_created = False
     if not user:
-        user = User(
+        if not payload.invite_token:
+            raise AppError(
+                code="INVITATION_REQUIRED",
+                message="An invitation is required to create an account.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+        new_user = User(
             id=uuid4(),
             email=email,
             hashed_password=DUMMY_PASSWORD_HASH,
             full_name=full_name,
-            role="user",
             is_active=True,
             provider=payload.provider,
             provider_id=supabase_uid,
@@ -451,54 +651,119 @@ async def social_login(
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
-        db.add(user)
         try:
+            invitation = await consume_invitation(db, payload.invite_token, email)
+            new_user.role = invitation.role
+            new_user.organization_id = invitation.organization_id
+            db.add(new_user)
             await db.commit()
-            await db.refresh(user)
+            await db.refresh(new_user)
+        except IntegrityError as exc:
+            await db.rollback()
+            try:
+                race_winner = await _lookup_user_by_provider_id(db, supabase_uid)
+                raced_email_matches = await _lookup_users_by_canonical_email(db, email)
+            except Exception as lookup_exc:
+                if _is_database_unavailable_error(lookup_exc):
+                    _raise_database_unavailable(lookup_exc)
+                raise exc from lookup_exc
+            raced_email_owner = raced_email_matches[0] if raced_email_matches else None
+            if race_winner is None and raced_email_owner is None:
+                raise
+            if race_winner is None or (
+                raced_email_owner is not None
+                and raced_email_owner.id != race_winner.id
+            ):
+                raise AppError(
+                    code="SOCIAL_ACCOUNT_LINK_REQUIRED",
+                    message=(
+                        "This social account is not linked to the account that owns this email."
+                    ),
+                    status_code=status.HTTP_409_CONFLICT,
+                ) from exc
+            user = race_winner
+            user.email = email
+            try:
+                await db.commit()
+            except IntegrityError as retry_exc:
+                await db.rollback()
+                raise AppError(
+                    code="SOCIAL_ACCOUNT_LINK_REQUIRED",
+                    message="This social account is not linked to the account that owns this email.",
+                    status_code=status.HTTP_409_CONFLICT,
+                ) from retry_exc
         except Exception as exc:
+            await db.rollback()
             if _is_database_unavailable_error(exc):
                 _raise_database_unavailable(exc)
             raise
+        else:
+            user = new_user
+            new_user_created = True
 
-        # ── AUTOMATION: Welcome email for social signup ──
-        try:
-            if user.organization_id:
-                from app.services.automation_email_service import AutomationEmailService
+            # ── AUTOMATION: Welcome email for social signup ──
+            try:
+                if user.organization_id:
+                    from app.services.automation_email_service import AutomationEmailService
 
-                automation_svc = AutomationEmailService(db)
-                await automation_svc.trigger_welcome(
-                    organization_id=user.organization_id,
-                    customer_email=user.email,
-                    customer_name=full_name or user.email.split("@")[0],
+                    automation_svc = AutomationEmailService(db)
+                    await automation_svc.trigger_welcome(
+                        organization_id=user.organization_id,
+                        customer_email=user.email,
+                        customer_name=full_name or user.email.split("@")[0],
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Welcome email automation skipped for social signup: %s", exc
                 )
-        except Exception as exc:
-            logger.warning(
-                "Welcome email automation skipped for social signup: %s", exc
-            )
 
-        logger.info("Created new social user: %s via %s", email, payload.provider)
-    else:
-        # Update existing user with provider info if missing
-        changed = False
-        if not user.provider:
+            logger.info("Created new social user: %s via %s", email, payload.provider)
+
+    if not new_user_created:
+        # Existing users authenticate only through their stored provider subject.
+        changed = user.email != email
+        user.email = email
+        if user.provider != payload.provider:
             user.provider = payload.provider
-            user.provider_id = supabase_uid
             changed = True
         if avatar_url and not user.avatar_url:
             user.avatar_url = avatar_url
             changed = True
 
+        subject_user_id = user.id
         user.last_login_at = datetime.now(UTC)
         try:
             await db.commit()
+        except IntegrityError as exc:
+            await db.rollback()
+            try:
+                raced_email_matches = await _lookup_users_by_canonical_email(db, email)
+            except Exception as lookup_exc:
+                if _is_database_unavailable_error(lookup_exc):
+                    _raise_database_unavailable(lookup_exc)
+                raise exc from lookup_exc
+            raced_email_owner = (
+                raced_email_matches[0] if raced_email_matches else None
+            )
+            if (
+                raced_email_owner is not None
+                and raced_email_owner.id != subject_user_id
+            ):
+                raise AppError(
+                    code="SOCIAL_ACCOUNT_LINK_REQUIRED",
+                    message=(
+                        "This social account is not linked to the account that owns this email."
+                    ),
+                    status_code=status.HTTP_409_CONFLICT,
+                ) from exc
+            raise
         except Exception as exc:
             if _is_database_unavailable_error(exc):
                 _raise_database_unavailable(exc)
             raise
         if changed:
             logger.info(
-                "Linked social provider %s to existing user: %s",
-                payload.provider,
+                "Updated social profile metadata for existing user: %s",
                 email,
             )
 
@@ -593,7 +858,12 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             _raise_database_unavailable(exc)
         raise
 
-    if not user or not verify_password(password, user.hashed_password):
+    if (
+        not user
+        or user.provider is not None
+        or user.provider_id is not None
+        or not verify_password(password, user.hashed_password)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

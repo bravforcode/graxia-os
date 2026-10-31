@@ -89,6 +89,20 @@ export interface FunnelDailyAnalytics {
   revenue: number;
 }
 
+export interface FunnelAttributionRow {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  product_id?: string;
+  product_name?: string;
+  plan?: string;
+  views: number;
+  leads: number;
+  checkout_starts: number;
+  purchases: number;
+  revenue: number;
+}
+
 export interface DeliveryPayload {
   product_name: string;
   asset_title: string;
@@ -171,7 +185,7 @@ export const funnelApi = {
     customer_email?: string;
     success_url: string;
     cancel_url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<FunnelCheckout> => {
     const { data } = await client.post<FunnelCheckout>(`/funnel/products/${productId}/checkout`, payload);
     return data;
@@ -187,7 +201,7 @@ export const funnelApi = {
     customer_email?: string;
     success_url: string;
     cancel_url: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<FunnelCheckout> => {
     const { data } = await publicClient.post<FunnelCheckout>(`/funnel/public/products/${productId}/checkout`, payload);
     return data;
@@ -224,6 +238,9 @@ export const funnelApi = {
     organization_id: string;
     email: string;
     name?: string;
+    marketing_consent?: boolean;
+    consent_version?: string;
+    session_id?: string;
     source?: string;
     medium?: string;
     campaign?: string;
@@ -231,6 +248,10 @@ export const funnelApi = {
   }): Promise<{ contact_id: string; raw_token?: string; delivery_url?: string }> => {
     const { data } = await publicClient.post(`/public/funnel/lead-magnets/${slug}/capture`, payload);
     return data;
+  },
+
+  unsubscribe: async (payload: { token: string }): Promise<void> => {
+    await publicClient.post("/public/funnel/unsubscribe", payload);
   },
 
   // ── Public Delivery Access ─────────────────────────────────────────────
@@ -264,6 +285,14 @@ export const funnelApi = {
     return data;
   },
 
+  getAttributionAnalytics: async (params?: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<FunnelAttributionRow[]> => {
+    const { data } = await client.get<FunnelAttributionRow[]>("/funnel/analytics/attribution", { params });
+    return data;
+  },
+
   // Public Event Logging
   logPublicEvent: async (payload: {
     organization_id: string;
@@ -276,7 +305,8 @@ export const funnelApi = {
     medium?: string;
     campaign?: string;
     referrer?: string;
-    metadata_json?: Record<string, any>;
+    idempotency_key?: string;
+    metadata_json?: Record<string, unknown>;
   }): Promise<void> => {
     await publicClient.post("/funnel/events", payload);
   },

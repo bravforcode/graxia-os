@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEO Approval Console — Revenue OS</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --border: #262b36;
+    --text: #e6e9ef; --muted: #8b93a3; --accent: #38bdf8;
+    --ok: #34d399; --danger: #f87171; --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 2rem; max-width: 900px; margin: 0 auto;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .bar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  input[type=password], input[type=text] {
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.9rem; flex: 1; min-width: 200px;
+  }
+  button {
+    background: var(--accent); color: #0b1220; border: none; font-weight: 600;
+    padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+  }
+  button.secondary { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
+  button.ok { background: var(--ok); color: #06281c; }
+  button.no { background: var(--danger); color: #2b0a0a; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;
+  }
+  .card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+  .meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .pill {
+    font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .pill.pending { color: var(--warn); border-color: var(--warn); }
+  .pill.approved { color: var(--ok); border-color: var(--ok); }
+  .pill.rejected { color: var(--danger); border-color: var(--danger); }
+  pre {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word;
+    color: var(--muted); margin-bottom: 0.75rem; max-height: 160px; overflow-y: auto;
+  }
+  .actions { display: flex; gap: 0.5rem; }
+  .note { color: var(--muted); font-size: 0.8rem; margin-top: 0.5rem; }
+  .empty { color: var(--muted); text-align: center; padding: 3rem 0; }
+  .error { color: var(--danger); margin-bottom: 1rem; font-size: 0.9rem; }
+  .replay { color: var(--ok); font-size: 0.8rem; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+  <h1>CEO Approval Console</h1>
+  <p class="sub">Escalation bot — policy denials on money-moving actions land here. Approve = action is replayed automatically.</p>
+
+  <div class="bar">
+    <input type="password" id="apiKey" placeholder="Admin API key (X-Admin-Api-Key)" autocomplete="off">
+    <button id="loadBtn" onclick="load()">Load pending</button>
+    <button class="secondary" onclick="load()">Refresh</button>
+  </div>
+  <div id="error" class="error"></div>
+  <div id="list"><div class="empty">Enter your admin API key and load pending approvals.</div></div>
+
+<script>
+const API = "/api";
+const KEY_STORE = "ceo_approvals_api_key";
+
+function key() {
+  const k = document.getElementById("apiKey").value.trim();
+  if (k) localStorage.setItem(KEY_STORE, k);
+  return k || localStorage.getItem(KEY_STORE) || "";
+}
+
+async function call(path, options = {}) {
+  const headers = { "X-Admin-Api-Key": key(), ...(options.headers || {}) };
+  if (options.body) headers["Content-Type"] = "application/json";
+  const res = await fetch(API + path, { ...options, headers });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch (_) {}
+    throw new Error(`${res.status}: ${detail}`);
+  }
+  return res.json();
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function load() {
+  const el = document.getElementById("error");
+  el.textContent = "";
+  document.getElementById("list").innerHTML = '<div class="empty">Loading…</div>';
+  if (!key()) {
+    el.textContent = "Missing admin API key.";
+    document.getElementById("list").innerHTML = "";
+    return;
+  }
+  try {
+    const approvals = await call("/approvals");
+    render(approvals);
+  } catch (e) {
+    el.textContent = e.message;
+    document.getElementById("list").innerHTML = "";
+  }
+}
+
+function render(approvals) {
+  const list = document.getElementById("list");
+  if (!approvals.length) {
+    list.innerHTML = '<div class="empty">No pending approvals. The happy path is fully automated. 🎉</div>';
+    return;
+  }
+  list.innerHTML = approvals.map(a => `
+    <div class="card" id="card-${a.id}">
+      <div class="meta">
+        <span class="pill pending">${esc(a.status)}</span>
+        <span class="pill">${esc(a.object_type)}</span>
+        <span class="pill">${esc(a.created_at || "")}</span>
+      </div>
+      <h3>${esc(a.title)}</h3>
+      <pre>${esc(a.preview || "")}</pre>
+      <div class="actions">
+        <button class="ok" onclick="decide('${a.id}', 'approved')">Approve &amp; replay</button>
+        <button class="no" onclick="decide('${a.id}', 'rejected')">Reject</button>
+      </div>
+      <div class="note" id="note-${a.id}"></div>
+    </div>
+  `).join("");
+}
+
+async function decide(id, decision) {
+  const noteEl = document.getElementById(`note-${id}`);
+  const card = document.getElementById(`card-${id}`);
+  const buttons = card.querySelectorAll("button");
+  buttons.forEach(b => b.disabled = true);
+  noteEl.textContent = decision === "approved" ? "Replaying approved action…" : "Rejecting…";
+  try {
+    const result = await call(`/approvals/${id}/decide`, {
+      method: "POST",
+      body: JSON.stringify({ decision, ceo_notes: decision === "approved" ? "approved via CEO console" : "rejected via CEO console" }),
+    });
+    const replay = (result.ceo_notes || "").match(/replay=(\w+)/);
+    if (decision === "approved") {
+      noteEl.className = "replay";
+      noteEl.textContent = replay ? `Approved — replay: ${replay[1]}` : "Approved.";
+    } else {
+      noteEl.textContent = "Rejected.";
+    }
+    setTimeout(() => card.remove(), 1500);
+  } catch (e) {
+    noteEl.className = "error";
+    noteEl.textContent = e.message;
+    buttons.forEach(b => b.disabled = false);
+  }
+}
+
+document.getElementById("apiKey").value = localStorage.getItem(KEY_STORE) || "";
+</script>
+</body>
+</html>

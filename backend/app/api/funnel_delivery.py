@@ -11,6 +11,7 @@ from app.middleware.tenant import get_org
 from app.models.organization import Organization
 from app.models.funnel import DeliveryAccess
 from app.services.funnel_delivery_service import FunnelDeliveryService
+from app.services.funnel_service import delivery_access_service
 from app.schemas.funnel import (
     DeliveryAccessGrantResponse,
     DeliveryPayload,
@@ -74,6 +75,28 @@ async def consume_delivery(
             detail="Asset details not found"
         )
     return payload
+
+
+@router.post("/events/delivery-opened", response_model=dict)
+async def track_delivery_opened(
+    access_token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Track a delivery-open event using its access token."""
+    access = await delivery_access_service.verify_access(access_token, db=db)
+    if access is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery not found",
+        )
+    opened = await delivery_access_service.record_open(access.id, db=db)
+    if opened is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery not found",
+        )
+    return {"status": "tracked", "access_id": str(opened.id)}
+
 
 @router.post("/delivery-access/{access_id}/revoke", status_code=status.HTTP_200_OK)
 async def revoke_delivery_access(

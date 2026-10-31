@@ -3,7 +3,6 @@ import asyncio
 import hashlib
 import json
 import re
-from decimal import Decimal
 from typing import Any
 
 from app.ai.client import AIClient

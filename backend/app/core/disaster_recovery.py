@@ -360,7 +360,7 @@ class RecoveryOrchestrator:
                 steps_completed.append("restore")
 
             # Step 5: Verify recovery
-            verification = await self._verify_recovery()
+            await self._verify_recovery()
             steps_completed.append("verification")
 
             # Step 6: Resume operations

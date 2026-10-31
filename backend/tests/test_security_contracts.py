@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import jwt
 import pytest
@@ -63,16 +64,30 @@ async def test_protected_routes_reject_forged_access_tokens(public_async_client)
 
 
 @pytest.mark.asyncio
-async def test_cookie_session_and_logout_contract(public_async_client):
-    register_response = await public_async_client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "cookie-user@example.com",
-            "password": "correct-horse-battery",
-            "full_name": "Cookie User",
-        },
+async def test_cookie_session_and_logout_contract(public_async_client, db_session):
+    from app.core.auth import get_password_hash
+    from app.models.organization import Organization
+    from app.models.user import User
+
+    organization = Organization(
+        name="Cookie User Workspace",
+        slug=f"cookie-user-{uuid4().hex}",
     )
-    assert register_response.status_code == 201
+    db_session.add(
+        User(
+            id=uuid4(),
+            email="cookie-user@example.com",
+            hashed_password=get_password_hash("correct-horse-battery"),
+            full_name="Cookie User",
+            organization=organization,
+        )
+    )
+    await db_session.commit()
+    login_response = await public_async_client.post(
+        "/api/v1/auth/login",
+        data={"username": "cookie-user@example.com", "password": "correct-horse-battery"},
+    )
+    assert login_response.status_code == 200
     assert public_async_client.cookies.get("access_token")
     assert public_async_client.cookies.get("refresh_token")
     assert public_async_client.cookies.get("csrf_token")
@@ -100,7 +115,7 @@ async def test_csrf_is_enforced_for_state_changing_requests(async_client):
             async_client.headers["X-CSRF-Token"] = original_csrf
 
     assert response.status_code == 403
-    assert response.json()["detail"] == "CSRF token missing"
+    assert response.json()["error"]["code"] == "PERMISSION_DENIED"
 
 
 @pytest.mark.asyncio

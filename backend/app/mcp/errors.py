@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
-from app.mcp.schemas import MCPError, MCPResponse
+from app.mcp.schemas import MCPResponse
 
 logger = logging.getLogger(__name__)
 

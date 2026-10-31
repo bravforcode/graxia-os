@@ -1,53 +1,36 @@
-"""
-Morning Briefing Task
+"""Morning briefing delivery remains disabled until tenant-safe delivery exists."""
 
-Scheduled task to send daily briefing.
-"""
-import logging
-
-from app.agents.personal_assistant import personal_assistant_agent
-from app.tasks.base import execute_managed_async_task, idempotent_task
 from app.tasks.celery_app import celery_app
 from app.tasks.queues import DEFAULT_QUEUE
-from app.telegram_bot.bot import send_message
-
-logger = logging.getLogger(__name__)
 
 
-async def send_morning_briefing():
-    """
-    Generate and send daily briefing.
-    
-    Scheduled: 8:00 AM Bangkok time daily
-    """
-    logger.info("Starting morning briefing generation")
-    
-    try:
-        # Generate briefing
-        briefing = await personal_assistant_agent.generate_daily_briefing()
-        
-        # Send via Telegram
-        # Split long messages if needed
-        if len(briefing) > 4000:
-            parts = [briefing[i:i+4000] for i in range(0, len(briefing), 4000)]
-            for part in parts:
-                await send_message(part)
-        else:
-            await send_message(briefing)
-        
-        logger.info("Morning briefing sent successfully")
-        return {"status": "sent", "length": len(briefing)}
-    except Exception as e:
-        logger.error(f"Morning briefing task failed: {e}", exc_info=True)
-        await send_message(f"❌ Failed to generate morning briefing: {str(e)[:100]}")
-        raise
+def _disabled_result(
+    organization_id: str | None,
+    telegram_user_id: str | None,
+    telegram_chat_id: str | None,
+) -> dict[str, str]:
+    if not all((organization_id, telegram_user_id, telegram_chat_id)):
+        return {
+            "status": "disabled",
+            "reason": "tenant_and_authorized_recipient_required",
+        }
+    return {"status": "disabled", "reason": "tenant_scoped_delivery_not_enabled"}
+
+
+async def send_morning_briefing(
+    organization_id: str | None = None,
+    telegram_user_id: str | None = None,
+    telegram_chat_id: str | None = None,
+) -> dict[str, str]:
+    """Fail closed; the current briefing generator has no tenant scope."""
+    return _disabled_result(organization_id, telegram_user_id, telegram_chat_id)
 
 
 @celery_app.task(name="tasks.morning_briefing.run", queue=DEFAULT_QUEUE)
-@idempotent_task("{task_name}:{date}")
-def morning_briefing_task():
-    return execute_managed_async_task(
-        task_name="morning_briefing",
-        queue=DEFAULT_QUEUE,
-        coroutine_factory=send_morning_briefing,
-    )
+def morning_briefing_task(
+    organization_id: str | None = None,
+    telegram_user_id: str | None = None,
+    telegram_chat_id: str | None = None,
+) -> dict[str, str]:
+    """Keep already-queued invocations registered but prevent all delivery."""
+    return _disabled_result(organization_id, telegram_user_id, telegram_chat_id)

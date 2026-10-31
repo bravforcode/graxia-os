@@ -1,0 +1,15 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["tests/load", ".venv", "venv"]
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# Package __init__ modules re-export names and import modules for side effects.
+"**/__init__.py" = ["F401"]
+# SQLAlchemy model modules import siblings so every mapper is registered before
+# string relationship targets resolve. Those names are not used in the module body.
+"app/models/**" = ["F401", "F821"]
+# Scripts set sys.path before importing app code.
+"scripts/**" = ["E402"]

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import math
 
 from app.config import Settings, settings
 
@@ -37,6 +38,7 @@ class RoutingDecision:
     max_tokens: int
     estimated_max_cost_usd: float
     budget_exceeded: bool
+    pricing_configured: bool = True
 
 
 _TIER_ORDER = {"local": 0, "cheap": 1, "mid": 2, "high": 3}
@@ -99,6 +101,36 @@ def _get_task_defaults() -> dict[str, tuple[str, str, int]]:
 
 
 def build_router_config(app_settings: Settings = settings) -> RouterConfig:
+    selected_provider = (getattr(app_settings, "LLM_PROVIDER", "") or "").strip().lower()
+    if selected_provider == "openai":
+        openai_model = (getattr(app_settings, "OPENAI_CHAT_MODEL", "") or "").strip()
+        openai_pricing = ModelPricing(
+            input_cost_per_1m=getattr(app_settings, "OPENAI_INPUT_PRICE_USD_PER_1M", 0.0),
+            output_cost_per_1m=getattr(app_settings, "OPENAI_OUTPUT_PRICE_USD_PER_1M", 0.0),
+        )
+        return RouterConfig(
+            local=None,
+            cheap=ModelTierConfig(
+                model=openai_model,
+                max_tokens=app_settings.CHEAP_MODEL_MAX_TOKENS,
+                pricing=openai_pricing,
+            ),
+            mid=ModelTierConfig(
+                model=openai_model,
+                max_tokens=app_settings.MID_MODEL_MAX_TOKENS,
+                pricing=openai_pricing,
+            ),
+            high=ModelTierConfig(
+                model=openai_model,
+                max_tokens=app_settings.HIGH_QUALITY_MODEL_MAX_TOKENS,
+                pricing=openai_pricing,
+            ),
+            simple_max_complexity=app_settings.ROUTER_SIMPLE_MAX_COMPLEXITY,
+            medium_max_complexity=app_settings.ROUTER_MEDIUM_MAX_COMPLEXITY,
+            max_single_call_cost_usd=app_settings.MAX_SINGLE_LLM_CALL_COST_USD,
+            routing_enabled=app_settings.MODEL_ROUTING_ENABLED,
+        )
+
     return RouterConfig(
         local=ModelTierConfig(
             model="hermes-local",
@@ -141,6 +173,7 @@ def route_task(
     requested_max_tokens: int | None = None,
     complexity: int | None = None,
     router: RouterConfig | None = None,
+    estimated_input_tokens: int | None = None,
 ) -> RoutingDecision:
     """
     Route a task to the appropriate model tier based on task class and complexity.
@@ -181,17 +214,31 @@ def route_task(
     desired_tokens = requested_max_tokens or default_tokens
     max_tokens = min(desired_tokens, tier_config.max_tokens)
 
-    # Estimate realistic input/output ratio based on task class
-    input_ratio, output_ratio = _get_task_token_ratio(task_class)
-    estimated_input_tokens = int(max_tokens * input_ratio)
-    estimated_output_tokens = int(max_tokens * output_ratio)
-
-    estimated_max_cost_usd = _estimate_cost_usd(
-        tier_config=tier_config,
-        input_tokens=estimated_input_tokens,
-        output_tokens=estimated_output_tokens,
+    pricing_configured = _pricing_is_configured(
+        tier_config,
+        allow_zero_cost=target_tier == "local",
     )
-    budget_exceeded = estimated_max_cost_usd > router.max_single_call_cost_usd
+    if estimated_input_tokens is None:
+        # Estimates from callers without a prompt preserve the existing task
+        # ratios. The LLM client supplies a conservative prompt-byte bound.
+        input_ratio, output_ratio = _get_task_token_ratio(task_class)
+        input_tokens = int(max_tokens * input_ratio)
+        output_tokens = int(max_tokens * output_ratio)
+    else:
+        input_tokens = max(0, estimated_input_tokens)
+        output_tokens = max_tokens
+
+    exact_estimated_cost = (
+        _exact_cost_usd(
+            tier_config=tier_config,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+        if pricing_configured
+        else router.max_single_call_cost_usd + 1.0
+    )
+    estimated_max_cost_usd = round(exact_estimated_cost, 6)
+    budget_exceeded = not pricing_configured or exact_estimated_cost > router.max_single_call_cost_usd
 
     return RoutingDecision(
         task_class=task_class,
@@ -201,6 +248,26 @@ def route_task(
         max_tokens=max_tokens,
         estimated_max_cost_usd=estimated_max_cost_usd,
         budget_exceeded=budget_exceeded,
+        pricing_configured=pricing_configured,
+    )
+
+
+def _pricing_is_configured(
+    tier_config: ModelTierConfig,
+    *,
+    allow_zero_cost: bool = False,
+) -> bool:
+    if not tier_config.model.strip():
+        return False
+    input_price = tier_config.pricing.input_cost_per_1m
+    output_price = tier_config.pricing.output_cost_per_1m
+    if allow_zero_cost and input_price == 0 and output_price == 0:
+        return True
+    return (
+        math.isfinite(input_price)
+        and math.isfinite(output_price)
+        and input_price > 0
+        and output_price > 0
     )
 
 
@@ -284,6 +351,14 @@ def _estimate_cost_usd(
         - Model-specific pricing (may change)
         - Caching (some providers cache prompts)
     """
+    return round(_exact_cost_usd(tier_config, input_tokens, output_tokens), 6)
+
+
+def _exact_cost_usd(
+    tier_config: ModelTierConfig,
+    input_tokens: int,
+    output_tokens: int,
+) -> float:
     input_cost = (input_tokens / 1_000_000) * tier_config.pricing.input_cost_per_1m
     output_cost = (output_tokens / 1_000_000) * tier_config.pricing.output_cost_per_1m
-    return round(input_cost + output_cost, 6)
+    return input_cost + output_cost

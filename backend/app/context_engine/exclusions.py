@@ -5,7 +5,6 @@ Never reads excluded file contents. Only uses path/name metadata.
 from __future__ import annotations
 
 import fnmatch
-import os
 from pathlib import Path
 
 

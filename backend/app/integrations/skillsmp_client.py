@@ -97,7 +97,7 @@ def _parse_datetime(value: Any) -> datetime | None:
     try:
         # Try ISO format
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except:
+    except Exception:
         return None
 
 

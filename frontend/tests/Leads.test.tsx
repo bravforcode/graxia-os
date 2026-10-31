@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -88,16 +88,27 @@ describe('Leads page', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 
+  it('gives each lead form a distinct accessible name', async () => {
+    renderWithQueryClient(<Leads />)
+
+    await screen.findByText('Maya Chen')
+
+    expect(screen.getByRole('form', { name: 'Add lead' })).toBeVisible()
+    expect(screen.getByRole('form', { name: 'Add New Asset' })).toBeVisible()
+  })
+
   it('creates a lead from the capture form', async () => {
     const user = userEvent.setup()
     renderWithQueryClient(<Leads />)
 
     await screen.findByText('Maya Chen')
 
-    await user.type(screen.getByLabelText('Name'), 'Alex Rivera')
-    await user.type(screen.getByLabelText('Company'), 'Northstar Systems')
-    await user.type(screen.getByLabelText('Email'), 'alex@northstar.dev')
-    await user.click(screen.getByRole('button', { name: 'Add lead' }))
+    const addLeadForm = screen.getByRole('form', { name: 'Add lead' })
+
+    await user.type(within(addLeadForm).getByLabelText('Name'), 'Alex Rivera')
+    await user.type(within(addLeadForm).getByLabelText('Company'), 'Northstar Systems')
+    await user.type(within(addLeadForm).getByLabelText('Email'), 'alex@northstar.dev')
+    await user.click(within(addLeadForm).getByRole('button', { name: 'Add lead' }))
 
     await waitFor(() => {
       expect(mockApi.createContact).toHaveBeenCalledWith(

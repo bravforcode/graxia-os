@@ -58,7 +58,7 @@ def test_missing_secrets_rejected_development() -> bool:
         error_msg = str(e)
         if "Required secrets not configured" in error_msg:
             print_success("Missing secrets correctly rejected")
-            print_success(f"Error message includes: 'Required secrets not configured'")
+            print_success("Error message includes: 'Required secrets not configured'")
             if "openssl rand" in error_msg:
                 print_success("Error message includes generation commands")
             return True

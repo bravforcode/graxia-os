@@ -1,13 +1,14 @@
 import logging
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import uuid4
 
 from sqlalchemy import desc, select
 
 from app.agents.base import BaseAgent
 from app.config import settings
 from app.core.tracking import sign_payload
+from app.auth.context import AuthContext
+from app.core.control_plane import _trusted_approval_owner
 
 logger = logging.getLogger(__name__)
 
@@ -108,14 +109,17 @@ class OutreachAgent(BaseAgent):
         html_body = self._to_html(body, token)
         return default_subject, body, html_body, token, token_payload
 
-    async def run(self) -> dict[str, Any]:
+    async def run(self, *, auth: AuthContext | None = None) -> dict[str, Any]:
+        try:
+            owner = _trusted_approval_owner(auth)
+        except (TypeError, ValueError):
+            return {"status": "blocked", "reason": "trusted_auth_context_required"}
         from sqlalchemy import func
 
         from app.database import AsyncSessionLocal
         from app.models.automation_run import AutomationRun
         from app.models.contact import Contact
         from app.models.network_interaction import NetworkInteraction
-        from app.telegram_bot.bot import send_message
 
         max_per_day = int(settings.OUTREACH_MAX_PER_DAY or 0)
         min_days = int(settings.OUTREACH_MIN_DAYS_BETWEEN_CONTACT or 0)
@@ -133,7 +137,10 @@ class OutreachAgent(BaseAgent):
 
         async with AsyncSessionLocal() as db:
             already_sent_today = await db.scalar(
-                select(func.count(NetworkInteraction.id)).where(
+                select(func.count(NetworkInteraction.id))
+                .join(Contact, NetworkInteraction.contact_id == Contact.id)
+                .where(
+                    Contact.organization_id == owner,
                     NetworkInteraction.interaction_type.in_(
                         ["email_outreach_initial", "email_outreach_followup_1", "email_outreach_followup_2"]
                     ),
@@ -144,14 +151,19 @@ class OutreachAgent(BaseAgent):
             if remaining <= 0:
                 return {"status": "skipped", "reason": "daily_limit_reached", "sent_today": int(already_sent_today or 0)}
 
-            campaign_key = f"outreach:{settings.OUTREACH_CAMPAIGN_NAME}:{today.isoformat()}"
+            campaign_key = (
+                f"outreach:{owner}:{settings.OUTREACH_CAMPAIGN_NAME}:{today.isoformat()}"
+            )
             run = (
                 await db.execute(
-                    select(AutomationRun).where(AutomationRun.idempotency_key == campaign_key).limit(1)
+                    select(AutomationRun)
+                    .where(AutomationRun.idempotency_key == campaign_key)
+                    .limit(1)
                 )
             ).scalar_one_or_none()
             if not run:
                 run = AutomationRun(
+                    organization_id=owner,
                     name=settings.OUTREACH_CAMPAIGN_NAME,
                     task_type="outreach_campaign",
                     trigger_source="scheduler",
@@ -166,6 +178,7 @@ class OutreachAgent(BaseAgent):
                 (
                     await db.execute(
                         select(Contact)
+                        .where(Contact.organization_id == owner)
                         .where(Contact.is_deleted.is_(False))
                         .where(Contact.email.is_not(None))
                         .where(Contact.email != "")
@@ -185,6 +198,11 @@ class OutreachAgent(BaseAgent):
                 if not self._allowed(contact.email or ""):
                     skipped += 1
                     continue
+                if not await self._marketing_recipient_is_authorized(
+                    db, owner, contact.id, contact.email
+                ):
+                    skipped += 1
+                    continue
                 interaction_count = await db.scalar(
                     select(func.count(NetworkInteraction.id)).where(
                         NetworkInteraction.contact_id == contact.id,
@@ -200,78 +218,44 @@ class OutreachAgent(BaseAgent):
                 token = sign_payload(token_payload)
                 html_body = self._to_html(body, token)
 
-                if not settings.OUTREACH_AUTOSEND_ENABLED:
-                    try:
-                        from app.core.control_plane import queue_approval_request
-
-                        await queue_approval_request(
-                            title=f"Send outreach follow-up to {contact.email}",
-                            action_type="send_email",
-                            subject_type="contact",
-                            subject_id=contact.id,
-                            details={
-                                "to": contact.email or "",
-                                "subject": subject,
-                                "body": body,
-                                "body_html": html_body,
-                                "is_html": True,
-                                "headers": {"X-Outreach-Token": token},
-                                "campaign_id": str(run.id),
-                                "campaign_name": settings.OUTREACH_CAMPAIGN_NAME,
-                                "stage": stage,
-                            },
-                            preview={
-                                "to": contact.email or "",
-                                "subject": subject,
-                                "body_preview": body[:280],
-                                "campaign": settings.OUTREACH_CAMPAIGN_NAME,
-                                "stage": stage,
-                            },
-                            requested_by="outreach_agent",
-                            batch_group=settings.OUTREACH_CAMPAIGN_NAME,
-                        )
-                        previews.append({"to": contact.email or "", "subject": subject})
-                    except Exception:
-                        skipped += 1
-                    continue
-
                 try:
-                    from app.core.google_workspace import google_workspace
+                    from app.core.control_plane import queue_approval_request
 
-                    message_id = await google_workspace.send_message(  # ENFORCE
-                        contact.email or "",
-                        subject,
-                        html_body,
-                        is_html=True,
-                        extra_headers={"X-Outreach-Token": token},
+                    await queue_approval_request(
+                        title=f"Send outreach follow-up to {contact.email}",
+                        action_type="send_email",
+                        subject_type="contact",
+                        subject_id=contact.id,
+                        details={
+                            "to": contact.email or "",
+                            "subject": subject,
+                            "body": body,
+                            "body_html": html_body,
+                            "is_html": True,
+                            "headers": {"X-Outreach-Token": token},
+                            "campaign_id": str(run.id),
+                            "campaign_name": settings.OUTREACH_CAMPAIGN_NAME,
+                            "stage": stage,
+                        },
+                        preview={
+                            "to": contact.email or "",
+                            "subject": subject,
+                            "body_preview": body[:280],
+                            "campaign": settings.OUTREACH_CAMPAIGN_NAME,
+                            "stage": stage,
+                        },
+                        requested_by="outreach_agent",
+                        auth=auth,
+                        batch_group=settings.OUTREACH_CAMPAIGN_NAME,
                     )
-                    if not message_id:
-                        skipped += 1
-                        continue
-                    contact.last_contacted_at = date.today()
-                    if stage == 1:
-                        contact.next_followup_date = today + timedelta(days=5)
-                        interaction_type = "email_outreach_followup_1"
-                    else:
-                        contact.next_followup_date = None
-                        interaction_type = "email_outreach_followup_2"
-                    db.add(
-                        NetworkInteraction(
-                            id=uuid4(),
-                            contact_id=contact.id,
-                            interaction_type=interaction_type,
-                            interaction_at=datetime.now(UTC),
-                            notes=f"campaign_id={run.id} subject={subject}",
-                        )
-                    )
-                    sent += 1
-                    followups_sent += 1
-                except Exception as exc:
+                    previews.append({"to": contact.email or "", "subject": subject})
+                except Exception:
                     skipped += 1
-                    await send_message(f"⚠️ Outreach send failed: {contact.email}\n{str(exc)[:160]}")
+                continue
 
             query = (
                 select(Contact)
+                .where(Contact.organization_id == owner)
                 .where(Contact.is_deleted.is_(False))
                 .where(Contact.email.is_not(None))
                 .where(Contact.email != "")
@@ -293,6 +277,11 @@ class OutreachAgent(BaseAgent):
                 if not self._allowed(contact.email or ""):
                     skipped += 1
                     continue
+                if not await self._marketing_recipient_is_authorized(
+                    db, owner, contact.id, contact.email
+                ):
+                    skipped += 1
+                    continue
 
                 subject, body, html_body, token, token_payload = self._build_message(contact, stage=0)
                 token_payload["campaign_id"] = str(run.id)
@@ -300,84 +289,42 @@ class OutreachAgent(BaseAgent):
                 token = sign_payload(token_payload)
                 html_body = self._to_html(body, token)
 
-                if not settings.OUTREACH_AUTOSEND_ENABLED:
-                    try:
-                        from app.core.control_plane import queue_approval_request
-
-                        await queue_approval_request(
-                            title=f"Send outreach email to {contact.email}",
-                            action_type="send_email",
-                            subject_type="contact",
-                            subject_id=contact.id,
-                            details={
-                                "to": contact.email or "",
-                                "subject": subject,
-                                "body": body,
-                                "body_html": html_body,
-                                "is_html": True,
-                                "headers": {"X-Outreach-Token": token},
-                                "campaign_id": str(run.id),
-                                "campaign_name": settings.OUTREACH_CAMPAIGN_NAME,
-                                "stage": 0,
-                            },
-                            preview={
-                                "to": contact.email or "",
-                                "subject": subject,
-                                "body_preview": body[:280],
-                                "campaign": settings.OUTREACH_CAMPAIGN_NAME,
-                                "stage": 0,
-                            },
-                            requested_by="outreach_agent",
-                            batch_group=settings.OUTREACH_CAMPAIGN_NAME,
-                        )
-                        previews.append({"to": contact.email or "", "subject": subject})
-                    except Exception:
-                        skipped += 1
-                    continue
-
                 try:
-                    from app.core.google_workspace import google_workspace
+                    from app.core.control_plane import queue_approval_request
 
-                    message_id = await google_workspace.send_message(  # ENFORCE
-                        contact.email or "",
-                        subject,
-                        html_body,
-                        is_html=True,
-                        extra_headers={"X-Outreach-Token": token},
+                    await queue_approval_request(
+                        title=f"Send outreach email to {contact.email}",
+                        action_type="send_email",
+                        subject_type="contact",
+                        subject_id=contact.id,
+                        details={
+                            "to": contact.email or "",
+                            "subject": subject,
+                            "body": body,
+                            "body_html": html_body,
+                            "is_html": True,
+                            "headers": {"X-Outreach-Token": token},
+                            "campaign_id": str(run.id),
+                            "campaign_name": settings.OUTREACH_CAMPAIGN_NAME,
+                            "stage": 0,
+                        },
+                        preview={
+                            "to": contact.email or "",
+                            "subject": subject,
+                            "body_preview": body[:280],
+                            "campaign": settings.OUTREACH_CAMPAIGN_NAME,
+                            "stage": 0,
+                        },
+                        requested_by="outreach_agent",
+                        auth=auth,
+                        batch_group=settings.OUTREACH_CAMPAIGN_NAME,
                     )
-                    if not message_id:
-                        skipped += 1
-                        continue
-                    contact.last_contacted_at = date.today()
-                    contact.next_followup_date = today + timedelta(days=3)
-                    db.add(
-                        NetworkInteraction(
-                            id=uuid4(),
-                            contact_id=contact.id,
-                            interaction_type="email_outreach_initial",
-                            interaction_at=datetime.now(UTC),
-                            notes=f"campaign_id={run.id} subject={subject}",
-                        )
-                    )
-                    sent += 1
-                except Exception as exc:
+                    previews.append({"to": contact.email or "", "subject": subject})
+                except Exception:
                     skipped += 1
-                    await send_message(f"⚠️ Outreach send failed: {contact.email}\n{str(exc)[:160]}")
+                continue
 
             await db.commit()
-
-        if sent > 0 or previews:
-            lines = [
-                "📮 Outreach",
-                f"• Sent: {sent}",
-                f"• Followups: {followups_sent}",
-                f"• Skipped: {skipped}",
-            ]
-            if previews:
-                lines.append("Previews:")
-                for p in previews[:5]:
-                    lines.append(f"• {p['to']} — {p['subject']}")
-            await send_message("\n".join(lines))
 
         try:
             async with AsyncSessionLocal() as db:
@@ -391,6 +338,15 @@ class OutreachAgent(BaseAgent):
             pass
 
         return {"status": "ok", "sent": sent, "skipped": skipped, "previews": previews}
+
+    async def _marketing_recipient_is_authorized(
+        self, db: Any, organization_id: Any, contact_id: Any, recipient: str | None
+    ) -> bool:
+        from app.services.automation_email_service import AutomationEmailService
+
+        return await AutomationEmailService(db)._marketing_allowed(
+            organization_id, recipient, contact_id
+        )
 
 
 outreach_agent = OutreachAgent()

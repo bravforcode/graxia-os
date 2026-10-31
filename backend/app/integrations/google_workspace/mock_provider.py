@@ -8,7 +8,6 @@ Storage is scoped by organization_id for defense-in-depth.
 """
 from __future__ import annotations
 
-import copy
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -17,7 +16,6 @@ from uuid import uuid4
 from app.integrations.google_workspace.base import GoogleWorkspaceProvider
 from app.integrations.google_workspace.errors import (
     WorkspaceNotFoundError,
-    WorkspacePermissionError,
 )
 from app.integrations.google_workspace.schemas import (
     WorkspaceMockEmail,

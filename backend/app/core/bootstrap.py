@@ -9,7 +9,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-def wire_event_handlers() -> None:
+def wire_event_handlers(*, auth=None) -> None:
     """Register the default event-driven agent pipeline.
 
     This is intentionally idempotent so startup and tests can call it repeatedly.
@@ -29,6 +29,7 @@ def wire_event_handlers() -> None:
     async def handle_cog_suggestion(payload: dict):
         """Route COG weight suggestions through the approval queue (never auto-apply)."""
         await create_approval_from_event(
+            auth=auth,
             action_type="scoring_weight_update",
             what_action=f"Update scoring weights: {payload.get('suggested_weights')}",
             why_now=payload.get("reasoning", ""),
@@ -75,7 +76,7 @@ def wire_event_handlers() -> None:
         event_bus.subscribe(event_name, handler)
 
 
-async def seed_admin_user() -> None:
+async def seed_admin_user(redis_client=None) -> None:
     from datetime import datetime
     from uuid import uuid4
 
@@ -85,6 +86,7 @@ async def seed_admin_user() -> None:
     from app.database import AsyncSessionLocal
     from app.models.user import User
     from app.models.organization import Organization
+    from app.services.session_service import SessionService
 
     email = (getattr(settings, "GOOGLE_WORKSPACE_EMAIL", "") or "").strip().lower()
     if not email:
@@ -111,10 +113,16 @@ async def seed_admin_user() -> None:
         existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
         if existing:
             if existing.role != "admin" or not existing.organization_id:
+                role_changed = existing.role != "admin"
                 existing.role = "admin"
                 existing.organization_id = org.id
                 existing.updated_at = datetime.now(UTC)
                 await db.commit()
+                if role_changed:
+                    # Sessions carry the old role in their token; end them so the next request re-authenticates.
+                    await SessionService(redis_client).invalidate_all_user_sessions(
+                        str(existing.id), reason="role_changed"
+                    )
             return
 
         password = str(getattr(settings, "ADMIN_DEFAULT_PASSWORD", "changeme") or "changeme")
@@ -197,13 +205,15 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         else:
             warnings.append(message)
 
-    # At least one LLM key required
-    if not settings.HAS_REAL_OPENCLAW_KEY and not settings.HAS_REAL_GEMINI_KEY:
-        add_external_readiness("API: Neither OPENCLAW_API_KEY nor GEMINI_API_KEY is set — AI features disabled")
-    elif settings.HAS_REAL_OPENCLAW_KEY:
-        logger.info("LLM: Using OpenClaw (Claude) as primary")
-    else:
-        logger.info("LLM: Using Gemini as primary (OpenClaw key not set)")
+    # Key presence alone is not provider health. A selected provider must be
+    # configured and must have completed a successful inference this process.
+    from app.core.llm import llm_client
+
+    llm_readiness = llm_client.get_provider_readiness()
+    if not llm_readiness["configured"]:
+        issues.append("LLM provider: selection, credentials, model, or pricing is incomplete")
+    elif not llm_readiness["ready"]:
+        issues.append(f"LLM provider: selected provider status is {llm_readiness['status']}")
     if not settings.HAS_REAL_TELEGRAM_TOKEN:
         add_external_readiness("API: TELEGRAM_BOT_TOKEN not set or still placeholder")
     if not settings.HAS_REAL_TELEGRAM_CHAT_ID:

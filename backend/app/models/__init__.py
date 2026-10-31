@@ -18,7 +18,9 @@ from .content_engine import (
 from .deploy_history import DeployHistory
 from .email_message import EmailMessage
 from .email_thread import EmailThread
+from .delivery_email_event import DeliveryEmailEvent
 from .identity_snapshot import IdentitySnapshot
+from .invitation import Invitation
 from .job_posting import JobPosting
 from .knowledge import KnowledgeItem
 from .metric import WeeklyMetric
@@ -47,6 +49,7 @@ from .scraper_health import ScraperHealth
 from .scraper_run import ScraperRun
 from .skill_profile import SkillProfile
 from .submission import Submission
+from .telegram_pairing import TelegramApprovalBinding, TelegramPairingChallenge
 from .user import User
 from .funnel import (
     BundleDeal,
@@ -57,8 +60,10 @@ from .funnel import (
     DeliveryAsset,
     DigitalProduct,
     EmailSequence,
+    FunnelRecommendation,
     FunnelOrder,
     FunnelOrderItem,
+    LeadCapture,
     LeadMagnet,
     ProductReview,
 )
@@ -73,6 +78,8 @@ __all__ = [
     "Contact",
     "ContactEdge",
     "Submission",
+    "TelegramApprovalBinding",
+    "TelegramPairingChallenge",
     "ContentDraft",
     "KnowledgeItem",
     "WeeklyMetric",
@@ -81,12 +88,14 @@ __all__ = [
     "ScoringWeightHistory",
     "ScraperHealth",
     "IdentitySnapshot",
+    "Invitation",
     "AuditLog",
     "AutomationRun",
     "ApprovalRequest",
     "SkillProfile",
     "JobPosting",
     "EmailThread",
+    "DeliveryEmailEvent",
     "EmailMessage",
     "AssistantTask",
     "NetworkInteraction",
@@ -112,6 +121,8 @@ __all__ = [
     "FunnelOrderItem",
     "DeliveryAccess",
     "ConversionEvent",
+    "FunnelRecommendation",
+    "LeadCapture",
     "LeadMagnet",
     "Coupon",
     "ProductReview",

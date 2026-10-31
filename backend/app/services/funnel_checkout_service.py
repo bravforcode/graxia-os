@@ -1,16 +1,22 @@
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import DigitalProduct, FunnelCheckoutSession
+from app.models.funnel import DeliveryAsset, DigitalProduct, FunnelCheckoutSession
 from app.core.stripe_client import create_stripe_checkout_session
 from app.schemas.funnel import FunnelCheckoutCreate
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class NoActiveDeliveryAssetError(Exception):
+    """Raised when a published product cannot fulfill a new checkout."""
+
 
 class FunnelCheckoutService:
     def __init__(self, db: AsyncSession):
@@ -37,13 +43,27 @@ class FunnelCheckoutService:
                 # contain NULL; only an explicit True means deleted.
                 DigitalProduct.is_deleted.is_not(True),
             )
-        )
+        ).with_for_update()
         result = await self.db.execute(stmt)
         product = result.scalar_one_or_none()
 
         if not product:
             logger.warning(f"Checkout failed: Product {product_id} not found or not published for org {organization_id}")
             return None
+
+        active_asset_id = await self.db.scalar(
+            select(DeliveryAsset.id)
+            .where(
+                DeliveryAsset.product_id == product_id,
+                DeliveryAsset.organization_id == organization_id,
+                DeliveryAsset.is_active.is_(True),
+            )
+            .limit(1)
+        )
+        if active_asset_id is None:
+            raise NoActiveDeliveryAssetError(
+                "Checkout is unavailable because this product has no active delivery asset"
+            )
 
         # Create local session record
         checkout_session = FunnelCheckoutSession(
@@ -55,6 +75,15 @@ class FunnelCheckoutService:
             amount=product.price_amount,
             currency=product.currency,
             customer_email=payload.customer_email,
+            metadata_json={
+                key: str(value)[:200]
+                for key, value in (payload.metadata or {}).items()
+                if key in {
+                    "source", "medium", "campaign", "referrer", "session_id",
+                    "content_id", "plan", "cta", "channel", "locale",
+                }
+                and value is not None
+            },
         )
         self.db.add(checkout_session)
         await self.db.flush() # Get ID
@@ -79,6 +108,13 @@ class FunnelCheckoutService:
             "product_id": str(product_id),
             "funnel_checkout_session_id": str(checkout_session.id),
         }
+        metadata.update(
+            {
+                key: value
+                for key, value in (checkout_session.metadata_json or {}).items()
+                if key in {"source", "medium", "campaign", "session_id", "content_id", "plan"}
+            }
+        )
 
         try:
             # We don't have customer_id yet for new buyers, using email if provided
@@ -92,6 +128,18 @@ class FunnelCheckoutService:
             )
 
             checkout_session.stripe_session_id = stripe_session.id
+            stripe_expires_at = getattr(stripe_session, "expires_at", None)
+            if isinstance(stripe_expires_at, (int, float)) and not isinstance(
+                stripe_expires_at, bool
+            ):
+                checkout_session.expires_at = datetime.fromtimestamp(
+                    stripe_expires_at, tz=timezone.utc
+                )
+            elif stripe_expires_at is not None:
+                logger.warning(
+                    "Stripe checkout returned invalid expires_at for local session %s",
+                    checkout_session.id,
+                )
             checkout_session.status = "pending"
             await self.db.commit()
 

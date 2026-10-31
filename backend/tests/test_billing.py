@@ -3,7 +3,8 @@ Phase 3 Billing & Stripe Integration Tests
 Tests for Stripe billing, webhooks, and subscription management
 """
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -69,8 +70,8 @@ class TestBillingIntegration:
     @pytest.mark.asyncio
     async def test_cancel_subscription(self, async_client):
         """Should handle subscription cancellation"""
-        with patch("stripe.Subscription.modify") as mock_modify:
-            mock_modify.return_value = MagicMock(
+        with patch("stripe.Subscription.cancel") as mock_cancel:
+            mock_cancel.return_value = MagicMock(
                 id="sub_test_123",
                 status="active",
                 cancel_at_period_end=True
@@ -80,6 +81,7 @@ class TestBillingIntegration:
             
             # May return various codes
             assert response.status_code in [200, 400, 403, 500]
+            mock_cancel.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_webhook_endpoint_exists(self, public_async_client):
@@ -213,3 +215,87 @@ class TestBillingMiddleware:
         
         # Should not crash, may return various status codes
         assert response.status_code in [200, 400, 401, 403, 422, 500]
+
+
+class _BillingOrganizationLookup:
+    def __init__(self, organization):
+        self.organization = organization
+        self.requested = []
+
+    async def get(self, model, organization_id):
+        self.requested.append((model, organization_id))
+        return self.organization
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["checkout", "portal", "cancel"])
+@pytest.mark.parametrize("case", ["non_admin", "tenant_mismatch"])
+async def test_billing_mutations_reject_non_admin_and_cross_tenant_before_stripe(
+    route, case
+):
+    from fastapi import HTTPException
+
+    from app.api import billing
+    from app.models.organization import Organization
+
+    requested_org_id = uuid4()
+    other_org = SimpleNamespace(
+        id=uuid4(), stripe_customer_id="cus_other", stripe_subscription_id="sub_other"
+    )
+    if case == "non_admin":
+        user = SimpleNamespace(
+            id=uuid4(),
+            role="user",
+            is_active=True,
+            organization_id=requested_org_id,
+            organization=other_org,
+            email="offline@example.test",
+            full_name="Offline",
+        )
+        db = _BillingOrganizationLookup(
+            SimpleNamespace(id=requested_org_id, stripe_customer_id=None)
+        )
+    else:
+        user = SimpleNamespace(
+            id=uuid4(),
+            role="admin",
+            is_active=True,
+            organization_id=requested_org_id,
+            organization=other_org,
+            email="offline@example.test",
+            full_name="Offline",
+        )
+        db = _BillingOrganizationLookup(other_org)
+
+    with (
+        patch.object(billing, "get_price_id", new_callable=AsyncMock) as price,
+        patch.object(
+            billing, "create_stripe_customer", new_callable=AsyncMock
+        ) as customer,
+        patch.object(
+            billing, "create_stripe_subscription", new_callable=AsyncMock
+        ) as subscription,
+        patch.object(billing, "get_portal_url", new_callable=AsyncMock) as portal,
+        patch.object(
+            billing, "cancel_stripe_subscription", new_callable=AsyncMock
+        ) as cancel,
+    ):
+        with pytest.raises(HTTPException) as error:
+            if route == "checkout":
+                await billing.start_checkout(
+                    billing.CheckoutIn(plan="starter"), db=db, user=user
+                )
+            elif route == "portal":
+                await billing.open_portal(
+                    request=SimpleNamespace(), db=db, user=user
+                )
+            else:
+                await billing.cancel_plan(db=db, user=user)
+
+    assert error.value.status_code == 403
+    if case == "non_admin":
+        assert db.requested == []
+    else:
+        assert db.requested == [(Organization, requested_org_id)]
+    for provider_call in (price, customer, subscription, portal, cancel):
+        provider_call.assert_not_awaited()

@@ -13,6 +13,8 @@ from app.core.auth import (
     decode_access_token,
     extract_bearer_token,
 )
+from app.core.errors import build_error_body
+from app.core.request_context import get_correlation_id, get_request_id
 from app.services.audit_service import log_audit_event
 from app.services.session_service import SessionService
 from app.models.user import User as _UserORM
@@ -42,6 +44,8 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/auth/refresh"),
     ("POST", "/api/v1/auth/logout"),
     ("GET", "/health"),
+    ("GET", "/health/live"),
+    ("GET", "/health/ready"),
     ("GET", "/"),
     ("GET", "/favicon.ico"),
     ("GET", "/api/v1/system/health"),
@@ -49,9 +53,22 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/funnel/delivery/{token}/consume"),
     ("POST", "/api/v1/funnel/webhooks/stripe"),
     ("POST", "/api/v1/funnel/events"),
+    ("POST", "/api/v1/funnel/events/delivery-opened"),
     ("POST", "/api/v1/public/funnel/lead-magnets/{slug}/capture"),
+    ("POST", "/api/v1/public/funnel/unsubscribe"),
+    ("GET", "/api/v1/public/funnel/unsubscribe"),
+    ("POST", "/api/v1/public/funnel/unsubscribe/confirm"),
     ("GET", "/api/v1/funnel/public/products/{organization_id}/{slug}"),
     ("POST", "/api/v1/funnel/public/products/{product_id}/checkout"),
+    ("GET", "/t/open.gif"),
+    ("GET", "/t/click"),
+    # Each /internal route enforces X-Internal-API-Key in its own dependency, not here.
+    ("GET", "/internal/health"),
+    ("POST", "/internal/run-lead-hunter"),
+    ("POST", "/internal/daily-report"),
+    ("POST", "/internal/cleanup"),
+    ("POST", "/internal/backup"),
+    ("GET", "/internal/queue-status"),
 }
 
 BLOCKED_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/metrics", "/flower", "/admin")
@@ -76,11 +93,19 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/funnel/delivery/{token}/consume",
     "/api/v1/funnel/webhooks/stripe",
     "/api/v1/funnel/events",
+    "/api/v1/funnel/events/delivery-opened",
     "/api/v1/public/funnel/lead-magnets/{slug}/capture",
+    "/api/v1/public/funnel/unsubscribe",
+    "/api/v1/public/funnel/unsubscribe/confirm",
     "/api/v1/funnel/public/products/{product_id}/checkout",
 }
 INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/integrations/alerts/telegram"),
+}
+
+ADMIN_ROUTES: set[tuple[str, str]] = {
+    ("POST", "/api/v1/auth/invitations"),
+    ("DELETE", "/api/v1/auth/invitations/{invitation_id}"),
 }
 
 ROLE_ORDER = {
@@ -88,7 +113,9 @@ ROLE_ORDER = {
     "user": 1,
     "operator": 2,
     "admin": 3,
+    "owner": 3,
 }
+SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 def is_blocked_surface(path: str) -> bool:
@@ -105,7 +132,7 @@ def classify_route(method: str, route_path: str) -> AuthLevel:
         return AuthLevel.PUBLIC
     if key in OPERATOR_ROUTES or route_path.startswith(OPERATOR_PREFIXES):
         return AuthLevel.OPERATOR
-    if route_path.startswith(ADMIN_PREFIXES):
+    if key in ADMIN_ROUTES or route_path.startswith(ADMIN_PREFIXES):
         return AuthLevel.ADMIN
     if route_path.startswith(ADMIN_ROUTE_PREFIXES):
         if key in OPERATOR_ROUTES:
@@ -113,7 +140,8 @@ def classify_route(method: str, route_path: str) -> AuthLevel:
         return AuthLevel.ADMIN
     if route_path.startswith("/api/v1") or route_path.startswith("/obsidian"):
         return AuthLevel.AUTHENTICATED
-    return AuthLevel.PUBLIC
+    # Default deny: a mounted route without an explicit classification is refused.
+    return AuthLevel.BLOCKED
 
 
 def route_controls(method: str, route_path: str) -> list[str]:
@@ -160,8 +188,10 @@ def extract_access_token_from_request(request: Request) -> str | None:
     return extract_bearer_token(request.headers.get("Authorization"))
 
 
-def role_satisfies(required: AuthLevel, actual_role: str) -> bool:
+def role_satisfies(required: AuthLevel, actual_role: str, *, safe_method: bool = False) -> bool:
     if required == AuthLevel.AUTHENTICATED:
+        if actual_role == "viewer":
+            return safe_method
         return ROLE_ORDER.get(actual_role, -1) >= ROLE_ORDER["user"]
     if required == AuthLevel.OPERATOR:
         return ROLE_ORDER.get(actual_role, -1) >= ROLE_ORDER["operator"]
@@ -217,6 +247,17 @@ async def build_auth_context(request: Request) -> dict[str, Any]:
     return payload
 
 
+def _denial_response(request: Request, status_code: int, code: str, detail: str) -> JSONResponse:
+    """Denial with the safe error envelope; `detail` stays for existing clients."""
+    response = JSONResponse(
+        {"detail": detail, **build_error_body(request, code, detail)},
+        status_code=status_code,
+    )
+    response.headers.setdefault("X-Request-ID", get_request_id(request))
+    response.headers.setdefault("X-Correlation-ID", get_correlation_id(request))
+    return response
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     """Fail-closed route protection using the mounted app routes."""
 
@@ -226,12 +267,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         if route_path is None:
             if is_blocked_surface(path) and settings.STRICT_BOOTSTRAP:
-                return JSONResponse({"detail": "Not Found"}, status_code=404)
-            return JSONResponse({"detail": "Forbidden"}, status_code=403)
+                return _denial_response(request, 404, "NOT_FOUND", "Not Found")
+            return _denial_response(request, 403, "FORBIDDEN", "Forbidden")
 
         required_level = classify_route(request.method, route_path)
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
-            return JSONResponse({"detail": "Not Found"}, status_code=404)
+            return _denial_response(request, 404, "NOT_FOUND", "Not Found")
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
             secret = (
                 getattr(settings, "ALERTMANAGER_WEBHOOK_SECRET", "") or ""
@@ -289,7 +330,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
 
         user_role = str(payload.get("role") or "user")
-        if not role_satisfies(required_level, user_role):
+        if not role_satisfies(
+            required_level,
+            user_role,
+            safe_method=request.method.upper() in SAFE_METHODS,
+        ):
             await log_audit_event(
                 app=request.app,
                 action="auth.forbidden",
@@ -309,7 +354,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return JSONResponse({"detail": "Forbidden"}, status_code=403)
+            return _denial_response(request, 403, "FORBIDDEN", "Forbidden")
 
         request.state.auth_payload = payload
         request.state.session_id = str(payload.get("session_id") or "")

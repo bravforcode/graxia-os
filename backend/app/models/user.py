@@ -2,9 +2,10 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, String, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Index, String, text
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
+from app.core.email_identity import normalize_email
 from app.models.base import Base, TenantMixin
 
 
@@ -12,6 +13,15 @@ class User(Base, TenantMixin):
     """User model for authentication and authorization."""
 
     __tablename__ = "users"
+    __table_args__ = (
+        Index(
+            "uq_users_provider_id",
+            "provider_id",
+            unique=True,
+            postgresql_where=text("provider_id IS NOT NULL"),
+            sqlite_where=text("provider_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
@@ -32,6 +42,10 @@ class User(Base, TenantMixin):
     provider_id: Mapped[str | None] = mapped_column(String(255))
     avatar_url: Mapped[str | None] = mapped_column(String(1024))
     onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @validates("email")
+    def _normalize_email(self, _key: str, email: str) -> str:
+        return normalize_email(email)
 
     @property
     def onboarding_complete(self) -> bool:

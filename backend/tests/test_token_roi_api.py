@@ -1,23 +1,28 @@
 from __future__ import annotations
 
-import base64
-import json
+from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.user import User
 
 
 @pytest.mark.asyncio
 async def test_token_roi_summary_mcp_api_exposes_dashboard_metrics(
     async_client: AsyncClient,
+    db_session: AsyncSession,
 ) -> None:
-    auth_header = async_client.headers["Authorization"]
-    access_token = auth_header.split(" ", 1)[1]
-    payload_segment = access_token.split(".")[1]
-    padded_segment = payload_segment + "=" * (-len(payload_segment) % 4)
-    token_payload = json.loads(base64.urlsafe_b64decode(padded_segment.encode("utf-8")))
-    organization_id = token_payload["organization_id"]
+    me_response = await async_client.get("/api/v1/auth/me")
+    user_id = UUID(me_response.json()["id"])
+    organization_id = str(
+        (await db_session.execute(select(User.organization_id).where(User.id == user_id))).scalar_one()
+    )
 
+    # Test env resolves tenant from this header; default is the local dev org.
+    async_client.headers["X-Graxia-Org-Id"] = organization_id
     response = await async_client.post(
         "/api/v1/mcp/",
         json={

@@ -1,13 +1,24 @@
 import logging
+import os
+import sys
 from contextlib import asynccontextmanager
 
 import tenacity
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _is_celery_context() -> bool:
+    """Detect Celery worker/beat processes or an explicit NullPool override."""
+    pool_class = os.getenv("DB_POOL_CLASS", "").strip().lower()
+    if pool_class in ("nullpool", "null_pool", "null"):
+        return True
+    return any("celery" in str(arg).lower() for arg in sys.argv)
 
 # Enterprise-grade engine with retries and connection pooling
 @tenacity.retry(
@@ -18,7 +29,6 @@ logger = logging.getLogger(__name__)
 )
 def _set_sqlite_pragma(dbapi_conn, connection_record):
     """Enable foreign key support for SQLite connections."""
-    import sqlite3
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.execute("PRAGMA journal_mode=WAL")
@@ -36,6 +46,11 @@ def create_engine_with_retry():
 
     if is_sqlite:
         engine_args["connect_args"] = {"check_same_thread": False}
+    elif _is_celery_context():
+        # Each Celery task runs in its own asyncio loop. A pooled asyncpg connection from a closed loop breaks, so open one per session.
+        logger.info("Database engine configured with NullPool (Celery/multi-loop context)")
+        engine_args["poolclass"] = NullPool
+        engine_args["connect_args"] = {"server_settings": {"application_name": "brav_os_mas"}}
     else:
         engine_args.update({
             "pool_size": settings.DB_POOL_SIZE,

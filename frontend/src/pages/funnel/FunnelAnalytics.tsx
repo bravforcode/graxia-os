@@ -17,7 +17,7 @@ import {
   HeartPulse
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { funnelApi, type FunnelAnalyticsSummary, type FunnelDailyAnalytics } from "../../api/funnel";
+import { funnelApi, type FunnelAnalyticsSummary, type FunnelDailyAnalytics, type FunnelAttributionRow } from "../../api/funnel";
 import { client } from "../../lib/api";
 
 interface AIRecommendation {
@@ -54,6 +54,7 @@ interface AIRecommendationsResponse {
 export default function FunnelAnalytics() {
   const [summary, setSummary] = useState<FunnelAnalyticsSummary | null>(null);
   const [dailyData, setDailyData] = useState<FunnelDailyAnalytics[]>([]);
+  const [attributionData, setAttributionData] = useState<FunnelAttributionRow[]>([]);
   const [aiData, setAiData] = useState<AIRecommendationsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
@@ -66,12 +67,14 @@ export default function FunnelAnalytics() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const [sum, daily] = await Promise.all([
+      const [sum, daily, attribution] = await Promise.all([
         funnelApi.getAnalyticsSummary(),
-        funnelApi.getDailyAnalytics()
+        funnelApi.getDailyAnalytics(),
+        funnelApi.getAttributionAnalytics(),
       ]);
       setSummary(sum);
       setDailyData(daily);
+      setAttributionData(attribution);
     } catch (err) {
       console.error("Failed to load analytics dashboard data", err);
     } finally {
@@ -372,6 +375,36 @@ export default function FunnelAnalytics() {
           </div>
         </>
       )}
+
+      <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-100">Attribution and revenue</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Source, campaign, product, and plan from consent-safe events.</p>
+          </div>
+          <span className="text-[10px] text-slate-500">No evidence is shown as zero.</span>
+        </div>
+        {attributionData.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">No attributed funnel events yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                <tr><th className="px-3 py-2">Source / campaign</th><th className="px-3 py-2">Product / plan</th><th className="px-3 py-2">Views</th><th className="px-3 py-2">Leads</th><th className="px-3 py-2">Purchases</th><th className="px-3 py-2 text-right">Revenue</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-850/50">
+                {attributionData.map((row, index) => (
+                  <tr key={`${row.source}-${row.campaign}-${row.product_id}-${index}`}>
+                    <td className="px-3 py-2 text-slate-300">{row.source || "direct"} / {row.campaign || "—"}</td>
+                    <td className="px-3 py-2 text-slate-400">{row.product_name || "—"}{row.plan ? ` / ${row.plan}` : ""}</td>
+                    <td className="px-3 py-2 text-slate-400">{row.views}</td><td className="px-3 py-2 text-indigo-300">{row.leads}</td><td className="px-3 py-2 text-emerald-300">{row.purchases}</td><td className="px-3 py-2 text-right text-slate-200">{row.revenue.toFixed(2)} THB</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* AI Funnel Recommendations Panel */}
       <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-xl">

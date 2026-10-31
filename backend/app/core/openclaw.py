@@ -57,6 +57,15 @@ class OpenClawClient:
     
     async def _get_redis(self):
         """Get or create Redis connection."""
+        if self._redis is not None:
+            try:
+                pool = getattr(self._redis, "connection_pool", None)
+                loop = getattr(pool, "_loop", None)
+                if loop is not None and loop.is_closed():
+                    self._redis = None
+            except Exception:
+                self._redis = None
+
         if self._redis is None:
             try:
                 import redis.asyncio as aioredis
@@ -216,13 +225,36 @@ class OpenClawClient:
             resp.raise_for_status()
             return resp.json()
     
+    def _get_platform_cookies(self, platform: str) -> str | None:
+        """Resolve session cookies for the given platform."""
+        try:
+            import json
+            specific_key = f"{platform.upper()}_COOKIES"
+            direct_cookies = (getattr(settings, specific_key, "") or "").strip()
+            if direct_cookies:
+                return direct_cookies
+
+            raw_map = (getattr(settings, "SCRAPER_SESSION_COOKIES", "") or "").strip()
+            if raw_map:
+                cookies_dict = json.loads(raw_map)
+                if isinstance(cookies_dict, dict) and platform in cookies_dict:
+                    val = cookies_dict[platform]
+                    if isinstance(val, dict):
+                        return "; ".join(f"{k}={v}" for k, v in val.items())
+                    return str(val).strip()
+        except Exception:
+            pass
+        return None
+
     async def scrape_url(
         self,
         url: str,
         platform: str = "default",
         wait_for_selector: str | None = None,
         extract_schema: dict | None = None,
-        use_cache: bool = True
+        use_cache: bool = True,
+        cookies: str | dict | None = None,
+        proxy: str | None = None,
     ) -> dict:
         """
         Scrape URL using OpenClaw browser automation.
@@ -254,12 +286,17 @@ class OpenClawClient:
             raise OpenClawRateLimitError(f"Rate limit exceeded for {platform}")
         
         # Prepare payload
+        cookie_val = cookies or self._get_platform_cookies(platform)
+        proxy_target = proxy or getattr(settings, "ACTIVE_SCRAPER_PROXY", None)
+
         payload = {
             "url": url,
             "wait_for_selector": wait_for_selector,
             "extract_schema": extract_schema,
             "timeout": 30000,  # 30 seconds
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "cookies": cookie_val,
+            "proxy": proxy_target,
         }
         
         try:
@@ -274,16 +311,41 @@ class OpenClawClient:
                 await self._set_cache(cache_key, result)
             
             return result
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 429:
-                raise OpenClawRateLimitError("OpenClaw API rate limit exceeded")
+        except OpenClawRateLimitError:
             raise
+        except Exception as e:
+            logger.warning(f"OpenClaw API unavailable: {e}; falling back to direct headless HTTP fetch")
+            client_kwargs = {"timeout": 20.0, "follow_redirects": True}
+            if proxy_target:
+                client_kwargs["proxies"] = proxy_target
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Sec-Ch-Ua": '"Chromium";v="128", "Google Chrome";v="128"',
+            }
+            if cookie_val:
+                headers["Cookie"] = cookie_val if isinstance(cookie_val, str) else "; ".join(f"{k}={v}" for k, v in cookie_val.items())
+
+            try:
+                async with httpx.AsyncClient(**client_kwargs) as client:
+                    resp = await client.get(url, headers=headers)
+                    resp.raise_for_status()
+                    result = {"html": resp.text, "text": resp.text, "status_code": resp.status_code}
+                    if use_cache:
+                        await self._set_cache(cache_key, result)
+                    return result
+            except Exception as direct_err:
+                logger.warning(f"Direct scrape fallback also failed: {direct_err}")
+                raise
     
     async def extract_contacts(
         self,
         url: str,
         platform: str = "linkedin",
-        use_cache: bool = True
+        use_cache: bool = True,
+        cookies: str | dict | None = None,
+        proxy: str | None = None,
     ) -> list[dict]:
         """
         Extract contact information from LinkedIn or similar platforms.
@@ -323,7 +385,9 @@ class OpenClawClient:
         self,
         url: str,
         platform: str = "default",
-        use_cache: bool = True
+        use_cache: bool = True,
+        cookies: str | dict | None = None,
+        proxy: str | None = None,
     ) -> list[dict]:
         """
         Extract job postings from job boards.

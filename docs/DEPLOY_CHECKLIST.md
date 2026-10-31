@@ -35,6 +35,18 @@
    - Events: `checkout.session.completed`, `checkout.session.expired` → ได้ `whsec_...`
 
 ### 3. ตั้ง env บน Vercel
+
+ใช้สคริปต์เดียวสำหรับ production configuration และ provider secrets:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\menum\graxia os\scripts\set-vercel-production-secrets.ps1"
+```
+
+สคริปต์จะตั้ง canonical URL ชั่วคราวเป็น
+`https://graxia-os-funnel.vercel.app`, ปิด live payment, ถามคีย์แบบ
+ซ่อนค่า และข้ามรายการที่กด Enter; ใช้ `-OnlyRequired` หากต้องการกรอกเฉพาะ
+core keys.
+
 ```bash
 vercel link            # เชื่อม repo กับโปรเจกต์ที่มีอยู่
 vercel env add DATABASE_URL production
@@ -44,7 +56,7 @@ vercel env add SECRET_KEY production          # ค่าใน .env.production
 vercel env add ENCRYPTION_KEY production
 vercel env add CSRF_SECRET production
 vercel env add ADMIN_API_KEY production
-vercel env add INTERNAL_METRICS_TOKEN production
+vercel env add INTERNAL_API_KEY production
 vercel env add ADMIN_DEFAULT_EMAIL production   # admin@graxia.store
 vercel env add ADMIN_DEFAULT_PASSWORD production
 vercel env add FRONTEND_URL production        # https://graxia-os-funnel.vercel.app
@@ -71,7 +83,7 @@ cd backend
 ### 6. cron-job.org (ฟรี) — เปิด automation
 1. https://cron-job.org → Sign up → **Create job**
 2. URL: `https://<project>.vercel.app/internal/funnel/process-due`
-3. Method: POST, Headers: `X-Internal-Token: <INTERNAL_METRICS_TOKEN>`
+3. Method: POST, Headers: `X-Internal-Token: <INTERNAL_API_KEY>`
 4. ทุก 15 นาที → ระบบจะส่ง abandoned cart (1 ชม.), review (3 วัน), cross-sell (7 วัน), win-back (30 วัน) อัตโนมัติ
 
 ### 7. สร้างสินค้า + ทดสอบ

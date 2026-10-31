@@ -281,6 +281,7 @@ export default function Leads() {
             <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Add lead</h2>
           </div>
           <LeadForm
+            formName="Add lead"
             draft={draft}
             setDraft={setDraft}
             saving={createMutation.isPending}
@@ -432,6 +433,7 @@ export default function Leads() {
         />
         <GlassCard intensity="low" className="mt-8 p-8 max-w-4xl">
           <LeadForm
+            formName="Add New Asset"
             draft={draft}
             setDraft={setDraft}
             saving={createMutation.isPending}
@@ -444,11 +446,13 @@ export default function Leads() {
 }
 
 function LeadForm({
+  formName,
   draft,
   setDraft,
   saving,
   onSubmit,
 }: {
+  formName: string;
   draft: LeadDraft;
   setDraft: (draft: LeadDraft) => void;
   saving: boolean;
@@ -459,7 +463,15 @@ function LeadForm({
   }
 
   return (
-    <div className="space-y-4">
+    <form
+      aria-label={formName}
+      noValidate
+      className="space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           label="Name"
@@ -517,11 +529,11 @@ function LeadForm({
         />
       </label>
       <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-        <Button className="w-full justify-center" icon={<Plus size={16} />} loading={saving} onClick={onSubmit}>
+        <Button className="w-full justify-center" icon={<Plus size={16} />} loading={saving} type="submit">
           Add lead
         </Button>
       </motion.div>
-    </div>
+    </form>
   );
 }
 

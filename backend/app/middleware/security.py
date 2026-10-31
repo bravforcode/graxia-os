@@ -14,7 +14,6 @@ from app.core.request_context import get_correlation_id, get_request_id
 from app.middleware.auth import CSRF_EXEMPT_PATHS
 from app.services.audit_service import log_audit_event
 from fastapi import Request, Response
-from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 

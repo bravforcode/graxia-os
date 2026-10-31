@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { isAxiosError } from "axios";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { 
   Download, 
@@ -14,6 +15,7 @@ import { useLang } from "@/i18n/LanguageContext";
 export default function DeliveryAccessPage() {
   const { t } = useLang();
   const { token } = useParams<{ token: string }>();
+  const latestT = useRef(t);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [payload, setPayload] = useState<DeliveryPayload | null>(null);
@@ -24,24 +26,31 @@ export default function DeliveryAccessPage() {
   const rawToken = token || "";
 
   useEffect(() => {
-    if (rawToken) {
-      fetchPayload();
-    }
-  }, [rawToken]);
+    latestT.current = t;
+  }, [t]);
 
-  const fetchPayload = async () => {
+  const fetchPayload = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMsg("");
       const res = await funnelApi.getDeliveryPayload(rawToken);
       setPayload(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to retrieve delivery payload", err);
-      setErrorMsg(err.response?.data?.detail || t("delivery.invalid"));
+      const detail = isAxiosError<{ detail?: string }>(err)
+        ? err.response?.data?.detail
+        : undefined;
+      setErrorMsg(detail || latestT.current("delivery.invalid"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [rawToken]);
+
+  useEffect(() => {
+    if (rawToken) {
+      void fetchPayload();
+    }
+  }, [rawToken, fetchPayload]);
 
   const handleConsume = async () => {
     if (!rawToken) return;
@@ -54,9 +63,12 @@ export default function DeliveryAccessPage() {
       
       // Update the generic view too
       setPayload(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to consume delivery asset", err);
-      setErrorMsg(err.response?.data?.detail || t("delivery.downloadSecured"));
+      const detail = isAxiosError<{ detail?: string }>(err)
+        ? err.response?.data?.detail
+        : undefined;
+      setErrorMsg(detail || t("delivery.downloadSecured"));
     } finally {
       setConsuming(false);
     }

@@ -35,7 +35,7 @@ async def test_csrf_missing_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token missing"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf
@@ -56,7 +56,7 @@ async def test_csrf_missing_cookie_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token missing"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         # Restore original cookie
         if original_cookie:
@@ -73,7 +73,7 @@ async def test_csrf_missing_header_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token missing"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf
@@ -90,7 +90,7 @@ async def test_csrf_empty_string_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token missing"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf
@@ -107,7 +107,7 @@ async def test_csrf_whitespace_only_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token missing"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf
@@ -125,7 +125,7 @@ async def test_csrf_mismatched_tokens_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token invalid"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf
@@ -148,7 +148,7 @@ async def test_csrf_forged_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token forged"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf
@@ -173,7 +173,7 @@ async def test_csrf_malformed_token_rejected(async_client: AsyncClient):
             json={"title": "Test Task", "priority": 5, "assigned_to": "user"},
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token forged"
+        assert response.json()["error"]["code"] == "PERMISSION_DENIED"
     finally:
         if original_csrf is not None:
             async_client.headers["X-CSRF-Token"] = original_csrf

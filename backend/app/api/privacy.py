@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -26,6 +26,7 @@ from app.models.privacy import BreachNotification, PrivacyConsent
 from app.models.user import User
 from app.models.funnel import FunnelOrder
 from app.api.auth import get_current_user
+from app.services.session_service import SessionService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -216,6 +217,7 @@ async def data_export(
 @router.post("/privacy/erasure", response_model=ErasureResponse)
 async def request_erasure(
     payload: ErasureRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -250,9 +252,7 @@ async def request_erasure(
         # Full deletion: drop consent rows, deactivate account. Orders are
         # preserved by policy but detached from the account email.
         await db.execute(
-            select(PrivacyConsent)
-            .where(PrivacyConsent.user_id == current_user.id)
-            .delete()
+            delete(PrivacyConsent).where(PrivacyConsent.user_id == current_user.id)
         )
         current_user.email = f"deleted-{current_user.id}@anonymized.local"
         current_user.full_name = "Deleted User"
@@ -261,6 +261,9 @@ async def request_erasure(
         note = "Account data removed; order history anonymized for ledger integrity"
 
     await db.commit()
+    await SessionService(getattr(request.app.state, "redis", None)).invalidate_all_user_sessions(
+        str(current_user.id), reason="account_removed"
+    )
     return ErasureResponse(status="completed", user_id=current_user.id, method=method, note=note)
 
 

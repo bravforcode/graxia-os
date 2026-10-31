@@ -8,7 +8,7 @@ from .base import BaseScraper
 logger = logging.getLogger(__name__)
 
 RSS_FEEDS = [
-    ("https://devpost.com/hackathons.rss", "devpost_rss"),
+    ("https://weworkremotely.com/categories/remote-programming-jobs.rss", "weworkremotely_rss"),
     ("https://www.f6s.com/programs.rss", "f6s_rss"),
 ]
 
@@ -25,30 +25,50 @@ class RSSReaderScraper(BaseScraper):
         return self._feed_url
 
     async def fetch(self, url: str) -> httpx.Response | None:
-        return await self._safe_fetch(url)
+        return await self._safe_fetch(url, headers={"Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.1"})
 
     async def parse(self, response: httpx.Response) -> list[dict]:
+        items = []
         try:
-            root = ET.fromstring(response.content)
-            ns = ""
-            items = []
-            for item in root.findall(".//item")[:20]:
-                title_el = item.find("title")
-                link_el = item.find("link")
-                desc_el = item.find("description")
-                pub_el = item.find("pubDate")
-                title = title_el.text.strip() if title_el is not None and title_el.text else ""
-                if not title:
-                    continue
-                items.append({
-                    "title": title,
-                    "source_url": link_el.text.strip() if link_el is not None and link_el.text else "",
-                    "description": desc_el.text.strip() if desc_el is not None and desc_el.text else "",
-                    "pub_date": pub_el.text.strip() if pub_el is not None and pub_el.text else None,
-                })
-            return items
+            # 1. Try standard ElementTree
+            try:
+                root = ET.fromstring(response.content)
+                for item in root.findall(".//item")[:20]:
+                    title_el = item.find("title")
+                    link_el = item.find("link")
+                    desc_el = item.find("description")
+                    pub_el = item.find("pubDate")
+                    title = title_el.text.strip() if title_el is not None and title_el.text else ""
+                    if not title:
+                        continue
+                    items.append({
+                        "title": title,
+                        "source_url": link_el.text.strip() if link_el is not None and link_el.text else "",
+                        "description": desc_el.text.strip() if desc_el is not None and desc_el.text else "",
+                        "pub_date": pub_el.text.strip() if pub_el is not None and pub_el.text else None,
+                    })
+                return items
+            except ET.ParseError:
+                # 2. Resilient fallback with BeautifulSoup XML parser
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.content, "xml")
+                for item in soup.find_all("item")[:20]:
+                    title_el = item.find("title")
+                    link_el = item.find("link")
+                    desc_el = item.find("description")
+                    pub_el = item.find("pubDate")
+                    title = title_el.get_text(strip=True) if title_el else ""
+                    if not title:
+                        continue
+                    items.append({
+                        "title": title,
+                        "source_url": link_el.get_text(strip=True) if link_el else "",
+                        "description": desc_el.get_text(strip=True) if desc_el else "",
+                        "pub_date": pub_el.get_text(strip=True) if pub_el else None,
+                    })
+                return items
         except Exception as e:
-            logger.error(f"RSS parse error: {e}")
+            logger.warning(f"RSS parse error for {self.source_name}: {e}")
             return []
 
     async def normalize(self, raw_item: dict) -> dict | None:

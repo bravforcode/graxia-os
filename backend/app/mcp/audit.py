@@ -9,11 +9,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import AsyncSessionLocal
-from app.mcp.schemas import MCPAuthContext, MCPResponse
+from app.mcp.schemas import MCPResponse
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 import logging
-from datetime import datetime, date
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import select, and_, func, desc, Date
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.funnel import ConversionEvent, FunnelOrder, DigitalProduct
 
@@ -26,6 +26,7 @@ class FunnelAnalyticsService:
         campaign: Optional[str] = None,
         referrer: Optional[str] = None,
         metadata_json: Optional[Dict[str, Any]] = None,
+        idempotency_key: Optional[str] = None,
     ) -> ConversionEvent:
         """
         Logs a conversion event for tracking funnel analytics.
@@ -42,6 +43,26 @@ class FunnelAnalyticsService:
         if event_type not in valid_types:
             raise ValueError(f"Invalid event type: {event_type}")
 
+        if idempotency_key:
+            existing = await self.db.scalar(
+                select(ConversionEvent).where(
+                    ConversionEvent.organization_id == organization_id,
+                    ConversionEvent.idempotency_key == idempotency_key,
+                )
+            )
+            if existing:
+                return existing
+
+        allowed_metadata = {
+            "cta", "content_id", "path", "plan", "channel", "locale",
+            "lead_magnet_id", "lead_magnet_slug",
+        }
+        safe_metadata = {
+            str(key): str(value)[:200]
+            for key, value in (metadata_json or {}).items()
+            if key in allowed_metadata and value is not None
+        }
+
         event = ConversionEvent(
             organization_id=organization_id,
             event_type=event_type,
@@ -53,13 +74,74 @@ class FunnelAnalyticsService:
             medium=medium,
             campaign=campaign,
             referrer=referrer,
-            metadata_json=metadata_json or {},
+            metadata_json=safe_metadata,
+            idempotency_key=idempotency_key,
             occurred_at=datetime.utcnow(),
         )
         self.db.add(event)
         await self.db.commit()
         await self.db.refresh(event)
         return event
+
+    async def get_attribution_summary(
+        self,
+        organization_id: UUID,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> List[Dict[str, Any]]:
+        """Group funnel outcomes by attribution and product without exposing PII."""
+        filters = [ConversionEvent.organization_id == organization_id]
+        if start_date:
+            filters.append(ConversionEvent.occurred_at >= start_date)
+        if end_date:
+            filters.append(ConversionEvent.occurred_at <= end_date)
+
+        stmt = (
+            select(ConversionEvent, FunnelOrder.total_amount, DigitalProduct.name)
+            .select_from(ConversionEvent)
+            .outerjoin(FunnelOrder, FunnelOrder.id == ConversionEvent.order_id)
+            .outerjoin(DigitalProduct, DigitalProduct.id == ConversionEvent.product_id)
+            .where(and_(*filters))
+            .order_by(ConversionEvent.occurred_at)
+        )
+        result = await self.db.execute(stmt)
+        grouped: Dict[tuple, Dict[str, Any]] = {}
+        for event, order_total, product_name in result.all():
+            metadata = event.metadata_json or {}
+            plan = metadata.get("plan")
+            key = (
+                event.source, event.medium, event.campaign,
+                event.product_id, plan,
+            )
+            row = grouped.setdefault(
+                key,
+                {
+                    "source": event.source,
+                    "medium": event.medium,
+                    "campaign": event.campaign,
+                    "product_id": event.product_id,
+                    "product_name": product_name,
+                    "plan": plan,
+                    "views": 0,
+                    "leads": 0,
+                    "checkout_starts": 0,
+                    "purchases": 0,
+                    "revenue": 0.0,
+                },
+            )
+            if event.event_type == "page_view":
+                row["views"] += 1
+            elif event.event_type == "lead_capture":
+                row["leads"] += 1
+            elif event.event_type in {"checkout_start", "checkout_success"}:
+                row["checkout_starts"] += 1
+            elif event.event_type == "purchase":
+                row["purchases"] += 1
+                row["revenue"] += float(order_total or 0)
+
+        for row in grouped.values():
+            row["revenue"] = round(row["revenue"], 2)
+        return list(grouped.values())
 
     async def get_analytics_summary(
         self,

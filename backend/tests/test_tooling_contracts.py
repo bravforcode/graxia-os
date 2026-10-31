@@ -9,7 +9,7 @@ import pytest
 import yaml
 from app.core.logging_config import setup_logging
 from app.main import app
-from scripts.ops.export_openapi import export_openapi
+from app.ops.export_openapi import export_openapi
 
 
 @pytest.fixture()

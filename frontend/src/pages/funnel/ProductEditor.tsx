@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
@@ -51,7 +52,7 @@ export default function ProductEditor() {
     if (!isNew && id) {
       loadProductAndAssets(id);
     }
-  }, [id]);
+  }, [id, isNew]);
 
   const loadProductAndAssets = async (productId: string) => {
     try {
@@ -107,9 +108,12 @@ export default function ProductEditor() {
         await funnelApi.updateProduct(id, payload);
         alert("Product saved successfully!");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save product failed", err);
-      setErrorMsg(err.response?.data?.detail || "An error occurred while saving the product.");
+      const detail = isAxiosError<{ detail?: string }>(err)
+        ? err.response?.data?.detail
+        : undefined;
+      setErrorMsg(detail || "An error occurred while saving the product.");
     } finally {
       setSaving(false);
     }
