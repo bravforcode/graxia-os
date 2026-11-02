@@ -1,0 +1,220 @@
+# Graxia production overlay. All listeners remain localhost-only; host Caddy
+# is the sole public edge. Use only with /opt/graxia-os/.env.production.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+x-production-environment: &production-environment
+  APP_ENV: production
+  RUNNING_IN_DOCKER: "true"
+  SCHEDULER_EMBEDDED: "false"
+  TELEGRAM_POLLING_ENABLED: "false"
+  POSTGRES_DB: "${PRODUCTION_POSTGRES_DB:-graxia}"
+  POSTGRES_USER: "${PRODUCTION_POSTGRES_USER:-graxia_app}"
+  POSTGRES_PASSWORD: "${PRODUCTION_POSTGRES_PASSWORD:?PRODUCTION_POSTGRES_PASSWORD must be set}"
+  DATABASE_URL: "postgresql+asyncpg://${PRODUCTION_POSTGRES_USER:-graxia_app}:${PRODUCTION_POSTGRES_PASSWORD}@postgres:5432/${PRODUCTION_POSTGRES_DB:-graxia}"
+  DATABASE_MIGRATION_URL: "postgresql+asyncpg://${PRODUCTION_POSTGRES_USER:-graxia_app}:${PRODUCTION_POSTGRES_PASSWORD}@postgres:5432/${PRODUCTION_POSTGRES_DB:-graxia}"
+  REDIS_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0"
+  CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD}@redis:6379/1"
+  CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD}@redis:6379/2"
+
+services:
+  postgres:
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 1.0
+    image: pgvector/pgvector:pg17
+    container_name: graxia_prod_postgres
+    environment:
+      POSTGRES_DB: "${PRODUCTION_POSTGRES_DB:-graxia}"
+      POSTGRES_USER: "${PRODUCTION_POSTGRES_ADMIN_USER:-graxia_admin}"
+      POSTGRES_PASSWORD: "${PRODUCTION_POSTGRES_ADMIN_PASSWORD:?PRODUCTION_POSTGRES_ADMIN_PASSWORD must be set}"
+      PRODUCTION_POSTGRES_USER: "${PRODUCTION_POSTGRES_USER:-graxia_app}"
+      PRODUCTION_POSTGRES_PASSWORD: "${PRODUCTION_POSTGRES_PASSWORD:?PRODUCTION_POSTGRES_PASSWORD must be set}"
+    ports:
+      - "127.0.0.1:${PRODUCTION_POSTGRES_PORT:-19543}:5432"
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - ./backend/docker/postgres-init/10-create-app-role.sh:/docker-entrypoint-initdb.d/10-create-app-role.sh:ro
+    networks:
+      - graxia_production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PRODUCTION_POSTGRES_ADMIN_USER:-graxia_admin} -d ${PRODUCTION_POSTGRES_DB:-graxia}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *default-logging
+
+  redis:
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    container_name: graxia_prod_redis
+    entrypoint: ["redis-server"]
+    command: ["--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"]
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
+    ports: !override
+      - "127.0.0.1:${PRODUCTION_REDIS_PORT:-19579}:6379"
+    volumes: !override
+      - production_redis_data:/data
+    networks:
+      - graxia_production
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *default-logging
+
+  backend:
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 1.0
+    image: graxia-backend:${GRAXIA_BACKEND_TAG:?GRAXIA_BACKEND_TAG is required}
+    container_name: graxia_prod_backend
+    volumes:
+      - /opt/graxia-os/identity:/identity:ro
+    env_file: !override
+      - .env.production
+    environment:
+      <<: *production-environment
+      LLM_PROVIDER: "openai"
+      OPENAI_CHAT_MODEL: "gpt-6-luna"
+      OPENAI_BASE_URL: "https://api.openai.com/v1"
+      OPENAI_INPUT_PRICE_USD_PER_1M: "0.10"
+      OPENAI_OUTPUT_PRICE_USD_PER_1M: "0.50"
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --no-access-log
+    ports: !override
+      - "127.0.0.1:${PRODUCTION_BACKEND_PORT:-19081}:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - graxia_production
+    restart: unless-stopped
+    logging: *default-logging
+
+  frontend:
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    image: graxia-frontend:${PRODUCTION_TAG:?PRODUCTION_TAG is required}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: production
+        VITE_SITE_URL: "${VITE_SITE_URL:?VITE_SITE_URL must be set for production}"
+        VITE_ROBOTS_DIRECTIVE: "index, follow"
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
+        VITE_AGENT_STREAM_URL: ${VITE_AGENT_STREAM_URL:-}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+    container_name: graxia_prod_frontend
+    ports: !override
+      - "127.0.0.1:${PRODUCTION_FRONTEND_PORT:-19080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - graxia_production
+    restart: unless-stopped
+    logging: *default-logging
+
+  celery:
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.0
+    image: graxia-backend:${GRAXIA_BACKEND_TAG:?GRAXIA_BACKEND_TAG is required}
+    container_name: graxia_prod_celery
+    volumes:
+      - /opt/graxia-os/identity:/identity:ro
+    env_file: !override
+      - .env.production
+    environment:
+      <<: *production-environment
+      LLM_PROVIDER: "openai"
+      OPENAI_CHAT_MODEL: "gpt-6-luna"
+      OPENAI_BASE_URL: "https://api.openai.com/v1"
+      OPENAI_INPUT_PRICE_USD_PER_1M: "0.10"
+      OPENAI_OUTPUT_PRICE_USD_PER_1M: "0.50"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    networks:
+      - graxia_production
+    restart: unless-stopped
+    logging: *default-logging
+
+  beat:
+    image: graxia-backend:${GRAXIA_BACKEND_TAG:?GRAXIA_BACKEND_TAG is required}
+    container_name: graxia_prod_beat
+    env_file: !override
+      - .env.production
+    environment:
+      <<: *production-environment
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - graxia_production
+    restart: unless-stopped
+    logging: *default-logging
+
+  n8n:
+    profiles: ["n8n"]
+    logging: *default-logging
+    container_name: graxia_prod_n8n
+    environment:
+      N8N_BASIC_AUTH_PASSWORD: "${N8N_PASSWORD:?N8N_PASSWORD must be set}"
+    ports: !override
+      - "127.0.0.1:${PRODUCTION_N8N_PORT:-19567}:5678"
+    volumes:
+      - production_n8n_data:/home/node/.n8n
+
+volumes:
+  production_postgres_data:
+    name: graxia_production_postgres_data
+  production_redis_data:
+    name: graxia_production_redis_data
+  production_n8n_data:
+    name: graxia_production_n8n_data
+
+networks:
+  graxia_production:
+    name: graxia_production_network
+    driver: bridge

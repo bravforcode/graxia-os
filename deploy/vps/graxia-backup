@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# graxia-backup.sh — daily encrypted backup of the control plane. Runs as root on the VPS (systemd timer).
+#
+# What: pg_dump of `windmill`, `automation` + Graxia staging, SQLite online-backups (fb-commenter history, market.db),
+#       and a tarball of config/secrets/units. Everything is encrypted with `age` to the PUBLIC key in
+#       /etc/graxia/backup.age.pub. Age protects archived payloads; this VPS still contains live secrets.
+#       Keep private backup identities off-host; exclude their reserved names from the config archive.
+# Plaintext only ever lives in /dev/shm (RAM). Each dump is validated (pg_restore -l / PRAGMA integrity_check)
+# before it is encrypted. Retention: newest 7 dirs + one per ISO week for the last 4 weeks.
+# Reports to Windmill (service `backup`, dead-man 26 h) when /root/graxia-secrets/graxia-backup.token exists.
+set -Eeuo pipefail
+umask 077
+
+DEST="${BACKUP_DEST:-/var/backups/graxia}"
+PUBFILE="${BACKUP_PUB:-/etc/graxia/backup.age.pub}"
+COMPOSE="${COMPOSE_FILE:-/opt/windmill/docker-compose.yml}"
+TOKEN_FILE="${BACKUP_TOKEN_FILE:-/root/graxia-secrets/graxia-backup.token}"
+WM_URL="${WM_URL:-http://127.0.0.1:8100}"
+KEEP_DAILY="${KEEP_DAILY:-7}"
+KEEP_WEEKS="${KEEP_WEEKS:-4}"
+MIN_FREE_BYTES="${MIN_FREE_BYTES:-5368709120}" # 5 GiB
+SQLITE_FILES=(/opt/graxia/fb-commenter/data/history.db /opt/graxia/market-booking/data/market.db)
+CONFIG_PATHS=(/opt/windmill/.env /opt/windmill/docker-compose.yml /opt/windmill/initdb /root/graxia-secrets /etc/graxia
+  /opt/laya/.env /opt/graxia/fb-commenter/.env /opt/graxia/fb-commenter/cookies /opt/graxia/fb-commenter/src
+  /opt/graxia/fb-commenter/tools /etc/caddy /root/graxia-platform
+  /etc/systemd/system /opt/graxia-portal /opt/graxia/market-booking
+  /opt/fastwork-hunter /opt/graxia-os-staging /usr/local/sbin/fw-set-token)
+
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+OUT="$DEST/$STAMP"
+WORK="$(mktemp -d /dev/shm/graxia-backup.XXXXXX)"
+DCDB() { docker compose -f "$COMPOSE" exec -T db "$@"; }
+log() { echo "[$(date -u +%FT%TZ)] $*"; }
+
+beat() { # beat <status> <detail-json>
+  [ -r "$TOKEN_FILE" ] || return 0
+  printf 'Authorization: Bearer %s\n' "$(head -n1 "$TOKEN_FILE")" >"$WORK/hdr"
+  printf '{"name":"backup","status":"%s","detail":%s,"expected_s":86400,"grace_s":7200}' "$1" "$(printf '%s' "$2" | sed 's/\\/\\\\/g;s/"/\\"/g;s/^/"/;s/$/"/')" >"$WORK/body"
+  curl -fsS --max-time 20 -H @"$WORK/hdr" -H 'Content-Type: application/json' --data @"$WORK/body" \
+    "$WM_URL/api/w/graxia/jobs/run_wait_result/p/f/ops/service_heartbeat" >/dev/null 2>&1 || log "WARN: heartbeat post failed"
+}
+cleanup() { rm -rf "$WORK"; }
+fail() { log "FAILED at line $1"; beat degraded "{\"error\":\"backup failed at line $1\",\"stamp\":\"$STAMP\"}"; rm -rf "$OUT"; cleanup; exit 1; }
+trap 'fail $LINENO' ERR
+trap cleanup EXIT
+
+[ -s "$PUBFILE" ] || { echo "missing age public key $PUBFILE" >&2; exit 2; }
+command -v age >/dev/null || { echo "age not installed" >&2; exit 2; }
+mkdir -p "$DEST" && chmod 700 "$DEST"
+avail="$(df --output=avail -B1 "$DEST" | tail -1 | tr -d ' ')"
+[ "$avail" -ge "$MIN_FREE_BYTES" ] || { log "not enough free disk ($avail bytes)"; false; }
+mkdir -p "$OUT"
+
+enc() { age -R "$PUBFILE" -o "$OUT/$1.age"; } # stdin -> encrypted file
+
+log "postgres dumps"
+for db in windmill automation; do
+  DCDB pg_dump -U postgres -Fc "$db" >"$WORK/$db.dump"
+  DCDB pg_restore -l <"$WORK/$db.dump" >/dev/null # structural validation of the archive
+  enc "$db.dump" <"$WORK/$db.dump"
+  rm -f "$WORK/$db.dump"
+done
+
+if docker ps --format '{{.Names}}' | grep -qx 'graxia_staging_postgres'; then
+  log "graxia staging postgres dump"
+  docker exec graxia_staging_postgres sh -ec 'exec pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' >"$WORK/graxia-staging.dump"
+  docker exec -i graxia_staging_postgres pg_restore -l <"$WORK/graxia-staging.dump" >/dev/null
+  enc graxia-staging.dump <"$WORK/graxia-staging.dump"
+  rm -f "$WORK/graxia-staging.dump"
+else
+  log "skip graxia_staging_postgres: container not present"
+fi
+
+if docker ps --format '{{.Names}}' | grep -qx 'sanso-prod-postgres-1'; then
+  log "sanso production postgres dump"
+  docker exec sanso-prod-postgres-1 sh -ec 'exec pg_dump -U "${POSTGRES_USER:-sanso}" -Fc "${POSTGRES_DB:-sanso}"' >"$WORK/sanso-production.dump"
+  docker exec -i sanso-prod-postgres-1 pg_restore -l <"$WORK/sanso-production.dump" >/dev/null
+  enc sanso-production.dump <"$WORK/sanso-production.dump"
+  rm -f "$WORK/sanso-production.dump"
+fi
+
+log "graxia production postgres dump"
+docker exec graxia_prod_postgres pg_dump -U graxia_admin -Fc --no-owner --no-acl -d graxia >"$WORK/graxia-production.dump"
+docker exec -i graxia_prod_postgres pg_restore -l <"$WORK/graxia-production.dump" >/dev/null
+enc graxia-production.dump <"$WORK/graxia-production.dump"
+rm -f "$WORK/graxia-production.dump"
+
+log "sqlite online backups"
+for f in "${SQLITE_FILES[@]}"; do
+  [ -f "$f" ] || { log "skip missing $f"; continue; }
+  name="$(echo "$f" | sed 's|^/||;s|/|_|g')"
+  sqlite3 "$f" ".backup '$WORK/$name'"
+  [ "$(sqlite3 "$WORK/$name" 'PRAGMA integrity_check;')" = "ok" ]
+  enc "$name" <"$WORK/$name"
+  rm -f "$WORK/$name"
+done
+
+log "config tarball"
+existing=()
+for p in "${CONFIG_PATHS[@]}"; do [ -e "$p" ] && existing+=("$p"); done
+excludes=(--exclude=.venv --exclude=venv --exclude=node_modules --exclude=__pycache__ --exclude=.git
+  --exclude='backup.age.key' --exclude='backup.age.identity' --exclude='backup.age.private'
+  --exclude='backup.age.secret' --exclude='backup-identity*' --exclude='*.agekey')
+for f in "${SQLITE_FILES[@]}"; do
+  excludes+=("--exclude=$f" "--exclude=$f-wal" "--exclude=$f-shm" "--exclude=$f-journal")
+done
+if tar -czf - --warning=no-file-changed "${excludes[@]}" "${existing[@]}" 2>/dev/null | enc config.tar.gz; then
+  :
+else
+  pipeline_status=("${PIPESTATUS[@]}")
+  # A changed-file warning is acceptable only if age completed successfully.
+  [ "${pipeline_status[0]}" -eq 1 ] && [ "${pipeline_status[1]}" -eq 0 ] || false
+  log "WARN: config files changed while reading"
+fi
+[ -s "$OUT/config.tar.gz.age" ]
+
+( cd "$OUT" && sha256sum ./*.age >SHA256SUMS )
+size="$(du -sb "$OUT" | cut -f1)"
+printf '{"stamp":"%s","bytes":%s,"files":%s}\n' "$STAMP" "$size" "$(ls "$OUT"/*.age | wc -l)" >"$OUT/manifest.json"
+log "wrote $OUT ($size bytes)"
+
+# retention: newest KEEP_DAILY dirs + the newest dir of each of the last KEEP_WEEKS ISO weeks
+mapfile -t all < <(find "$DEST" -maxdepth 1 -mindepth 1 -type d -name '20*T*Z' -printf '%f\n' | sort -r)
+declare -A keep=() wk=()
+i=0
+for d in "${all[@]}"; do
+  i=$((i + 1))
+  [ "$i" -le "$KEEP_DAILY" ] && keep[$d]=1
+  w="$(date -u -d "${d:0:8}" +%G-W%V)"
+  [ -n "${wk[$w]:-}" ] || { wk[$w]=1; [ "${#wk[@]}" -le "$KEEP_WEEKS" ] && keep[$d]=1; }
+done
+for d in "${all[@]}"; do [ -n "${keep[$d]:-}" ] || { log "prune $d"; rm -rf "${DEST:?}/$d"; }; done
+
+beat ok "{\"stamp\":\"$STAMP\",\"bytes\":$size}"
+log "done"

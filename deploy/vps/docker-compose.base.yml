@@ -1,0 +1,112 @@
+# docker-compose.yml — PRODUCTION
+# Builds from image, no source mounts, no --reload.
+# Development: use docker-compose.dev.yml instead.
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f backend
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: graxia_redis
+    entrypoint: ["/docker-entrypoint-scripts/redis-entrypoint.sh"]
+    ports:
+      - "6379:6379"
+    environment:
+      - "REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+      - ./docker/redis-entrypoint.sh:/docker-entrypoint-scripts/redis-entrypoint.sh:ro
+    # Note: ./redis.conf was removed — not present in repo. Redis uses internal defaults.
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: graxia-backend:${TAG:-latest}
+    container_name: graxia_backend
+    env_file: .env.production
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      SCHEDULER_EMBEDDED: "false"
+      TELEGRAM_POLLING_ENABLED: "true"
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./scripts/ops:/app/scripts/ops:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: graxia-backend:${TAG:-latest}
+    container_name: graxia_celery
+    env_file: .env.production
+    environment:
+      RUNNING_IN_DOCKER: "true"
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: graxia-backend:${TAG:-latest}
+    container_name: graxia_beat
+    env_file: .env.production
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: python -m app.tasks.beat_launcher
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: graxia_n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - "N8N_BASIC_AUTH_USER=${N8N_USER:-operator}"
+      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}"
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Bangkok
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  n8n_data:
