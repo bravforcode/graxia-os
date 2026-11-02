@@ -9,7 +9,7 @@ ref="${1:-HEAD}"
 host="${GRAXIA_VPS:-opportunity-vps}"
 cd "$(git rev-parse --show-toplevel)"
 sha=$(git rev-parse --short=12 --verify "${ref}^{commit}")
-[ -z "$(git status --porcelain -- backend deploy/vps)" ] ||
+[ -z "$(git status --porcelain --untracked-files=no -- backend deploy/vps)" ] ||
   { echo "backend/ or deploy/vps has uncommitted changes" >&2; exit 1; }
 
 echo "deploy $sha to $host"
