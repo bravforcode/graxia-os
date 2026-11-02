@@ -18,7 +18,7 @@ from app.core.stripe_client import (
     get_price_id,
 )
 from app.database import get_db
-from app.middleware.auth import get_current_user_from_token
+from app.middleware.auth import get_current_user_from_token, require_role
 from app.models.organization import PLAN_LIMITS, Organization
 from app.models.usage_log import UsageLog
 from app.models.user import User
@@ -28,6 +28,15 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 class CheckoutIn(BaseModel):
     plan: str  # "starter" | "pro"
+
+
+async def _require_billing_admin(
+    user: User = Depends(get_current_user_from_token),
+) -> User:
+    await require_role("admin", user)
+    if not user.organization_id or not user.organization:
+        raise HTTPException(status_code=400, detail="No organization found")
+    return user
 
 
 @router.get("/plans")
@@ -46,7 +55,7 @@ async def list_plans():
 async def start_checkout(
     body: CheckoutIn,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user_from_token),
+    user: User = Depends(_require_billing_admin),
 ):
     """Start 14-day free trial. No card required during trial."""
     if body.plan not in PLAN_LIMITS or body.plan == "free":
@@ -59,7 +68,10 @@ async def start_checkout(
             detail="Billing not configured. Contact support@graxia.io",
         )
 
-    org: Organization | None = user.organization
+    # Load the authenticated user's own organization into this request's
+    # session. The auth dependency may have loaded the relationship in a
+    # separate session, so mutating user.organization here is not durable.
+    org: Organization | None = await db.get(Organization, user.organization_id)
     if not org:
         raise HTTPException(status_code=400, detail="No organization found")
 
@@ -110,7 +122,7 @@ async def start_checkout(
 @router.post("/portal")
 async def open_portal(
     request: Request,
-    user: User = Depends(get_current_user_from_token),
+    user: User = Depends(_require_billing_admin),
 ):
     """Open Stripe Customer Portal for self-service management."""
     org = user.organization
@@ -164,10 +176,10 @@ async def get_usage(
 @router.post("/cancel")
 async def cancel_plan(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user_from_token),
+    user: User = Depends(_require_billing_admin),
 ):
     """Cancel at end of billing period. Does not immediately downgrade."""
-    org = user.organization
+    org = await db.get(Organization, user.organization_id)
     if not org or not org.stripe_subscription_id:
         raise HTTPException(status_code=400, detail="No active subscription")
     await cancel_stripe_subscription(org.stripe_subscription_id)

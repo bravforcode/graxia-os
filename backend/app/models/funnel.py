@@ -177,7 +177,7 @@ class FunnelOrder(Base, TenantMixin):
             "stripe_session_id", name="uq_funnel_orders_stripe_session_id"
         ),
         CheckConstraint(
-            "status IN ('pending', 'paid', 'failed', 'refunded', 'cancelled')",
+            "status IN ('pending', 'paid', 'comped', 'failed', 'refunded', 'cancelled')",
             name="ck_order_status",
         ),
     )
@@ -493,6 +493,12 @@ class LeadMagnet(Base, TenantMixin):
     target_product_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True),
         ForeignKey("digital_products.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    delivery_asset_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True),
+        ForeignKey("delivery_assets.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

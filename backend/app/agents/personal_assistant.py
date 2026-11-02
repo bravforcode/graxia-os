@@ -119,7 +119,7 @@ class PersonalAssistantAgent(BaseAgent):
                 query = (
                     select(JobPosting)
                     .where(JobPosting.status == "discovered")
-                    .where(JobPosting.match_score >= Decimal("7.0"))
+                    .where(JobPosting.match_score >= Decimal("5.0"))
                     .order_by(JobPosting.match_score.desc())
                     .limit(5)
                 )

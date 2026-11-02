@@ -14,8 +14,28 @@ down_revision: str | Sequence[str] | None = "025_conversion_event_touch_attribut
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+_REFERRAL_TABLES = (
+    "referral_partners",
+    "referral_codes",
+    "referral_attributions",
+    "referral_conversions",
+)
+
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing = {table for table in _REFERRAL_TABLES if inspector.has_table(table)}
+    if existing:
+        missing = set(_REFERRAL_TABLES) - existing
+        if missing:
+            raise RuntimeError(
+                "referral baseline is partial; refusing duplicate migration: "
+                + ", ".join(sorted(missing))
+            )
+        # 001_enterprise_baseline already owns the complete referral ledger.
+        return
+
     uuid_type = postgresql.UUID(as_uuid=True)
 
     op.create_table(
@@ -140,13 +160,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table("referral_conversions")
-    op.drop_index("ix_referral_attributions_code", table_name="referral_attributions")
-    op.drop_table("referral_attributions")
-    op.drop_index("ix_referral_codes_partner_id", table_name="referral_codes")
-    op.drop_index("ix_referral_codes_owner_identity_hash", table_name="referral_codes")
-    op.drop_index("ix_referral_codes_org_active", table_name="referral_codes")
-    op.drop_table("referral_codes")
-    op.drop_index("ix_referral_partners_user_id", table_name="referral_partners")
-    op.drop_index("ix_referral_partners_org_status", table_name="referral_partners")
-    op.drop_table("referral_partners")
+    # The baseline may own the referral ledger; never drop referral history.
+    return

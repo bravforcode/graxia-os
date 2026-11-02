@@ -16,6 +16,21 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing = {
+        name: inspector.has_table(name)
+        for name in ("content_batches", "content_batch_items")
+    }
+    if all(existing.values()):
+        # The ORM baseline may have created both tables before Alembic runs.
+        # Preserve that data and treat this revision as already satisfied.
+        return
+    if any(existing.values()):
+        raise RuntimeError(
+            "partial content batch schema detected; refusing to create or alter it"
+        )
+
     op.create_table(
         "content_batches",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
@@ -132,7 +147,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_content_batch_items_batch_status", table_name="content_batch_items")
-    op.drop_table("content_batch_items")
-    op.drop_index("ix_content_batches_org_status", table_name="content_batches")
-    op.drop_table("content_batches")
+    # Baseline-owned tables: never destroy them during a downgrade.
+    return

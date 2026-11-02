@@ -111,6 +111,7 @@ class OutreachAgent(BaseAgent):
     async def run(self) -> dict[str, Any]:
         from sqlalchemy import func
 
+        from app.core.control_plane import LEGACY_ORGANIZATION_ID
         from app.database import AsyncSessionLocal
         from app.models.automation_run import AutomationRun
         from app.models.contact import Contact
@@ -152,6 +153,7 @@ class OutreachAgent(BaseAgent):
             ).scalar_one_or_none()
             if not run:
                 run = AutomationRun(
+                    organization_id=LEGACY_ORGANIZATION_ID,
                     name=settings.OUTREACH_CAMPAIGN_NAME,
                     task_type="outreach_campaign",
                     trigger_source="scheduler",
@@ -229,6 +231,7 @@ class OutreachAgent(BaseAgent):
                             },
                             requested_by="outreach_agent",
                             batch_group=settings.OUTREACH_CAMPAIGN_NAME,
+                            organization_id=contact.organization_id,
                         )
                         previews.append({"to": contact.email or "", "subject": subject})
                     except Exception:
@@ -329,6 +332,7 @@ class OutreachAgent(BaseAgent):
                             },
                             requested_by="outreach_agent",
                             batch_group=settings.OUTREACH_CAMPAIGN_NAME,
+                            organization_id=contact.organization_id,
                         )
                         previews.append({"to": contact.email or "", "subject": subject})
                     except Exception:

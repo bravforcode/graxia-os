@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.audit.security_events import safe_request_path
 from app.api.router import api_router
 from app.api.internal import router as internal_router
 from app.config import settings
@@ -97,14 +98,13 @@ app = FastAPI(
 register_exception_handlers(app)
 
 
-@app.middleware("http")
 async def add_metrics_middleware(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time
     metrics_collector.record_http_request(
         method=request.method,
-        endpoint=request.url.path,
+        endpoint=safe_request_path(request),
         status=response.status_code,
         duration=duration,
     )
@@ -281,6 +281,9 @@ app.add_middleware(RequestSizeLimitMiddleware)
 
 # Request / correlation IDs for all downstream security and error handling
 app.add_middleware(RequestContextMiddleware)
+
+# Capture short-circuit responses from security middleware too.
+app.middleware("http")(add_metrics_middleware)
 
 # CORS (Outermost - added last) - Must handle preflight OPTIONS requests
 app.add_middleware(

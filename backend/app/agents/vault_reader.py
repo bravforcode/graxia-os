@@ -61,7 +61,7 @@ class VaultReaderAgent(BaseAgent):
                         opp_id_str = filename[4:]  # Remove "OPP-" prefix
                         opp_id = uuid.UUID(opp_id_str)
                     except (ValueError, IndexError) as e:
-                        logger.warning("vault_reader_invalid_filename", filename=filename, error=str(e))
+                        logger.warning("vault_reader_invalid_filename filename=%s error=%s", filename, str(e))
                         failed_count += 1
                         continue
 
@@ -71,14 +71,14 @@ class VaultReaderAgent(BaseAgent):
                     opp = result.scalar_one_or_none()
 
                     if not opp:
-                        logger.warning("vault_reader_opportunity_not_found", opportunity_id=str(opp_id))
+                        logger.warning("vault_reader_opportunity_not_found opportunity_id=%s", str(opp_id))
                         failed_count += 1
                         continue
 
                     # Get new status from vault frontmatter
                     new_status = file_info.get("status")
                     if not new_status:
-                        logger.debug("vault_reader_no_status_in_vault", filename=filename)
+                        logger.debug("vault_reader_no_status_in_vault filename=%s", filename)
                         failed_count += 1
                         continue
 
@@ -102,9 +102,9 @@ class VaultReaderAgent(BaseAgent):
                         }
                         if new_status not in valid_statuses:
                             logger.warning(
-                                "vault_reader_invalid_status",
-                                filename=filename,
-                                status=new_status,
+                                "vault_reader_invalid_status filename=%s status=%s",
+                                filename,
+                                new_status,
                             )
                             failed_count += 1
                             continue
@@ -112,10 +112,10 @@ class VaultReaderAgent(BaseAgent):
                         opp.status = new_status
                         await db.commit()
                         logger.info(
-                            "vault_reader_synced_opportunity_status",
-                            opportunity_id=str(opp_id),
-                            old_status=old_status,
-                            new_status=new_status,
+                            "vault_reader_synced_opportunity_status opportunity_id=%s old_status=%s new_status=%s",
+                            str(opp_id),
+                            old_status,
+                            new_status,
                         )
 
                         # Emit domain event
@@ -131,31 +131,31 @@ class VaultReaderAgent(BaseAgent):
                         synced_count += 1
                     else:
                         logger.debug(
-                            "vault_reader_no_status_change",
-                            filename=filename,
-                            status=new_status,
+                            "vault_reader_no_status_change filename=%s status=%s",
+                            filename,
+                            new_status,
                         )
                         # Don't increment synced_count - nothing changed
 
                 except (ValueError, KeyError) as e:
                     logger.error(
-                        "vault_reader_invalid_data",
-                        filename=file_info.get("file_path"),
-                        error=str(e),
+                        "vault_reader_invalid_data filename=%s error=%s",
+                        file_info.get("file_path"),
+                        str(e),
                     )
                     failed_count += 1
                 except OSError as e:
                     logger.error(
-                        "vault_reader_file_error",
-                        filename=file_info.get("file_path"),
-                        error=str(e),
+                        "vault_reader_file_error filename=%s error=%s",
+                        file_info.get("file_path"),
+                        str(e),
                     )
                     failed_count += 1
                 except Exception as e:
                     logger.error(
-                        "vault_reader_unknown_error",
-                        filename=file_info.get("file_path"),
-                        error=str(e),
+                        "vault_reader_unknown_error filename=%s error=%s",
+                        file_info.get("file_path"),
+                        str(e),
                         exc_info=True,
                     )
                     failed_count += 1

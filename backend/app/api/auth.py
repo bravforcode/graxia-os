@@ -26,10 +26,11 @@ from app.middleware.auth import (
     get_device_fingerprint,
 )
 from app.middleware.security import generate_csrf_token
+from app.models.organization import Organization
 from app.models.user import User
 from app.services.audit_service import log_audit_event
 from app.services.risk_engine import RiskEngine
-from app.services.session_service import RefreshTokenReuseDetected, SessionService
+from app.services.session_service import LockoutStatus, RefreshTokenReuseDetected, SessionService
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +172,7 @@ def _build_auth_payloads(
         "sub": str(user.id),
         "email": user.email,
         "role": user.role,
+        "organization_id": str(user.organization_id),
         "session_id": session_id,
         "device_id": device_id,
         "jti": str(uuid4()),
@@ -201,6 +203,23 @@ def _raise_database_unavailable(exc: Exception) -> None:
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         detail=DATABASE_UNAVAILABLE_DETAIL,
     ) from exc
+
+
+def _new_personal_organization(*, user_id, email: str, full_name: str | None) -> Organization:
+    organization = Organization(
+        id=uuid4(),
+        name=f"{(full_name or email).split('@')[0]}'s Workspace",
+        slug=f"u-{user_id}",
+        plan="free",
+        status="active",
+    )
+    organization.apply_plan_limits()
+    return organization
+
+
+def _lockout_headers(lockout: LockoutStatus) -> dict[str, str]:
+    retry_after = lockout.lockout_duration_seconds or SessionService.BASE_LOCKOUT_SECONDS
+    return {"Retry-After": str(max(1, retry_after))}
 
 
 async def _resolve_refresh_token(request: Request) -> str | None:
@@ -316,18 +335,25 @@ async def register(
             detail="Password must be at least 12 characters",
         )
 
+    user_id = uuid4()
+    organization = _new_personal_organization(
+        user_id=user_id,
+        email=user_data.email,
+        full_name=user_data.full_name,
+    )
     user = User(
-        id=uuid4(),
+        id=user_id,
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
         full_name=user_data.full_name,
         role="user",
         is_active=True,
         totp_enabled=False,
+        organization_id=organization.id,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
-    db.add(user)
+    db.add_all([organization, user])
     try:
         await db.commit()
         await db.refresh(user)
@@ -438,8 +464,14 @@ async def social_login(
         raise
 
     if not user:
+        user_id = uuid4()
+        organization = _new_personal_organization(
+            user_id=user_id,
+            email=email,
+            full_name=full_name,
+        )
         user = User(
-            id=uuid4(),
+            id=user_id,
             email=email,
             hashed_password=DUMMY_PASSWORD_HASH,
             full_name=full_name,
@@ -448,10 +480,11 @@ async def social_login(
             provider=payload.provider,
             provider_id=supabase_uid,
             avatar_url=avatar_url,
+            organization_id=organization.id,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
-        db.add(user)
+        db.add_all([organization, user])
         try:
             await db.commit()
             await db.refresh(user)
@@ -581,10 +614,16 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials"
         )
 
-    _check_rate_limit(email)
-
     session_service = SessionService(getattr(request.app.state, "redis", None))
     identifier = f"login:{email}"
+
+    lockout = await session_service.check_lockout(identifier)
+    if lockout.is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Account temporarily locked. Try again later.",
+            headers=_lockout_headers(lockout),
+        )
 
     try:
         user = await _lookup_user_by_email(db, email)
@@ -594,6 +633,10 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
         raise
 
     if not user or not verify_password(password, user.hashed_password):
+        await session_service.record_failed_login(
+            identifier=identifier,
+            ip_address=get_client_ip(request),
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -786,6 +829,101 @@ async def update_current_user(
     )
     await db.commit()
     return _serialize_user(current_user)
+
+
+@router.get("/me/export")
+async def export_current_user_data(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """GDPR right to data portability — machine-readable copy of own account data."""
+    exported_at = datetime.now(UTC)
+    payload = {
+        "export_metadata": {
+            "user_id": str(current_user.id),
+            "exported_at": exported_at.isoformat(),
+            "format_version": "1.0",
+        },
+        "profile": {
+            "email": current_user.email,
+            "full_name": current_user.full_name,
+            "role": current_user.role,
+            "is_active": current_user.is_active,
+            "provider": current_user.provider,
+            "created_at": current_user.created_at.isoformat()
+            if current_user.created_at
+            else None,
+            "last_login_at": current_user.last_login_at.isoformat()
+            if current_user.last_login_at
+            else None,
+            "onboarding_completed_at": current_user.onboarding_completed_at.isoformat()
+            if current_user.onboarding_completed_at
+            else None,
+        },
+        "organization": {"organization_id": str(current_user.organization_id)},
+    }
+    await log_audit_event(
+        db=db,
+        action="auth.data_export",
+        event_type="data_export",
+        event_category="privacy",
+        metadata={"format_version": "1.0"},
+        user_id=str(current_user.id),
+        session_id=getattr(request.state, "session_id", None),
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        request_path=str(request.url.path),
+        request_method=request.method,
+    )
+    await db.commit()
+    return payload
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user(
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """GDPR right to erasure — soft-delete: anonymize PII and deactivate.
+
+    Soft delete keeps org/order referential integrity intact; the account can
+    no longer authenticate because it is inactive and every session is revoked.
+    """
+    user_id = str(current_user.id)
+    current_user.email = f"deleted-{current_user.id}@deleted.graxia.io"
+    current_user.full_name = "Deleted User"
+    current_user.is_active = False
+    current_user.provider_id = None
+    current_user.avatar_url = None
+    current_user.updated_at = datetime.now(UTC)
+    await db.commit()
+
+    session_service = SessionService(getattr(request.app.state, "redis", None))
+    await session_service.invalidate_all_user_sessions(
+        user_id, reason="account_deleted"
+    )
+    _clear_auth_cookies(response)
+    await log_audit_event(
+        db=db,
+        action="auth.account_delete",
+        event_type="account_deleted",
+        event_category="privacy",
+        severity="HIGH",
+        metadata={"method": "soft_delete"},
+        user_id=user_id,
+        session_id=getattr(request.state, "session_id", None),
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        request_path=str(request.url.path),
+        request_method=request.method,
+    )
+    await db.commit()
+    logger.info("Account soft-deleted: %s", user_id)
+    # Return None so FastAPI keeps the injected response's cleared auth cookies.
+    return None
 
 
 @router.post("/change-password")

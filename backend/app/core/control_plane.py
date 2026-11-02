@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 
+from app.config import settings
 from app.core.event_bus import event_bus
 from app.core.policy import build_batch_key, get_action_policy
 from app.database import AsyncSessionLocal
@@ -13,11 +14,19 @@ from app.models.content_draft import ContentDraft
 from app.telegram_bot.bot import send_message
 from app.telegram_bot.keyboards import approval_keyboard
 
+LEGACY_ORGANIZATION_ID = settings.LEGACY_ORGANIZATION_ID
+
 
 class ApprovalAlreadyProcessedError(RuntimeError):
     def __init__(self, status: str):
         super().__init__("Approval already processed")
         self.status = status
+
+
+def _require_organization_id(organization_id: UUID | None) -> UUID:
+    if not isinstance(organization_id, UUID):
+        raise ValueError("organization_id must come from a trusted tenant context")
+    return organization_id
 
 
 def _approval_event_payload(approval: ApprovalRequest) -> dict[str, Any]:
@@ -45,9 +54,13 @@ async def create_run(
     trigger_source: str,
     context: dict[str, Any] | None = None,
     idempotency_key: str | None = None,
+    *,
+    organization_id: UUID,
 ) -> AutomationRun:
+    tenant_id = _require_organization_id(organization_id)
     async with AsyncSessionLocal() as db:
         run = AutomationRun(
+            organization_id=tenant_id,
             name=name,
             task_type=task_type,
             trigger_source=trigger_source,
@@ -101,13 +114,17 @@ async def queue_approval_request(
     preview: dict[str, Any] | None = None,
     requested_by: str | None = None,
     batch_group: str | None = None,
+    *,
+    organization_id: UUID,
 ) -> ApprovalRequest:
+    organization_id = _require_organization_id(organization_id)
     policy = get_action_policy(action_type)
     expires_at = None
     if policy.default_ttl_hours > 0:
         expires_at = datetime.now(UTC) + timedelta(hours=policy.default_ttl_hours)
 
     approval = ApprovalRequest(
+        organization_id=organization_id,
         title=title,
         action_type=action_type,
         subject_type=subject_type,
@@ -138,6 +155,8 @@ async def create_draft_review_request(
     draft_title: str | None,
     preview_text: str,
     requested_by: str,
+    *,
+    organization_id: UUID,
 ) -> ApprovalRequest:
     return await queue_approval_request(
         title=draft_title or "Draft review",
@@ -148,6 +167,7 @@ async def create_draft_review_request(
         preview={"content_preview": preview_text[:280]},
         requested_by=requested_by,
         batch_group=draft_type or "draft",
+        organization_id=organization_id,
     )
 
 
@@ -155,9 +175,17 @@ async def resolve_approval_request(
     approval_id: UUID,
     decision: str,
     note: str | None = None,
+    *,
+    organization_id: UUID,
 ) -> ApprovalRequest | None:
+    organization_id = _require_organization_id(organization_id)
     async with AsyncSessionLocal() as db:
-        approval = await db.get(ApprovalRequest, approval_id)
+        approval = await db.scalar(
+            select(ApprovalRequest).where(
+                ApprovalRequest.id == approval_id,
+                ApprovalRequest.organization_id == organization_id,
+            )
+        )
         if approval is None:
             return None
         if approval.status != "pending":
@@ -194,21 +222,27 @@ async def resolve_approval_batch(
     batch_key: str,
     decision: str,
     note: str | None = None,
-    organization_id: UUID | None = None,
+    *,
+    organization_id: UUID,
 ) -> int:
+    organization_id = _require_organization_id(organization_id)
     async with AsyncSessionLocal() as db:
         stmt = select(ApprovalRequest).where(
             ApprovalRequest.batch_key == batch_key,
             ApprovalRequest.status == "pending",
         )
-        if organization_id is not None:
-            stmt = stmt.where(ApprovalRequest.organization_id == organization_id)
+        stmt = stmt.where(ApprovalRequest.organization_id == organization_id)
         rows = list(((await db.execute(stmt)).scalars()))
         approval_ids = [row.id for row in rows]
 
     count = 0
     for approval_id in approval_ids:
-        approval = await resolve_approval_request(approval_id, decision, note=note)
+        approval = await resolve_approval_request(
+            approval_id,
+            decision,
+            note=note,
+            organization_id=organization_id,
+        )
         if approval is not None:
             count += 1
     return count
@@ -219,7 +253,10 @@ async def mark_subject_approvals_resolved(
     subject_id: UUID,
     decision: str,
     note: str | None = None,
+    *,
+    organization_id: UUID,
 ) -> int:
+    organization_id = _require_organization_id(organization_id)
     async with AsyncSessionLocal() as db:
         resolved_at = datetime.now(UTC)
         rows = list(
@@ -229,6 +266,7 @@ async def mark_subject_approvals_resolved(
                         ApprovalRequest.subject_type == subject_type,
                         ApprovalRequest.subject_id == subject_id,
                         ApprovalRequest.status == "pending",
+                        ApprovalRequest.organization_id == organization_id,
                     )
                 )
             ).scalars()
@@ -247,12 +285,16 @@ async def mark_subject_approvals_resolved(
     return len(rows)
 
 
-async def count_pending_approvals() -> int:
+async def count_pending_approvals(*, organization_id: UUID) -> int:
+    organization_id = _require_organization_id(organization_id)
     async with AsyncSessionLocal() as db:
         total = await db.scalar(
             select(func.count()).select_from(
                 select(ApprovalRequest)
-                .where(ApprovalRequest.status == "pending")
+                .where(
+                    ApprovalRequest.status == "pending",
+                    ApprovalRequest.organization_id == organization_id,
+                )
                 .subquery()
             )
         )

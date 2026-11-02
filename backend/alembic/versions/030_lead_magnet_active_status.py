@@ -14,13 +14,28 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-def upgrade() -> None:
+def _replace_status_constraint(allowed_statuses: str) -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("funnel_lead_magnets"):
+        return
+
+    existing = {
+        constraint.get("name")
+        for constraint in inspector.get_check_constraints("funnel_lead_magnets")
+    }
     with op.batch_alter_table("funnel_lead_magnets") as batch_op:
-        batch_op.drop_constraint("ck_lead_magnet_status", type_="check")
+        for name in ("ck_lead_magnet_status", "ck_lead_magnet_runtime_status"):
+            if name in existing:
+                batch_op.drop_constraint(name, type_="check")
         batch_op.create_check_constraint(
             "ck_lead_magnet_status",
-            "status IN ('draft', 'active', 'published', 'archived')",
+            f"status IN ({allowed_statuses})",
         )
+
+
+def upgrade() -> None:
+    _replace_status_constraint("'draft', 'active', 'published', 'archived'")
 
 
 def downgrade() -> None:
@@ -35,9 +50,4 @@ def downgrade() -> None:
             "SET status = 'published' WHERE status = 'active'"
         )
     )
-    with op.batch_alter_table("funnel_lead_magnets") as batch_op:
-        batch_op.drop_constraint("ck_lead_magnet_status", type_="check")
-        batch_op.create_check_constraint(
-            "ck_lead_magnet_status",
-            "status IN ('draft', 'published', 'archived')",
-        )
+    _replace_status_constraint("'draft', 'published', 'archived'")

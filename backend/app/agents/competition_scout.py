@@ -1,6 +1,7 @@
 import logging
 
 from app.agents.base import BaseAgent
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class CompetitionScout(BaseAgent):
                 return None
 
             opp = Opportunity(
+                organization_id=settings.AUTOMATION_ORGANIZATION_ID,
                 type=raw.get("type", "other"),
                 title=raw.get("title", "Untitled"),
                 description=raw.get("description"),

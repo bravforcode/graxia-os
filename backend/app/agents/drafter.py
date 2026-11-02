@@ -105,6 +105,7 @@ Write the complete draft now. Make it real — not a template."""
                 draft_title=draft.title,
                 preview_text=draft.content,
                 requested_by=self.name,
+                organization_id=opp.organization_id,
             )
             await self.log_audit(
                 "draft.created",

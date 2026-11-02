@@ -20,10 +20,15 @@ def upgrade() -> None:
     # Expand it before Alembic records this revision so the upgrade can be
     # applied atomically on those databases.
     bind = op.get_bind()
-    version_columns = {
-        column["name"]: column
-        for column in sa.inspect(bind).get_columns("alembic_version")
-    }
+    inspector = sa.inspect(bind)
+    version_columns = (
+        {
+            column["name"]: column
+            for column in inspector.get_columns("alembic_version")
+        }
+        if inspector.has_table("alembic_version")
+        else {}
+    )
     version_column = version_columns.get("version_num")
     current_length = getattr(version_column.get("type"), "length", None) if version_column else None
     if current_length is not None and current_length < 64:
@@ -50,24 +55,19 @@ def upgrade() -> None:
         ("content_id", sa.String(length=255)),
         ("referral_code", sa.String(length=160)),
     )
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("conversion_events"):
+        return
+    existing_columns = {
+        column["name"] for column in inspector.get_columns("conversion_events")
+    }
     for name, column_type in columns:
-        op.add_column("conversion_events", sa.Column(name, column_type, nullable=True))
+        if name not in existing_columns:
+            op.add_column("conversion_events", sa.Column(name, column_type, nullable=True))
+            existing_columns.add(name)
 
 
 def downgrade() -> None:
-    for name in (
-        "referral_code",
-        "content_id",
-        "landing_path",
-        "last_touch_path",
-        "last_touch_referrer",
-        "last_touch_campaign",
-        "last_touch_medium",
-        "last_touch_source",
-        "first_touch_path",
-        "first_touch_referrer",
-        "first_touch_campaign",
-        "first_touch_medium",
-        "first_touch_source",
-    ):
-        op.drop_column("conversion_events", name)
+    # Attribution columns are part of the baseline on current deployments;
+    # preserve historical attribution during downgrade.
+    return

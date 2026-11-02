@@ -37,24 +37,55 @@ TENANT_TABLES = [
 ]
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
     for table_name, id_col, ts_col in TENANT_TABLES:
+        if not inspector.has_table(table_name):
+            continue
+        columns = {column["name"] for column in inspector.get_columns(table_name)}
+        if not {"organization_id", id_col, ts_col}.issubset(columns):
+            continue
+        index_names = {
+            index["name"]
+            for index in inspector.get_indexes(table_name)
+            if index.get("name")
+        }
         # Index 1: (organization_id, id) for primary lookups
-        op.create_index(
-            f"ix_{table_name}_org_id_id",
-            table_name,
-            ["organization_id", id_col],
-            unique=False
-        )
+        index_name = f"ix_{table_name}_org_id_id"
+        if index_name not in index_names:
+            op.create_index(index_name, table_name, ["organization_id", id_col], unique=False)
         # Index 2: (organization_id, timestamp) for list/sort queries
-        op.create_index(
-            f"ix_{table_name}_org_id_{ts_col}",
-            table_name,
-            ["organization_id", ts_col],
-            unique=False
-        )
+        inspector = sa.inspect(bind)
+        index_names = {
+            index["name"]
+            for index in inspector.get_indexes(table_name)
+            if index.get("name")
+        }
+        index_name = f"ix_{table_name}_org_id_{ts_col}"
+        if index_name not in index_names:
+            op.create_index(index_name, table_name, ["organization_id", ts_col], unique=False)
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
     for table_name, id_col, ts_col in TENANT_TABLES:
-        op.drop_index(f"ix_{table_name}_org_id_id", table_name=table_name)
-        op.drop_index(f"ix_{table_name}_org_id_{ts_col}", table_name=table_name)
+        inspector = sa.inspect(bind)
+        if not inspector.has_table(table_name):
+            continue
+        index_names = {
+            index["name"]
+            for index in inspector.get_indexes(table_name)
+            if index.get("name")
+        }
+        index_name = f"ix_{table_name}_org_id_id"
+        if index_name in index_names:
+            op.drop_index(index_name, table_name=table_name)
+        inspector = sa.inspect(bind)
+        index_names = {
+            index["name"]
+            for index in inspector.get_indexes(table_name)
+            if index.get("name")
+        }
+        index_name = f"ix_{table_name}_org_id_{ts_col}"
+        if index_name in index_names:
+            op.drop_index(index_name, table_name=table_name)

@@ -1,5 +1,5 @@
 """
-Upwork Scraper using OpenClaw for browser automation.
+Upwork Scraper using OpenClaw for browser automation or Residential Proxy / Session Cookies.
 Handles freelance job postings with rate limiting.
 """
 import logging
@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 class UpworkScraper(BaseScraper):
     """
-    Upwork freelance job scraper using OpenClaw.
+    Upwork freelance job scraper using OpenClaw or Residential Proxy / Session Cookies.
     
     Rate limit: 100 requests/day (default)
-    Fallback: RSS feed (limited data)
+    Fallback: RSS feed (with proxy / cookie support)
     """
     
     source_name = "upwork"
@@ -36,13 +36,15 @@ class UpworkScraper(BaseScraper):
     
     async def fetch(self, url: str) -> httpx.Response | None:
         """Fetch using OpenClaw or fallback to RSS."""
+        cookies = self._get_platform_cookies()
         if self.use_openclaw:
             try:
                 result = await openclaw_client.scrape_url(
                     url=url,
                     platform="upwork",
                     wait_for_selector="[data-test='job-tile'], .job-tile",
-                    use_cache=True
+                    use_cache=True,
+                    cookies=cookies,
                 )
                 
                 response = httpx.Response(
@@ -55,12 +57,16 @@ class UpworkScraper(BaseScraper):
                 logger.warning("Upwork OpenClaw rate limit hit, falling back to RSS")
                 self.use_openclaw = False
             except Exception as e:
-                logger.error(f"Upwork OpenClaw scraping failed: {e}")
+                logger.warning(f"Upwork OpenClaw scraping fallback: {e}")
                 self.use_openclaw = False
         
         # Fallback to RSS feed
         rss_url = f"https://www.upwork.com/ab/feed/jobs/rss?q={quote_plus(self.keywords)}"
-        return await self._safe_fetch(rss_url)
+        return await self._safe_fetch(
+            rss_url,
+            headers={"Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.1"},
+            cookies=cookies,
+        )
     
     async def parse(self, response: httpx.Response) -> list[dict]:
         """Parse job listings from HTML or RSS."""

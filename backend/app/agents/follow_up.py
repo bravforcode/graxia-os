@@ -85,6 +85,7 @@ Write the follow-up now."""
                 draft_title=draft.title,
                 preview_text=draft.content,
                 requested_by=self.name,
+                organization_id=sub.organization_id,
             )
 
 

@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
-URL = "https://fastwork.co/category/web-developer?sort=latest"
+URL = "https://fastwork.co/web-development"
 
 
 class FastworkScraper(BaseScraper):
@@ -22,13 +22,16 @@ class FastworkScraper(BaseScraper):
         try:
             soup = BeautifulSoup(response.text, "lxml")
             items = []
-            for card in soup.select(".service-card, .fw-card, [class*='service']")[:15]:
+            cards = soup.select(".service-card, .fw-card, [class*='service'], a[href*='/web-development/']")[:15]
+            for card in cards:
                 title_el = card.select_one("h2, h3, .title, .service-title")
-                title = title_el.get_text(strip=True) if title_el else ""
-                if not title:
+                title = title_el.get_text(strip=True) if title_el else card.get_text(strip=True)
+                if not title or len(title) < 3:
                     continue
-                link_el = card.select_one("a[href]")
-                href = link_el.get("href", "") if link_el else ""
+                href = card.get("href", "")
+                if not href:
+                    link_el = card.select_one("a[href]")
+                    href = link_el.get("href", "") if link_el else ""
                 if href and not href.startswith("http"):
                     href = "https://fastwork.co" + href
                 price_el = card.select_one(".price, .cost, [class*='price']")

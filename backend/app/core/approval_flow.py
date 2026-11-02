@@ -10,6 +10,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 
+from app.auth.context import resolve_organization_id
 from app.core.policy import get_action_policy
 from app.database import AsyncSessionLocal
 from app.models.approval_request import ApprovalRequest
@@ -49,6 +50,7 @@ class ApprovalFlowManager:
         action_data: dict[str, Any],
         priority: str = "normal",
         callback: Callable[[dict[str, Any]], Any] | None = None,
+        organization_id: UUID | None = None,
     ) -> str:
         policy = get_action_policy(action_type)
         now = datetime.now(UTC)
@@ -58,6 +60,7 @@ class ApprovalFlowManager:
             "priority": priority,
         }
         approval = ApprovalRequest(
+            organization_id=resolve_organization_id(organization_id),
             title=action_description[:300] or action_type,
             action_type=action_type,
             status="pending",

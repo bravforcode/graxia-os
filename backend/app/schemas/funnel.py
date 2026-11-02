@@ -191,20 +191,63 @@ class DeliveryAccessRead(BaseModel):
     created_at: datetime
 
 
+class DeliveryAccessPublic(BaseModel):
+    product_name: str
+    asset_title: Optional[str]
+    status: str
+    is_opened: bool
+    opened_at: Optional[datetime]
+
+
 class DeliveryAccessGrantResponse(BaseModel):
     access_id: UUID
     raw_token: str  # Only returned once at creation
 
 
-class DeliveryPayload(BaseModel):
+class DeliveryEmailEventCreate(BaseModel):
+    order_id: UUID
+    delivery_access_id: Optional[UUID] = None
+    customer_email: str = Field(..., max_length=255)
+    status: str = "pending"
+    provider: str = Field(default="mock", max_length=100)
+    idempotency_key: str = Field(..., max_length=255)
+    error_code: Optional[str] = Field(None, max_length=100)
+    error_message_redacted: Optional[str] = Field(None, max_length=500)
+    sent_at: Optional[datetime] = None
+    metadata_json: Optional[dict[str, Any]] = None
+    organization_id: Optional[UUID] = None
+
+
+class DeliveryEmailEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    order_id: UUID
+    delivery_access_id: Optional[UUID] = None
+    customer_email: str
+    status: str
+    provider: str
+    idempotency_key: str
+    error_code: Optional[str] = None
+    error_message_redacted: Optional[str] = None
+    sent_at: Optional[datetime] = None
+    metadata_json: Optional[dict[str, Any]] = None
+    created_at: datetime
+
+
+class DeliveryMetadata(BaseModel):
     product_name: str
     asset_title: str
     asset_type: str
-    content_body: Optional[str] = None
-    external_url: Optional[str] = None
-    storage_path: Optional[str] = None
+    download_url: Optional[str] = None
     expires_at: Optional[datetime] = None
     downloads_remaining: Optional[int] = None
+
+
+class DeliveryPayload(DeliveryMetadata):
+    content_body: Optional[str] = None
+    external_url: Optional[str] = None
 
 
 # ── Conversion Event ──────────────────────────────────────────────────────
@@ -310,6 +353,7 @@ class LeadMagnetBase(BaseModel):
     name: str = Field(..., max_length=255)
     slug: str = Field(..., max_length=255)
     target_product_id: Optional[UUID] = None
+    delivery_asset_id: Optional[UUID] = None
     promise: Optional[str] = None
     file_url: Optional[str] = Field(None, max_length=500)
     landing_page_url: Optional[str] = Field(None, max_length=500)
@@ -323,6 +367,7 @@ class LeadMagnetUpdate(BaseModel):
     name: Optional[str] = None
     slug: Optional[str] = None
     target_product_id: Optional[UUID] = None
+    delivery_asset_id: Optional[UUID] = None
     promise: Optional[str] = None
     file_url: Optional[str] = None
     landing_page_url: Optional[str] = None
@@ -338,6 +383,31 @@ class LeadMagnetRead(LeadMagnetBase):
     opt_in_count: int
     created_at: datetime
     updated_at: datetime
+
+
+class LeadMagnetPublic(BaseModel):
+    slug: str
+    title: str
+    description: Optional[str] = None
+
+
+class LeadCaptureCreate(BaseModel):
+    lead_magnet_id: UUID
+    email: str = Field(..., max_length=255)
+    source: Optional[str] = Field(None, max_length=100)
+    utm_source: Optional[str] = Field(None, max_length=255)
+    utm_medium: Optional[str] = Field(None, max_length=255)
+    utm_campaign: Optional[str] = Field(None, max_length=255)
+    metadata_json: Optional[dict[str, Any]] = None
+    organization_id: Optional[UUID] = None
+
+
+class LeadCaptureRead(LeadCaptureCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    created_at: datetime
 
 
 class LeadCaptureRequest(BaseModel):
@@ -365,6 +435,35 @@ class UnsubscribeRequest(BaseModel):
 
 class UnsubscribeResponse(BaseModel):
     ok: bool = True
+
+
+# ── Recommendation ────────────────────────────────────────────────────────
+
+
+class FunnelRecommendationCreate(BaseModel):
+    recommendation_type: str = Field(..., max_length=50)
+    recommended_action: str
+    bottleneck: Optional[str] = Field(None, max_length=255)
+    expected_impact: Optional[str] = Field(None, max_length=255)
+    confidence: Optional[str] = Field(None, max_length=50)
+    effort: Optional[str] = Field(None, max_length=50)
+    risk: Optional[str] = Field(None, max_length=50)
+    reasoning: Optional[str] = None
+    draft_content: Optional[str] = None
+    metadata_json: Optional[dict[str, Any]] = None
+
+
+class FunnelRecommendationRead(FunnelRecommendationCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    product_id: UUID
+    rollback_note: Optional[str] = None
+    approval_request_id: Optional[UUID] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
 
 
 # ── Coupon ────────────────────────────────────────────────────────────────

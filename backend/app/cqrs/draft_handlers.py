@@ -3,6 +3,9 @@ Draft Command and Query Handlers
 """
 import logging
 from datetime import UTC, datetime
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.result import Result, err, ok
 from app.cqrs.commands import ApproveDraftCommand, RejectDraftCommand
@@ -13,6 +16,31 @@ from app.models.content_draft import ContentDraft
 from app.repositories.draft_repository import DraftRepository
 
 logger = logging.getLogger(__name__)
+
+
+async def _draft_organization_id(session: AsyncSession, draft: ContentDraft) -> UUID | None:
+    from app.models.contact import Contact
+    from app.models.opportunity import Opportunity
+    from app.models.submission import Submission
+
+    parents = (
+        (Opportunity, draft.opportunity_id),
+        (Submission, draft.submission_id),
+        (Contact, draft.contact_id),
+    )
+    organization_ids: set[UUID] = set()
+    for model, parent_id in parents:
+        if parent_id is None:
+            continue
+        parent = await session.get(model, parent_id)
+        organization_id = getattr(parent, "organization_id", None)
+        if parent is None or not isinstance(organization_id, UUID):
+            return None
+        organization_ids.add(organization_id)
+
+    if len(organization_ids) != 1:
+        return None
+    return organization_ids.pop()
 
 
 # Command Handlers
@@ -30,6 +58,10 @@ class ApproveDraftHandler(CommandHandler[ApproveDraftCommand, ContentDraft]):
                 draft = await repo.get_by_id(command.draft_id)
                 if not draft:
                     return err(ValueError(f"Draft not found: {command.draft_id}"))
+
+                organization_id = await _draft_organization_id(session, draft)
+                if organization_id is None:
+                    return err(ValueError("Draft has no trustworthy tenant context"))
                 
                 # Update status
                 draft.status = "approved"
@@ -42,7 +74,12 @@ class ApproveDraftHandler(CommandHandler[ApproveDraftCommand, ContentDraft]):
                 
                 # Mark approvals resolved
                 from app.core.control_plane import mark_subject_approvals_resolved
-                await mark_subject_approvals_resolved("content_draft", command.draft_id, "approved")
+                await mark_subject_approvals_resolved(
+                    "content_draft",
+                    command.draft_id,
+                    "approved",
+                    organization_id=organization_id,
+                )
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -73,6 +110,10 @@ class RejectDraftHandler(CommandHandler[RejectDraftCommand, ContentDraft]):
                 draft = await repo.get_by_id(command.draft_id)
                 if not draft:
                     return err(ValueError(f"Draft not found: {command.draft_id}"))
+
+                organization_id = await _draft_organization_id(session, draft)
+                if organization_id is None:
+                    return err(ValueError("Draft has no trustworthy tenant context"))
                 
                 # Update status
                 draft.status = "rejected"
@@ -89,7 +130,8 @@ class RejectDraftHandler(CommandHandler[RejectDraftCommand, ContentDraft]):
                     "content_draft",
                     command.draft_id,
                     "rejected",
-                    note=command.reason or None
+                    note=command.reason or None,
+                    organization_id=organization_id,
                 )
                 
                 logger.info(f"Rejected draft: {draft.id}")

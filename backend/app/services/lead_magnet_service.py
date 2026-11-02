@@ -7,7 +7,13 @@ from typing import List, Optional, Tuple
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import LeadMagnet, FunnelOrder, FunnelOrderItem, DigitalProduct
+from app.models.funnel import (
+    LeadMagnet,
+    FunnelOrder,
+    FunnelOrderItem,
+    DeliveryAsset,
+    DigitalProduct,
+)
 from app.models.contact import Contact
 from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.funnel_analytics_service import FunnelAnalyticsService
@@ -29,6 +35,7 @@ class LeadMagnetService:
             name=payload.name,
             slug=payload.slug,
             target_product_id=payload.target_product_id,
+            delivery_asset_id=payload.delivery_asset_id,
             promise=payload.promise,
             file_url=payload.file_url,
             landing_page_url=payload.landing_page_url,
@@ -123,6 +130,32 @@ class LeadMagnetService:
         if marketing_consent and not consent_version:
             raise ValueError("consent_version is required when marketing_consent is true")
 
+        if not lm.delivery_asset_id:
+            raise ValueError("Lead magnet is unavailable: delivery asset is not configured")
+        delivery_service = FunnelDeliveryService(self.db)
+        delivery_asset = await self.db.scalar(
+            select(DeliveryAsset).where(
+                DeliveryAsset.id == lm.delivery_asset_id,
+                DeliveryAsset.organization_id == organization_id,
+                DeliveryAsset.is_active.is_(True),
+            )
+        )
+        if (
+            delivery_asset is None
+            or (lm.target_product_id and lm.target_product_id != delivery_asset.product_id)
+            or not delivery_service.asset_has_verified_payload(delivery_asset)
+        ):
+            raise ValueError("Lead magnet is unavailable: delivery asset is not verified")
+        product = await self.db.scalar(
+            select(DigitalProduct).where(
+                DigitalProduct.id == delivery_asset.product_id,
+                DigitalProduct.organization_id == organization_id,
+                DigitalProduct.status == "published",
+            )
+        )
+        if product is None:
+            raise ValueError("Lead magnet is unavailable: delivery product is not published")
+
         # Create/Get contact
         stmt = select(Contact).where(
             and_(
@@ -189,46 +222,42 @@ class LeadMagnetService:
         )
 
         try:
-            raw_token = None
-            if lm.target_product_id:
-                # Grant free digital asset delivery access
-                order = FunnelOrder(
-                    id=uuid.uuid4(),
-                    organization_id=organization_id,
-                    contact_id=contact.id,
-                    status="paid",
-                    subtotal_amount=Decimal("0.00"),
-                    total_amount=Decimal("0.00"),
-                    currency="USD",
-                    customer_email=email,
-                    paid_at=datetime.utcnow()
-                )
-                self.db.add(order)
-                await self.db.flush()
+            order = FunnelOrder(
+                id=uuid.uuid4(),
+                organization_id=organization_id,
+                contact_id=contact.id,
+                status="comped",
+                subtotal_amount=Decimal("0.00"),
+                total_amount=Decimal("0.00"),
+                currency=product.currency,
+                customer_email=email,
+            )
+            self.db.add(order)
+            await self.db.flush()
 
-                item = FunnelOrderItem(
-                    id=uuid.uuid4(),
-                    organization_id=organization_id,
-                    order_id=order.id,
-                    product_id=lm.target_product_id,
-                    quantity=1,
-                    unit_amount=Decimal("0.00"),
-                    total_amount=Decimal("0.00"),
-                    currency="USD"
-                )
-                self.db.add(item)
-                await self.db.flush()
+            item = FunnelOrderItem(
+                id=uuid.uuid4(),
+                organization_id=organization_id,
+                order_id=order.id,
+                product_id=product.id,
+                quantity=1,
+                unit_amount=Decimal("0.00"),
+                total_amount=Decimal("0.00"),
+                currency=product.currency,
+            )
+            self.db.add(item)
+            await self.db.flush()
 
-                # Keep delivery and capture in the same transaction.
-                delivery_service = FunnelDeliveryService(self.db)
-                access_grants = await delivery_service.grant_delivery_access_for_order(
-                    organization_id=organization_id,
-                    order_id=order.id,
-                    commit=False,
-                )
-
-                if access_grants:
-                    raw_token = access_grants[0][1]
+            access_grant = await delivery_service.grant_delivery_access_for_asset(
+                organization_id=organization_id,
+                order_id=order.id,
+                product_id=product.id,
+                delivery_asset_id=delivery_asset.id,
+                commit=False,
+            )
+            if access_grant is None:
+                raise RuntimeError("Could not grant the assigned lead-magnet asset")
+            _, raw_token = access_grant
 
             await self.db.commit()
         except Exception:

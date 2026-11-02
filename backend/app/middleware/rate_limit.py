@@ -2,13 +2,20 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import logging
 import time
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
+from types import SimpleNamespace
 
-from app.audit.security_events import emit_security_event, fingerprint_token
+from app.audit.security_events import (
+    emit_security_event,
+    fingerprint_token,
+    safe_request_path,
+    safe_route_or_tool,
+)
 from app.config import settings
 from app.core.auth import decode_access_token, extract_bearer_token
 from app.core.errors import build_error_response
@@ -21,6 +28,33 @@ from starlette.middleware.base import BaseHTTPMiddleware
 logger = logging.getLogger(__name__)
 
 _memory_rate_limits: dict[str, list[float]] = defaultdict(list)
+
+
+def resolve_client_ip(request: Request) -> str:
+    """Use XFF only behind an explicitly trusted immediate socket peer."""
+    peer = request.client.host if request.client else "unknown"
+    try:
+        peer_ip = ipaddress.ip_address(peer)
+        entries = [item.strip() for item in settings.RATE_LIMIT_TRUSTED_PROXIES.split(",")]
+        if not entries or not any(entries):
+            return peer
+        if not all(entries):
+            return peer
+        trusted = [ipaddress.ip_network(item, strict=False) for item in entries]
+        if any(network.prefixlen == 0 for network in trusted):
+            return peer
+        if not any(peer_ip in network for network in trusted):
+            return peer
+        forwarded = request.headers.get("x-forwarded-for", "")
+        if not forwarded:
+            return peer
+        chain = [ipaddress.ip_address(item.strip()) for item in forwarded.split(",")]
+        for client in reversed(chain):
+            if not any(client in network for network in trusted):
+                return str(client)
+        return str(chain[0])
+    except ValueError:
+        return peer
 
 
 def reset_rate_limit_state() -> None:
@@ -49,6 +83,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     LEAD_CAPTURE_RULE = RateLimitRule("lead_capture", 20, 60)
     CHECKOUT_RULE = RateLimitRule("checkout", 20, 60)
     DELIVERY_RULE = RateLimitRule("delivery", 30, 60)
+    DELIVERY_AGGREGATE_RULE = RateLimitRule("delivery_aggregate", 30, 60)
 
     async def dispatch(self, request: Request, call_next: Callable):
         if request.url.path == "/health":
@@ -60,24 +95,53 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         identifier = self._resolve_identifier(request, rule.name)
-        try:
-            remaining, retry_after = await self._check_rate_limit(
-                redis_client,
-                rule,
-                identifier,
-                request.method,
-                request.url.path,
+        checks = [(rule, identifier, request.url.path)]
+        if rule.name == "delivery":
+            checks.append(
+                (
+                    self.DELIVERY_AGGREGATE_RULE,
+                    resolve_client_ip(request),
+                    "/api/v1/funnel/delivery/{token}",
+                )
             )
+        remaining = rule.limit
+        try:
+            for active_rule, active_identifier, active_path in checks:
+                current_remaining, retry_after = await self._check_rate_limit(
+                    redis_client,
+                    active_rule,
+                    active_identifier,
+                    "DELIVERY" if active_rule.name == "delivery_aggregate" else request.method,
+                    active_path,
+                )
+                remaining = min(remaining, current_remaining)
         except HTTPException as exc:
-            metrics_collector.record_rate_limit(rule.name)
+            audit_request = request
+            if rule.name == "delivery":
+                route_path = "/api/v1/funnel/delivery/{token}"
+                if request.url.path.endswith("/download"):
+                    route_path += "/download"
+                elif request.url.path.endswith("/consume"):
+                    route_path += "/consume"
+                audit_request = Request(
+                    {
+                        **request.scope,
+                        "path": route_path,
+                        "raw_path": route_path.encode(),
+                        "query_string": b"",
+                        "route": SimpleNamespace(path=route_path),
+                    },
+                    receive=request.receive,
+                )
+            metrics_collector.record_rate_limit(active_rule.name)
             await emit_security_event(
-                request,
+                audit_request,
                 event_type="rate_limit.exceeded",
                 reason_code="RATE_LIMITED",
                 decision="blocked",
-                route_or_tool=request.url.path,
+                route_or_tool=audit_request.url.path,
                 risk_level="LOW_WRITE",
-                redacted_payload={"rule": rule.name, "identifier": identifier},
+                redacted_payload={"rule": active_rule.name, "identifier": active_identifier},
             )
             await log_audit_event(
                 app=request.app,
@@ -87,10 +151,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 severity="WARNING",
                 outcome="blocked",
                 success=False,
-                metadata={"rule": rule.name, "identifier": identifier},
+                metadata={
+                    "rule": active_rule.name,
+                    "identifier": active_identifier,
+                    "route_or_tool": safe_route_or_tool(audit_request, audit_request.url.path),
+                },
                 ip_address=request.client.host if request.client else "unknown",
                 user_agent=request.headers.get("user-agent"),
-                request_path=request.url.path,
+                request_path=safe_request_path(audit_request),
                 request_method=request.method,
             )
             return build_error_response(
@@ -104,7 +172,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers.setdefault("X-Request-ID", get_request_id(request))
         response.headers.setdefault("X-Correlation-ID", get_correlation_id(request))
-        response.headers["RateLimit-Limit"] = str(rule.limit)
+        response.headers["RateLimit-Limit"] = str(min(check[0].limit for check in checks))
         response.headers["RateLimit-Remaining"] = str(max(remaining, 0))
         response.headers["RateLimit-Reset"] = str(rule.window_seconds)
         if retry_after is not None:
@@ -125,7 +193,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return self.LEAD_CAPTURE_RULE
         if path.startswith("/api/v1/billing/checkout") and request.method == "POST":
             return self.CHECKOUT_RULE
-        if path.startswith("/api/v1/funnel/delivery/") and request.method == "GET":
+        if path.startswith("/api/v1/funnel/delivery/") and (
+            request.method == "GET"
+            or (request.method == "POST" and path.endswith("/consume"))
+        ):
             return self.DELIVERY_RULE
         if path.startswith("/api/v1/mcp") and request.method == "POST":
             return self.MCP_RULE
@@ -139,11 +210,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def _resolve_identifier(self, request: Request, rule_name: str) -> str:
         if rule_name in {"login", "register"}:
-            return request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
-                request.client.host if request.client else "unknown"
-            )
+            return resolve_client_ip(request)
         if rule_name == "delivery":
-            delivery_token = request.url.path.rsplit("/", 1)[-1]
+            parts = request.url.path.split("/")
+            delivery_token = parts[-2] if parts[-1] in {"download", "consume"} else parts[-1]
             return f"delivery:{fingerprint_token(delivery_token) or 'unknown'}"
 
         auth_context = getattr(request.state, "auth_context", None)
@@ -161,9 +231,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     return f"org:{org_id}:actor:{user_id}"
             except Exception:
                 pass
-        return request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
-            request.client.host if request.client else "unknown"
-        )
+        return resolve_client_ip(request)
 
     async def _check_rate_limit(
         self,

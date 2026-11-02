@@ -5,6 +5,7 @@ Tracks AI API costs (OpenClaw + Gemini) and provides forecasting.
 """
 import logging
 from datetime import UTC, datetime, timedelta
+import math
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -20,8 +21,7 @@ class CostTracker:
     Cost tracker for AI API usage.
     
     Features:
-    - Track OpenClaw costs
-    - Track Gemini costs
+    - Track OpenClaw, Gemini, and OpenAI costs
     - Daily/weekly/monthly aggregation
     - Cost forecasting
     - Budget alerts
@@ -86,28 +86,62 @@ class CostTracker:
                 await self._check_budget_alerts()
         except Exception as e:
             logger.error(f"Failed to track Gemini cost: {e}")
-    
+
+    async def track_openai_cost(
+        self,
+        model: str,
+        input_tokens: int,
+        output_tokens: int,
+        cost_usd: float | Decimal,
+    ) -> bool:
+        """Persist provider-reported OpenAI usage and its configured cost.
+
+        The usage table stores USD to twelve decimal places to preserve small
+        per-request amounts before daily and monthly aggregation.
+        """
+        if (
+            not model.strip()
+            or input_tokens < 0
+            or output_tokens < 0
+            or not math.isfinite(cost_usd)
+            or cost_usd < 0
+        ):
+            return False
+        try:
+            precise_cost = Decimal(str(cost_usd))
+            async with AsyncSessionLocal() as db:
+                usage = OpenClawUsage(
+                    platform=f"openai/{model}"[:50],
+                    action="generate",
+                    cost_usd=precise_cost,
+                    created_at=datetime.now(UTC),
+                )
+                db.add(usage)
+                await db.commit()
+            logger.info(
+                "OpenAI cost tracked: $%.12f (model=%s, input_tokens=%d, output_tokens=%d)",
+                cost_usd,
+                model,
+                input_tokens,
+                output_tokens,
+            )
+            await self._check_budget_alerts()
+            return True
+        except Exception:
+            logger.error("Failed to track OpenAI cost")
+            return False
+
     async def get_daily_cost(self, date: datetime | None = None) -> float:
         """Get total cost for a specific day."""
-        try:
-            if not date:
-                date = datetime.now(UTC)
-            
-            async with AsyncSessionLocal() as db:
-                # OpenClaw costs
-                openclaw_query = select(func.sum(OpenClawUsage.cost_usd)).where(
-                    func.date(OpenClawUsage.created_at) == date.date()
-                )
-                openclaw_result = await db.execute(openclaw_query)
-                openclaw_cost = float(openclaw_result.scalar() or 0)
-                
-                # TODO: Add Gemini costs
-                gemini_cost = 0.0
-                
-                return openclaw_cost + gemini_cost
-        except Exception as e:
-            logger.error(f"Failed to get daily cost: {e}")
-            return 0.0
+        if not date:
+            date = datetime.now(UTC)
+
+        async with AsyncSessionLocal() as db:
+            daily_query = select(func.sum(OpenClawUsage.cost_usd)).where(
+                func.date(OpenClawUsage.created_at) == date.date()
+            )
+            result = await db.execute(daily_query)
+            return float(result.scalar() or 0)
     
     async def get_weekly_cost(self) -> float:
         """Get total cost for current week."""
@@ -138,24 +172,14 @@ class CostTracker:
     
     async def get_monthly_cost(self) -> float:
         """Get total cost for current month."""
-        try:
-            month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0)
-            
-            async with AsyncSessionLocal() as db:
-                # OpenClaw costs
-                openclaw_query = select(func.sum(OpenClawUsage.cost_usd)).where(
-                    OpenClawUsage.created_at >= month_start
-                )
-                openclaw_result = await db.execute(openclaw_query)
-                openclaw_cost = float(openclaw_result.scalar() or 0)
-                
-                # TODO: Add Gemini costs
-                gemini_cost = 0.0
-                
-                return openclaw_cost + gemini_cost
-        except Exception as e:
-            logger.error(f"Failed to get monthly cost: {e}")
-            return 0.0
+        month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0)
+
+        async with AsyncSessionLocal() as db:
+            monthly_query = select(func.sum(OpenClawUsage.cost_usd)).where(
+                OpenClawUsage.created_at >= month_start
+            )
+            result = await db.execute(monthly_query)
+            return float(result.scalar() or 0)
     
     async def forecast_monthly_cost(self) -> dict:
         """

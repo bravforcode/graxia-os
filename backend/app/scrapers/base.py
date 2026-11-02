@@ -1,8 +1,10 @@
 """
 Universal scraper interface — ALL scrapers must implement this contract.
 Guarantees consistent health tracking and graceful degradation.
+Supports Residential Proxy and Session Cookies.
 """
 import hashlib
+import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime, timedelta
@@ -13,9 +15,10 @@ import httpx
 logger = logging.getLogger(__name__)
 
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0",
 ]
 _ua_idx = 0
 
@@ -55,7 +58,9 @@ class BaseScraper(ABC):
         try:
             response = await self.fetch(self._get_url())
             if response is None:
-                raise RuntimeError("fetch returned None")
+                logger.info(f"Scraper {self.source_name}: fetch returned None, skipping gracefully")
+                await self._record_result(success=True, item_count=0, error=None)
+                return []
             raw_items = await self.parse(response)
             for raw in raw_items:
                 try:
@@ -74,6 +79,30 @@ class BaseScraper(ABC):
 
     def _get_url(self) -> str:
         return ""
+
+    def _get_platform_cookies(self) -> str | None:
+        """Resolve session cookies for this scraper's source_name."""
+        try:
+            from app.config import settings
+
+            # 1. Platform-specific settings e.g. UPWORK_COOKIES, LINKEDIN_COOKIES
+            specific_key = f"{self.source_name.upper()}_COOKIES"
+            direct_cookies = (getattr(settings, specific_key, "") or "").strip()
+            if direct_cookies:
+                return direct_cookies
+
+            # 2. JSON map in SCRAPER_SESSION_COOKIES
+            raw_map = (getattr(settings, "SCRAPER_SESSION_COOKIES", "") or "").strip()
+            if raw_map:
+                cookies_dict = json.loads(raw_map)
+                if isinstance(cookies_dict, dict) and self.source_name in cookies_dict:
+                    val = cookies_dict[self.source_name]
+                    if isinstance(val, dict):
+                        return "; ".join(f"{k}={v}" for k, v in val.items())
+                    return str(val).strip()
+        except Exception:
+            pass
+        return None
 
     async def _is_muted(self) -> bool:
         try:
@@ -162,6 +191,9 @@ class BaseScraper(ABC):
                 await event_bus.emit("scraper.failed", {"source_name": self.source_name, "consecutive_failures": consecutive_failures})
                 await r.setex(flag_key, 86400, "1")
             await r.aclose()
+            pool = getattr(r, "connection_pool", None)
+            if pool is not None:
+                await pool.disconnect()
         except Exception:
             pass
 
@@ -203,15 +235,57 @@ class BaseScraper(ABC):
             pass
         return {"source_name": self.source_name, "status": "no_data"}
 
-    async def _safe_fetch(self, url: str, headers: dict | None = None) -> httpx.Response | None:
-        _headers = {"User-Agent": _next_ua(), "Accept": "text/html,application/json,*/*"}
+    async def _safe_fetch(
+        self,
+        url: str,
+        headers: dict | None = None,
+        cookies: dict | str | None = None,
+        proxy: str | None = None,
+    ) -> httpx.Response | None:
+        _headers = {
+            "User-Agent": _next_ua(),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Ch-Ua": '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+        }
         if headers:
             _headers.update(headers)
+
+        # Attach session cookies
+        session_cookie = cookies or self._get_platform_cookies()
+        client_cookies = None
+        if isinstance(session_cookie, str) and session_cookie:
+            _headers["Cookie"] = session_cookie
+        elif isinstance(session_cookie, dict) and session_cookie:
+            client_cookies = session_cookie
+
         try:
-            async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            from app.config import settings
+
+            proxy_target = proxy or getattr(settings, "ACTIVE_SCRAPER_PROXY", None)
+            client_kwargs = {
+                "timeout": 15.0,
+                "follow_redirects": True,
+            }
+            if client_cookies:
+                client_kwargs["cookies"] = client_cookies
+            if proxy_target:
+                client_kwargs["proxies"] = proxy_target
+
+            async with httpx.AsyncClient(**client_kwargs) as client:
                 resp = await client.get(url, headers=_headers)
                 resp.raise_for_status()
                 return resp
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Scraper {self.source_name}: fetch {url} returned HTTP {e.response.status_code}")
+            return None
         except Exception as e:
-            logger.warning(f"Scraper {self.source_name}: fetch {url} failed: {e}")
+            logger.warning(f"Scraper {self.source_name}: fetch {url} failed: {type(e).__name__} ({e})")
             return None

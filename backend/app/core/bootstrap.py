@@ -23,18 +23,11 @@ def wire_event_handlers() -> None:
     from app.agents.obsidian_sync import obsidian_sync_agent
     from app.agents.playbook_capture import playbook_capture
     from app.agents.scorer import scorer_agent
-    from app.api.approvals import create_approval_from_event
     from app.core.event_bus import event_bus
 
     async def handle_cog_suggestion(payload: dict):
         """Route COG weight suggestions through the approval queue (never auto-apply)."""
-        await create_approval_from_event(
-            action_type="scoring_weight_update",
-            what_action=f"Update scoring weights: {payload.get('suggested_weights')}",
-            why_now=payload.get("reasoning", ""),
-            confidence=payload.get("confidence", 0.5),
-            metadata=payload,
-        )
+        logger.warning("Skipping COG approval suggestion without trusted tenant context")
 
     subscriptions = [
         ("opportunity.found", scorer_agent.handle_new_opportunity),
@@ -188,11 +181,19 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         if "[PASTE" in sample_msg:
             issues.append("Profile: voice sample not filled in")
     except Exception as e:
-        issues.append(f"Profile: cannot load profile.yaml — {e}")
+        if getattr(settings, "PRODUCTION_CORE_ONLY", False):
+            warnings.append(
+                "Profile: identity/profile.yaml omitted in core-only runtime — "
+                "personal-agent features remain disabled"
+            )
+        else:
+            issues.append(f"Profile: cannot load profile.yaml — {e}")
 
     # ── 2. API keys ──────────────────────────────────────
     def add_external_readiness(message: str) -> None:
-        if settings.STRICT_BOOTSTRAP:
+        if settings.STRICT_BOOTSTRAP and not getattr(
+            settings, "PRODUCTION_CORE_ONLY", False
+        ):
             issues.append(message)
         else:
             warnings.append(message)

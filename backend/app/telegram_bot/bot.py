@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes
 
 from app.config import settings
@@ -380,26 +380,20 @@ async def send_message(
     Returns:
         True if sent successfully
     """
-    global _app
-    
     if not settings.HAS_REAL_TELEGRAM_TOKEN or not settings.HAS_REAL_TELEGRAM_CHAT_ID:
         logger.warning("Telegram credentials not configured; message not sent")
         return False
 
-    if not _app:
-        _app = setup_bot()
-
-    if not _app or not settings.TELEGRAM_CHAT_ID:
-        logger.warning("Telegram bot not initialized or chat ID not set")
-        return False
-    
     try:
-        await _app.bot.send_message(
-            chat_id=settings.TELEGRAM_CHAT_ID,
-            text=text,
-            parse_mode=parse_mode,
-            reply_markup=reply_markup,
-        )
+        # Fresh client per send: a pooled httpx client stays bound to the event loop
+        # that created it, and each Celery task runs in its own asyncio.run() loop.
+        async with Bot(token=settings.TELEGRAM_BOT_TOKEN) as bot:
+            await bot.send_message(
+                chat_id=settings.TELEGRAM_CHAT_ID,
+                text=text,
+                parse_mode=parse_mode,
+                reply_markup=reply_markup,
+            )
         return True
     except Exception as e:
         logger.error(f"Failed to send Telegram message: {e}")
