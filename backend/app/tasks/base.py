@@ -14,6 +14,7 @@ from app.core.monitoring import metrics_collector
 from app.tasks.async_runner import run_async
 from app.tasks.dlq_handler import record_dlq_failure
 from app.tasks.queues import get_sync_redis_client
+from app.tasks.requirements import missing_settings
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,10 @@ async def _execute_managed_run(
     trigger_source: str,
     organization_id: UUID | None = None,
 ) -> Any:
+    missing = missing_settings(task_name)
+    if missing:
+        logger.warning("Task %s skipped: missing config %s", task_name, ", ".join(missing))
+        return {"status": "skipped", "reason": "missing_config", "missing": missing}
     tenant_id = organization_id or getattr(settings, "LEGACY_ORGANIZATION_ID", UUID("00000000-0000-0000-0000-000000000001"))
     run = await create_run(
         name=task_name.replace(".", " ").title(),
