@@ -8,12 +8,9 @@ from celery.schedules import crontab
 
 from app.tasks.queues import BACKGROUND_QUEUE, CRITICAL_QUEUE, DEFAULT_QUEUE
 
+# Postgres and Redis backups run on the host via the graxia-backup systemd timer;
+# tasks.backup.run_daily_backup / run_redis_backup stay registered for manual runs.
 BEAT_SCHEDULE = {
-    "daily-backup": {
-        "task": "tasks.backup.run_daily_backup",
-        "schedule": crontab(hour=2, minute=0),
-        "options": {"queue": CRITICAL_QUEUE},
-    },
     "restore-drill-weekly": {
         "task": "tasks.backup.run_restore_drill",
         "schedule": crontab(day_of_week="sunday", hour=3, minute=0),
@@ -77,11 +74,6 @@ BEAT_SCHEDULE = {
     "obsidian-refresh": {
         "task": "tasks.maintenance.obsidian_refresh",
         "schedule": crontab(hour=6, minute=10),
-        "options": {"queue": BACKGROUND_QUEUE},
-    },
-    "redis-backup": {
-        "task": "tasks.backup.run_redis_backup",
-        "schedule": crontab(hour=2, minute=30),
         "options": {"queue": BACKGROUND_QUEUE},
     },
     "vault-sync": {
