@@ -1,0 +1,8 @@
+[Unit]
+Description=Graxia autopilot health check (alerts Telegram)
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/graxia-autopilot-check
+SuccessExitStatus=2
