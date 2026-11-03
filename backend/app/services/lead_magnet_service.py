@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select, and_
+from sqlalchemy import func, select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import (
@@ -19,6 +19,7 @@ from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.funnel_analytics_service import FunnelAnalyticsService
 from app.services.public_funnel_service import require_public_funnel_organization
 from app.schemas.funnel import LeadMagnetCreate, LeadMagnetUpdate
+from app.core.email_identity import normalize_email
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ class LeadMagnetService:
             and_(
                 Contact.organization_id == organization_id,
                 Contact.email == email,
-                Contact.is_deleted == False
+                Contact.is_deleted.is_(False)
             )
         )
         result = await self.db.execute(stmt)
@@ -267,18 +268,19 @@ class LeadMagnetService:
 
         return contact, raw_token
 
-    async def unsubscribe(
-        self, organization_id: uuid.UUID, email: str, *, public: bool = False
-    ) -> None:
-        if public:
-            organization_id = require_public_funnel_organization(organization_id)
-        stmt = select(Contact).where(
-            Contact.organization_id == organization_id,
-            Contact.email == email,
-            Contact.is_deleted == False,
+    async def unsubscribe(self, organization_id: uuid.UUID, email: str) -> None:
+        stmt = (
+            update(Contact)
+            .where(
+                Contact.organization_id == organization_id,
+                func.lower(func.trim(Contact.email)) == normalize_email(email),
+                Contact.is_deleted.is_(False),
+            )
+            .values(
+                marketing_unsubscribed=True,
+                marketing_unsubscribed_at=datetime.now(timezone.utc),
+            )
+            .execution_options(synchronize_session=False)
         )
-        contact = (await self.db.execute(stmt)).scalar_one_or_none()
-        if contact:
-            contact.marketing_unsubscribed = True
-            contact.marketing_unsubscribed_at = datetime.now(timezone.utc)
-            await self.db.commit()
+        await self.db.execute(stmt)
+        await self.db.commit()

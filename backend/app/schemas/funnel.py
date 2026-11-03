@@ -432,8 +432,7 @@ class LeadCaptureResponse(BaseModel):
 
 
 class UnsubscribeRequest(BaseModel):
-    organization_id: UUID
-    email: str = Field(..., max_length=300)
+    token: str = Field(..., min_length=1, max_length=4096)
 
 
 class UnsubscribeResponse(BaseModel):

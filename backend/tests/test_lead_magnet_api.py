@@ -19,6 +19,7 @@ from app.models.contact import Contact
 from app.models.organization import Organization
 from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.lead_magnet_service import LeadMagnetService
+from app.services.unsubscribe_tokens import create_unsubscribe_token
 from tests.factories import OrganizationFactory
 
 @pytest.mark.asyncio
@@ -264,9 +265,10 @@ class TestLeadMagnetAPI:
         db_session.add(contact)
         await db_session.commit()
 
+        token = create_unsubscribe_token(org.id, contact.email)
         response = await public_async_client.post(
             "/api/v1/public/funnel/unsubscribe",
-            json={"organization_id": str(org.id), "email": contact.email},
+            json={"token": token},
         )
 
         assert response.status_code == 200
