@@ -9,7 +9,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-def wire_event_handlers() -> None:
+def wire_event_handlers(*, auth=None) -> None:
     """Register the default event-driven agent pipeline.
 
     This is intentionally idempotent so startup and tests can call it repeatedly.
@@ -23,11 +23,19 @@ def wire_event_handlers() -> None:
     from app.agents.obsidian_sync import obsidian_sync_agent
     from app.agents.playbook_capture import playbook_capture
     from app.agents.scorer import scorer_agent
+    from app.api.approvals import create_approval_from_event
     from app.core.event_bus import event_bus
 
     async def handle_cog_suggestion(payload: dict):
         """Route COG weight suggestions through the approval queue (never auto-apply)."""
-        logger.warning("Skipping COG approval suggestion without trusted tenant context")
+        await create_approval_from_event(
+            auth=auth,
+            action_type="scoring_weight_update",
+            what_action=f"Update scoring weights: {payload.get('suggested_weights')}",
+            why_now=payload.get("reasoning", ""),
+            confidence=payload.get("confidence", 0.5),
+            metadata=payload,
+        )
 
     subscriptions = [
         ("opportunity.found", scorer_agent.handle_new_opportunity),
@@ -205,13 +213,15 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         else:
             warnings.append(message)
 
-    # At least one LLM key required
-    if not settings.HAS_REAL_OPENCLAW_KEY and not settings.HAS_REAL_GEMINI_KEY:
-        add_external_readiness("API: Neither OPENCLAW_API_KEY nor GEMINI_API_KEY is set — AI features disabled")
-    elif settings.HAS_REAL_OPENCLAW_KEY:
-        logger.info("LLM: Using OpenClaw (Claude) as primary")
-    else:
-        logger.info("LLM: Using Gemini as primary (OpenClaw key not set)")
+    # Key presence alone is not provider health. A selected provider must be
+    # configured and must have completed a successful inference this process.
+    from app.core.llm import llm_client
+
+    llm_readiness = llm_client.get_provider_readiness()
+    if not llm_readiness["configured"]:
+        issues.append("LLM provider: selection, credentials, model, or pricing is incomplete")
+    elif not llm_readiness["ready"]:
+        issues.append(f"LLM provider: selected provider status is {llm_readiness['status']}")
     if not settings.HAS_REAL_TELEGRAM_TOKEN:
         add_external_readiness("API: TELEGRAM_BOT_TOKEN not set or still placeholder")
     if not settings.HAS_REAL_TELEGRAM_CHAT_ID:

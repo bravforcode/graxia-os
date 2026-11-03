@@ -8,7 +8,6 @@ from sqlalchemy import desc, func, select
 from app.config import settings
 from app.core.advanced_health import health_checker as advanced_health_checker
 from app.core.control_plane import (
-    LEGACY_ORGANIZATION_ID,
     create_run,
     mark_run_completed,
     mark_run_failed,
@@ -515,7 +514,7 @@ async def trigger_scan() -> TriggerResponse:
         task_type="daily_scan",
         trigger_source="api",
         context={"route": "/api/v1/system/scan/now"},
-        organization_id=LEGACY_ORGANIZATION_ID,
+        organization_id=settings.AUTOMATION_ORGANIZATION_ID,
     )
 
     async def _runner() -> None:
@@ -542,7 +541,7 @@ async def trigger_brief() -> TriggerResponse:
         task_type="morning_brief",
         trigger_source="api",
         context={"route": "/api/v1/system/brief/now"},
-        organization_id=LEGACY_ORGANIZATION_ID,
+        organization_id=settings.AUTOMATION_ORGANIZATION_ID,
     )
 
     async def _runner() -> None:

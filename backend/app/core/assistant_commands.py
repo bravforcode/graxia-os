@@ -293,7 +293,6 @@ async def _trigger_brief() -> str:
 async def _trigger_scan() -> str:
     from app.config import settings
     from app.core.control_plane import (
-        LEGACY_ORGANIZATION_ID,
         create_run,
         mark_run_completed,
         mark_run_failed,
@@ -302,11 +301,11 @@ async def _trigger_scan() -> str:
     from app.tasks.daily_scan import run_daily_scan
 
     run = await create_run(
+        organization_id=settings.AUTOMATION_ORGANIZATION_ID,
         name="Telegram/manual scan",
         task_type="daily_scan",
         trigger_source="telegram_command",
         context={"command": "/scan"},
-        organization_id=LEGACY_ORGANIZATION_ID,
     )
 
     async def _runner() -> None:

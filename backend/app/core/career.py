@@ -522,10 +522,12 @@ async def update_job_status(
         return row
 
 
-async def request_job_apply_approval(job_id: UUID):
+async def request_job_apply_approval(job_id: UUID, *, auth=None):
+    from app.core.control_plane import _trusted_approval_owner
+    owner = _trusted_approval_owner(auth)
     async with AsyncSessionLocal() as db:
         job = await db.get(JobPosting, job_id)
-        if job is None:
+        if job is None or job.organization_id != owner:
             return None
 
         preview = {
@@ -551,7 +553,7 @@ async def request_job_apply_approval(job_id: UUID):
         details=details,
         preview=preview,
         requested_by="jobs_api",
-        organization_id=job.organization_id,
+        auth=auth,
     )
 
 

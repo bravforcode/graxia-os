@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 import inspect
+import json
 import logging
-from collections.abc import Callable
+import re
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
-from app.auth.context import resolve_organization_id
 from app.core.policy import get_action_policy
 from app.database import AsyncSessionLocal
 from app.models.approval_request import ApprovalRequest
@@ -18,6 +20,20 @@ from app.models.submission import Submission
 from app.telegram_bot.keyboards import approval_keyboard
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class VerifiedJobApplicationReceipt:
+    """Internal adapter result after verifying provider acceptance, never request JSON.
+
+    There is currently no production sender wired into the default manager.
+    An adapter must verify acceptance and bind these values to its own response.
+    """
+    organization_id: UUID
+    opportunity_id: UUID | None
+    provider: str
+    external_reference: str
+    sent_at: datetime
 
 
 def _parse_uuid(value: str | UUID) -> UUID | None:
@@ -38,10 +54,15 @@ def _as_utc(value: datetime | None) -> datetime | None:
 class ApprovalFlowManager:
     """Create, resolve, remind, and summarize approval requests."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self, *, job_application_sender: Callable[
+            [dict[str, Any]], Awaitable[VerifiedJobApplicationReceipt | None]
+        ] | None = None,
+    ) -> None:
         self.pending_approvals: dict[str, dict[str, Any]] = {}
         self.approval_timeout_hours = 24
         self.reminder_timeout_hours = 12
+        self._job_application_sender = job_application_sender
 
     async def request_approval(
         self,
@@ -50,8 +71,12 @@ class ApprovalFlowManager:
         action_data: dict[str, Any],
         priority: str = "normal",
         callback: Callable[[dict[str, Any]], Any] | None = None,
+        *,
         organization_id: UUID | None = None,
     ) -> str:
+        # Internal caller supplies authenticated ownership separately from JSON.
+        if not isinstance(organization_id, UUID) or organization_id.int == 0:
+            raise ValueError("approval_organization_required")
         policy = get_action_policy(action_type)
         now = datetime.now(UTC)
         details = {
@@ -60,7 +85,7 @@ class ApprovalFlowManager:
             "priority": priority,
         }
         approval = ApprovalRequest(
-            organization_id=resolve_organization_id(organization_id),
+            organization_id=organization_id,
             title=action_description[:300] or action_type,
             action_type=action_type,
             status="pending",
@@ -127,23 +152,31 @@ class ApprovalFlowManager:
                 logger.warning("Approval request already processed: %s", approval_id)
                 return False
 
+            owner = approval.organization_id
+            if not isinstance(owner, UUID) or owner.int == 0:
+                return False
             now = datetime.now(UTC)
             expires_at = _as_utc(approval.expires_at)
-            if expires_at and now > expires_at:
-                approval.status = "expired"
-                approval.resolved_at = now
-                approval.resolution_note = "Expired before approval"
-                await db.commit()
-                self.pending_approvals.pop(approval_id, None)
+            expired = bool(expires_at and now > expires_at)
+            decision = "expired" if expired else "approved" if approved else "rejected"
+            # A database compare-and-swap consumes pending once across processes.
+            claimed = await db.execute(
+                update(ApprovalRequest).where(
+                    ApprovalRequest.id == parsed_id,
+                    ApprovalRequest.organization_id == owner,
+                    ApprovalRequest.status == "pending",
+                ).values(
+                    status=decision, resolved_at=now,
+                    resolution_note="Expired before approval" if expired else f"Resolved by {user_id}",
+                ).returning(ApprovalRequest.id).execution_options(synchronize_session=False)
+            )
+            if claimed.scalar_one_or_none() is None:
+                await db.rollback()
                 return False
-
-            approval.status = "approved" if approved else "rejected"
-            approval.resolved_at = now
-            approval.resolution_note = f"Resolved by {user_id}"
             await db.commit()
             await db.refresh(approval)
 
-        if not approved:
+        if expired or not approved:
             self.pending_approvals.pop(approval_id, None)
             return False
 
@@ -166,7 +199,9 @@ class ApprovalFlowManager:
         if approval.action_type == "linkedin_outreach":
             return await self._execute_linkedin_outreach(action_data)
         if approval.action_type == "job_apply":
-            return await self._execute_job_apply(action_data)
+            return await self._execute_job_apply(
+                action_data, organization_id=approval.organization_id,
+            )
         logger.warning("Unknown action type: %s", approval.action_type)
         return False
 
@@ -198,10 +233,36 @@ class ApprovalFlowManager:
         )
         return bool(result)
 
-    async def _execute_job_apply(self, data: dict[str, Any]) -> bool:
+    async def _execute_job_apply(
+        self, data: dict[str, Any], *, organization_id: UUID | None = None,
+    ) -> bool:
         opportunity_id = _parse_uuid(data.get("opportunity_id") or data.get("job_id"))
-        org_id = _parse_uuid(data.get("organization_id"))
-        now = datetime.now(UTC)
+        org_id = organization_id
+        if not isinstance(org_id, UUID) or org_id.int == 0 or (
+            (data.get("opportunity_id") or data.get("job_id")) and opportunity_id is None
+        ) or self._job_application_sender is None:
+            return False
+        try:
+            receipt = await self._job_application_sender({**data, "organization_id": str(org_id)})
+        except Exception as exc:
+            # Timeout/transport failure may already have sent: never retry or
+            # manufacture delivery evidence, and never log provider payloads.
+            logger.warning("Job application outcome unverified: %s", type(exc).__name__)
+            return False
+        if not (
+            type(receipt) is VerifiedJobApplicationReceipt
+            and isinstance(receipt.organization_id, UUID)
+            and receipt.organization_id == org_id
+            and receipt.opportunity_id == opportunity_id
+            and (receipt.opportunity_id is None or isinstance(receipt.opportunity_id, UUID))
+            and isinstance(receipt.provider, str)
+            and re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", receipt.provider)
+            and isinstance(receipt.external_reference, str)
+            and re.fullmatch(r"[!-~]{1,256}", receipt.external_reference)
+            and isinstance(receipt.sent_at, datetime)
+            and receipt.sent_at.utcoffset() is not None
+        ):
+            return False
         submission = Submission(
             organization_id=org_id,
             opportunity_id=opportunity_id,
@@ -210,7 +271,11 @@ class ApprovalFlowManager:
             status="sent",
             content=str(data.get("cover_letter") or data.get("proposal_text") or ""),
             subject_line=str(data.get("subject") or "Application"),
-            sent_at=now,
+            sent_at=receipt.sent_at.astimezone(UTC),
+            outcome_notes=json.dumps({
+                "provider": receipt.provider,
+                "external_reference": receipt.external_reference,
+            }, sort_keys=True),
         )
 
         async with AsyncSessionLocal() as db:
@@ -220,13 +285,17 @@ class ApprovalFlowManager:
 
         from app.core.event_bus import event_bus
 
-        await event_bus.emit(
-            "submission.sent",
-            {
-                "submission_id": str(submission.id),
-                "opportunity_id": str(opportunity_id) if opportunity_id else None,
-            },
-        )
+        try:
+            await event_bus.emit_verified_submission_sent(
+                receipt=receipt,
+                submission_id=submission.id,
+                organization_id=org_id,
+            )
+        except Exception as exc:
+            # Submission and receipt are already persisted; never retry delivery.
+            logger.warning(
+                "Verified submission event was not queued: %s", type(exc).__name__
+            )
         return True
 
     async def check_expired_approvals(self) -> None:
