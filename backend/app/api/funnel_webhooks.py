@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 import stripe
@@ -10,6 +11,7 @@ from app.core.monitoring import metrics_collector
 from app.database import AsyncSessionLocal, get_db
 from app.services.funnel_order_service import FunnelOrderService
 from app.services.automation_email_service import AutomationEmailService
+from app.services.email_service import email_accepted
 
 router = APIRouter()
 logger = logging.getLogger("funnel.webhooks")
@@ -87,6 +89,8 @@ async def stripe_funnel_webhook(
     logger.info(f"Funnel Webhook received: {event_type}")
 
     order_id = None
+    delivery_email_result = None
+    email_result = None
     if event_type == "checkout.session.completed":
         try:
             order = await service.create_order_from_checkout_completed(data_object)
@@ -96,47 +100,138 @@ async def stripe_funnel_webhook(
             raise HTTPException(status_code=500, detail="Webhook processing failed")
         if order:
             order_id = str(order.id)
+            from app.services.funnel_delivery_email_service import DeliveryEmailOutcome
+            outcome = getattr(order, "delivery_email_result", None)
+            delivery_email_result = outcome if type(outcome) is DeliveryEmailOutcome else DeliveryEmailOutcome("unknown")
         # Forward to Revenue OS ops layer (best-effort, idempotent there).
         await _forward_to_revenue_os(payload, sig)
 
     elif event_type == "checkout.session.expired":
         # Fire abandoned cart email immediately when Stripe confirms the session expired
-        await _handle_checkout_expired(data_object)
+        email_result = await _handle_checkout_expired(data_object)
 
     return {
         "received": True,
         "event_type": event_type,
-        "order_id": order_id
+        "order_id": order_id,
+        "delivery_email_status": delivery_email_result.status if delivery_email_result is not None else None,
+        "delivery_email_provider_reference": delivery_email_result.provider_reference if delivery_email_result is not None else None,
+        "email_status": email_result.get("status") if email_result else None,
     }
 
 
-async def _handle_checkout_expired(data_object: dict) -> None:
+async def _handle_checkout_expired(data_object: dict) -> dict:
     """Handle checkout.session.expired — send abandoned cart email."""
-    metadata = data_object.get("metadata", {})
+    if not isinstance(data_object, dict):
+        logger.warning("[WEBHOOK] checkout.session.expired has no session payload")
+        return {"id": None, "status": "suppressed"}
+    metadata = data_object.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
     checkout_session_id = metadata.get("funnel_checkout_session_id")
     org_id_str = metadata.get("organization_id")
+    product_id_str = metadata.get("product_id")
+    stripe_session_id = data_object.get("id")
+    stripe_expires_at = data_object.get("expires_at")
 
-    if not checkout_session_id or not org_id_str:
-        logger.info("[WEBHOOK] checkout.session.expired missing metadata, skipping abandoned cart")
-        return
+    if (
+        not checkout_session_id
+        or not org_id_str
+        or not product_id_str
+        or not isinstance(stripe_session_id, str)
+        or not stripe_session_id
+        or isinstance(stripe_expires_at, bool)
+        or not isinstance(stripe_expires_at, int)
+        or stripe_expires_at <= 0
+    ):
+        logger.warning(
+            "[WEBHOOK] checkout.session.expired missing or invalid session identity/expiry"
+        )
+        return {"id": None, "status": "suppressed"}
 
     try:
-        from datetime import datetime, timezone
-        from sqlalchemy import update
+        from sqlalchemy import select, update
         from app.models.funnel import FunnelCheckoutSession as FCS
+        checkout_session_uuid = UUID(checkout_session_id)
+        organization_uuid = UUID(org_id_str)
+        product_uuid = UUID(product_id_str)
+
         async with AsyncSessionLocal() as session:
-            svc = AutomationEmailService(session)
-            await svc.trigger_abandoned_cart(
-                organization_id=UUID(org_id_str),
-                checkout_session_id=UUID(checkout_session_id),
+            checkout_stmt = (
+                select(FCS)
+                .where(
+                    FCS.id == checkout_session_uuid,
+                    FCS.organization_id == organization_uuid,
+                    FCS.product_id == product_uuid,
+                    FCS.stripe_session_id == stripe_session_id,
+                )
+                .with_for_update()
             )
+            checkout = await session.scalar(checkout_stmt)
+            if checkout is None:
+                logger.warning(
+                    "[WEBHOOK] checkout.session.expired has no matching local session"
+                )
+                await session.rollback()
+                return {"id": None, "status": "suppressed"}
+
+            stored_expiry = checkout.expires_at
+            if stored_expiry is None:
+                logger.warning(
+                    "[WEBHOOK] checkout.session.expired local session has no expiry"
+                )
+                await session.rollback()
+                return {"id": None, "status": "suppressed"}
+            if stored_expiry.tzinfo is None:
+                stored_expiry = stored_expiry.replace(tzinfo=timezone.utc)
+            else:
+                stored_expiry = stored_expiry.astimezone(timezone.utc)
+            if int(stored_expiry.timestamp()) != stripe_expires_at:
+                logger.warning(
+                    "[WEBHOOK] checkout.session.expired expiry does not match local session"
+                )
+                await session.rollback()
+                return {"id": None, "status": "suppressed"}
+
+            if checkout.status in {"created", "pending"}:
+                checkout.status = "expired"
+                await session.commit()
+            elif checkout.status == "expired":
+                await session.rollback()
+            else:
+                logger.info(
+                    "[WEBHOOK] checkout.session.expired ignored for terminal local status %s",
+                    checkout.status,
+                )
+                await session.rollback()
+                return {"id": None, "status": "suppressed"}
+
+        async with AsyncSessionLocal() as email_session:
+            svc = AutomationEmailService(email_session)
+            result = await svc.trigger_abandoned_cart(
+                organization_id=organization_uuid,
+                checkout_session_id=checkout_session_uuid,
+            )
+            if not email_accepted(result):
+                await email_session.rollback()
+                return result if isinstance(result, dict) and result.get("status") != "sent" else {
+                    "id": None, "status": "unverified",
+                }
             # Mark dedup flag so future retries / beat task skip this session
-            await session.execute(
+            await email_session.execute(
                 update(FCS)
-                .where(FCS.id == UUID(checkout_session_id))
+                .where(
+                    FCS.id == checkout_session_uuid,
+                    FCS.organization_id == organization_uuid,
+                    FCS.abandoned_email_sent_at.is_(None),
+                )
                 .values(abandoned_email_sent_at=datetime.now(timezone.utc))
             )
-            await session.commit()
-        logger.info(f"[WEBHOOK] Abandoned cart email triggered for session {checkout_session_id}")
+            await email_session.commit()
+        logger.info("[WEBHOOK] Provider acceptance recorded")
+        return result
     except Exception as exc:
-        logger.error(f"[WEBHOOK] Failed to send abandoned cart email: {exc}")
+        logger.warning(
+            "[WEBHOOK] Expired checkout handling failed: %s", type(exc).__name__
+        )
+        return {"id": None, "status": "failed"}

@@ -50,6 +50,7 @@ from .skill_profile import SkillProfile
 from .submission import Submission
 from .telegram_pairing import TelegramApprovalBinding, TelegramPairingChallenge
 from .user import User
+from .delivery_email_event import DeliveryEmailEvent
 from .funnel import (
     BundleDeal,
     Coupon,
@@ -57,7 +58,6 @@ from .funnel import (
     ConversionEvent,
     DeliveryAccess,
     DeliveryAsset,
-    DeliveryEmailEvent,
     DigitalProduct,
     EmailSequence,
     FunnelRecommendation,

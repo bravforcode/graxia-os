@@ -334,38 +334,6 @@ class DeliveryAccess(Base, TenantMixin):
     )
 
 
-class DeliveryEmailEvent(Base, TenantMixin):
-    __tablename__ = "delivery_email_events"
-    __table_args__ = (
-        CheckConstraint(
-            "status IN ('pending', 'sent', 'failed', 'skipped')",
-            name="ck_delivery_email_status",
-        ),
-    )
-
-    id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    order_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("funnel_orders.id"), nullable=False, index=True
-    )
-    delivery_access_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("delivery_accesses.id"), index=True
-    )
-    customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
-    provider: Mapped[str] = mapped_column(String(100), default="mock", nullable=False)
-    idempotency_key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    error_code: Mapped[str | None] = mapped_column(String(100))
-    error_message_redacted: Mapped[str | None] = mapped_column(String(500))
-    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-
 class ConversionEvent(Base, TenantMixin):
     __tablename__ = "conversion_events"
     __table_args__ = (

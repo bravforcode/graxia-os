@@ -14,10 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
 from app.runtime.events import business_event_service
+from app.models.delivery_email_event import DeliveryEmailEvent
 from app.models.funnel import (
     ConversionEvent,
     DeliveryAccess,
-    DeliveryEmailEvent,
     DeliveryAsset,
     DigitalProduct,
     FunnelOrder,

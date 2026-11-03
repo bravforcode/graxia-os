@@ -25,10 +25,10 @@ from app.core.compliance_audit import AuditEventType, ComplianceAuditLogger
 from app.models.contact import Contact
 from app.models.privacy import BreachNotification, PrivacyConsent
 from app.models.user import User
+from app.models.delivery_email_event import DeliveryEmailEvent
 from app.models.funnel import (
     ConversionEvent,
     DeliveryAccess,
-    DeliveryEmailEvent,
     FunnelCheckoutSession,
     FunnelOrder,
     FunnelOrderItem,

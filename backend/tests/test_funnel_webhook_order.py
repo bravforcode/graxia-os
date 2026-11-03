@@ -2,7 +2,7 @@ import pytest
 import json
 from uuid import uuid4
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, FunnelOrderItem, DeliveryAccess
 from app.models.organization import Organization
+from app.services.funnel_delivery_email_service import DeliveryEmailOutcome
 from tests.factories import OrganizationFactory
 
 @pytest.fixture
@@ -26,6 +27,20 @@ def mock_webhook_signature():
 class TestFunnelWebhookOrder:
     """Test the digital product funnel webhook and order creation"""
 
+    @pytest.fixture(autouse=True)
+    def guard_email_provider(self):
+        with patch(
+            "app.services.funnel_delivery_email_service.FunnelDeliveryEmailService.send_delivery_links",
+            new_callable=AsyncMock,
+            return_value=DeliveryEmailOutcome("suppressed"),
+        ), patch(
+            "app.services.email_service.EmailService.send_email",
+            new_callable=AsyncMock,
+            return_value={"id": "test-provider-reference", "status": "sent"},
+        ) as provider_send:
+            yield
+            provider_send.assert_not_awaited()
+
     async def test_webhook_creates_order_and_item(
         self, async_client: AsyncClient, db_session: AsyncSession, mock_webhook_signature
     ):
@@ -37,14 +52,15 @@ class TestFunnelWebhookOrder:
         )
         db_session.add(prod)
         
+        stripe_session_id = "cs_webhook_123"
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org.id, product_id=prod.id, 
-            status="pending", amount=prod.price_amount, currency=prod.currency
+            status="pending", amount=prod.price_amount, currency=prod.currency,
+            stripe_session_id=stripe_session_id,
         )
         db_session.add(checkout)
         await db_session.commit()
 
-        stripe_session_id = "cs_webhook_123"
         payment_intent_id = "pi_webhook_123"
         
         # Prepare fake Stripe event
@@ -107,7 +123,8 @@ class TestFunnelWebhookOrder:
         db_session.add(prod)
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org.id, product_id=prod.id, 
-            status="pending", amount=Decimal("100.00"), currency="THB"
+            status="pending", amount=Decimal("100.00"), currency="THB",
+            stripe_session_id="cs_dup_123",
         )
         db_session.add(checkout)
         await db_session.commit()
@@ -181,7 +198,8 @@ class TestFunnelWebhookOrder:
         )
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org1.id, product_id=prod.id, 
-            status="pending", amount=Decimal("100.00"), currency="THB"
+            status="pending", amount=Decimal("100.00"), currency="THB",
+            stripe_session_id="cs_mismatch",
         )
         db_session.add_all([prod, checkout])
         await db_session.commit()
@@ -226,7 +244,8 @@ class TestFunnelWebhookOrder:
         )
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org.id, product_id=prod.id, 
-            status="pending", amount=Decimal("100.00"), currency="THB"
+            status="pending", amount=Decimal("100.00"), currency="THB",
+            stripe_session_id="cs_no_delivery",
         )
         db_session.add_all([prod, checkout])
         await db_session.commit()
@@ -259,7 +278,8 @@ class TestFunnelWebhookOrder:
         )
         checkout = FunnelCheckoutSession(
             id=uuid4(), organization_id=org.id, product_id=prod.id, 
-            status="pending", amount=Decimal("100.00"), currency="THB"
+            status="pending", amount=Decimal("100.00"), currency="THB",
+            stripe_session_id="cs_no_email",
         )
         db_session.add_all([prod, checkout])
         await db_session.commit()
@@ -278,5 +298,102 @@ class TestFunnelWebhookOrder:
         
         # Verify email service was not called
         assert mock_email_service.called is False
+
+    async def test_webhook_rejects_stripe_session_mismatch(
+        self, async_client: AsyncClient, db_session: AsyncSession, mock_webhook_signature
+    ):
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="P", slug="p-session-mismatch",
+            price_amount=Decimal("100.00"), currency="THB", status="published",
+        )
+        checkout = FunnelCheckoutSession(
+            id=uuid4(), organization_id=org.id, product_id=product.id,
+            stripe_session_id="cs_persisted", status="pending",
+            amount=Decimal("100.00"), currency="THB",
+        )
+        db_session.add_all([product, checkout])
+        await db_session.commit()
+        mock_webhook_signature.return_value = {
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_incoming_mismatch",
+                    "metadata": {
+                        "organization_id": str(org.id),
+                        "product_id": str(product.id),
+                        "funnel_checkout_session_id": str(checkout.id),
+                    },
+                }
+            },
+        }
+
+        response = await async_client.post(
+            "/api/v1/funnel/webhooks/stripe",
+            headers={"stripe-signature": "fake"},
+            content="{}",
+        )
+
+        assert response.status_code == 200
+        assert response.json()["order_id"] is None
+        assert await db_session.scalar(select(FunnelOrder).where(FunnelOrder.checkout_session_id == checkout.id)) is None
+        await db_session.refresh(checkout)
+        assert checkout.status == "pending"
+
+    async def test_checkout_lock_transaction_rolls_back_and_allows_retry(
+        self, db_session: AsyncSession
+    ):
+        from unittest.mock import AsyncMock
+        from app.services.funnel_order_service import FunnelOrderService
+        from app.services.funnel_delivery_email_service import DeliveryEmailOutcome
+
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="P", slug="p-rollback-lock",
+            price_amount=Decimal("100.00"), currency="THB", status="published",
+        )
+        checkout = FunnelCheckoutSession(
+            id=uuid4(), organization_id=org.id, product_id=product.id,
+            stripe_session_id="cs_rollback_lock", status="pending",
+            amount=Decimal("100.00"), currency="THB",
+        )
+        db_session.add_all([product, checkout])
+        await db_session.commit()
+        checkout_id = checkout.id
+
+        event = {
+            "id": "cs_rollback_lock",
+            "metadata": {
+                "organization_id": str(org.id),
+                "product_id": str(product.id),
+                "funnel_checkout_session_id": str(checkout_id),
+            },
+        }
+        service = FunnelOrderService(db_session)
+        service.delivery_service.grant_delivery_access_for_order = AsyncMock(
+            side_effect=RuntimeError("injected access failure")
+        )
+
+        with pytest.raises(RuntimeError, match="injected access failure"):
+            await service.create_order_from_checkout_completed(event)
+
+        assert await db_session.scalar(select(FunnelOrder).where(FunnelOrder.checkout_session_id == checkout_id)) is None
+        await db_session.refresh(checkout)
+        assert checkout.status == "pending"
+
+        retry_service = FunnelOrderService(db_session)
+        retry_service.delivery_service.grant_delivery_access_for_order = AsyncMock(return_value=[])
+        with patch(
+            "app.services.funnel_delivery_email_service.FunnelDeliveryEmailService.send_delivery_links",
+            new_callable=AsyncMock,
+            return_value=DeliveryEmailOutcome("suppressed"),
+        ), patch(
+            "app.services.automation_email_service.AutomationEmailService.trigger_post_purchase",
+            new_callable=AsyncMock,
+        ):
+            order = await retry_service.create_order_from_checkout_completed(event)
+
+        assert order is not None
+        assert await db_session.scalar(select(FunnelOrder).where(FunnelOrder.checkout_session_id == checkout.id)) is not None
 
 
