@@ -17,7 +17,7 @@ from app.middleware.security import _get_security_headers
 async def test_protected_routes_require_authentication(public_async_client):
     response = await public_async_client.get("/api/v1/jobs")
     assert response.status_code == 401
-    assert response.json()["detail"] == "Authentication required"
+    assert response.json()["error"]["code"] == "AUTH_REQUIRED"
 
 
 @pytest.mark.asyncio
@@ -33,7 +33,7 @@ async def test_protected_routes_reject_expired_access_tokens(public_async_client
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid or expired token"
+    assert response.json()["error"]["code"] == "AUTH_INVALID"
 
 
 @pytest.mark.asyncio
@@ -60,7 +60,7 @@ async def test_protected_routes_reject_forged_access_tokens(public_async_client)
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid or expired token"
+    assert response.json()["error"]["code"] == "AUTH_INVALID"
 
 
 @pytest.mark.asyncio

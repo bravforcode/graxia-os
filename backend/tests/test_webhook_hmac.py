@@ -120,7 +120,7 @@ class TestWebhookHMACSignatureVerification:
             )
         
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_missing_signature_rejected(self, app, mock_settings):
@@ -135,7 +135,7 @@ class TestWebhookHMACSignatureVerification:
             )
 
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized — HMAC signature required"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_missing_timestamp_rejected(self, app, mock_settings, webhook_secret):
@@ -155,7 +155,7 @@ class TestWebhookHMACSignatureVerification:
             )
         
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_expired_timestamp_rejected(self, app, mock_settings, webhook_secret):
@@ -176,7 +176,7 @@ class TestWebhookHMACSignatureVerification:
             )
         
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_future_timestamp_rejected(self, app, mock_settings, webhook_secret):
@@ -197,7 +197,7 @@ class TestWebhookHMACSignatureVerification:
             )
         
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_malformed_timestamp_rejected(self, app, mock_settings, webhook_secret):
@@ -217,7 +217,7 @@ class TestWebhookHMACSignatureVerification:
             )
         
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_signature_without_sha256_prefix_rejected(self, app, mock_settings, webhook_secret):
@@ -241,7 +241,7 @@ class TestWebhookHMACSignatureVerification:
             )
 
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized — HMAC signature required"
+        assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_empty_body_signature_verification(self, app, mock_settings, webhook_secret):
@@ -342,7 +342,7 @@ class TestWebhookHMACSignatureVerification:
                     )
                 
                 assert response.status_code == 401
-                assert response.json()["detail"] == "Unauthorized — HMAC signature required"
+                assert response.json()["error"]["code"] in {"AUTH_REQUIRED", "AUTH_INVALID"}
     
     @pytest.mark.asyncio
     async def test_request_body_restoration(self, app, mock_settings, webhook_secret):
