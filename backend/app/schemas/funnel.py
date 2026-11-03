@@ -93,7 +93,10 @@ class DeliveryAssetRead(DeliveryAssetBase):
 
 
 class FunnelCheckoutCreate(BaseModel):
-    contact_id: Optional[UUID] = None
+    contact_id: Optional[UUID] = Field(
+        None,
+        description="Optional tenant contact; checkout validates its normalized email against customer_email.",
+    )
     customer_email: Optional[str] = None
     success_url: str
     cancel_url: str
@@ -193,10 +196,10 @@ class DeliveryAccessRead(BaseModel):
 
 class DeliveryAccessPublic(BaseModel):
     product_name: str
-    asset_title: Optional[str]
+    asset_title: Optional[str] = None
     status: str
     is_opened: bool
-    opened_at: Optional[datetime]
+    opened_at: Optional[datetime] = None
 
 
 class DeliveryAccessGrantResponse(BaseModel):
@@ -386,8 +389,8 @@ class LeadMagnetRead(LeadMagnetBase):
 
 
 class LeadMagnetPublic(BaseModel):
-    slug: str
-    title: str
+    slug: str = Field(..., max_length=255)
+    title: str = Field(..., max_length=255)
     description: Optional[str] = None
 
 
@@ -453,12 +456,21 @@ class FunnelRecommendationCreate(BaseModel):
     metadata_json: Optional[dict[str, Any]] = None
 
 
-class FunnelRecommendationRead(FunnelRecommendationCreate):
+class FunnelRecommendationRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    organization_id: UUID
     product_id: UUID
+    organization_id: UUID
+    recommendation_type: str
+    bottleneck: Optional[str] = None
+    recommended_action: str
+    expected_impact: Optional[str] = None
+    confidence: Optional[str] = None
+    effort: Optional[str] = None
+    risk: Optional[str] = None
+    reasoning: Optional[str] = None
+    draft_content: Optional[str] = None
     rollback_note: Optional[str] = None
     approval_request_id: Optional[UUID] = None
     status: str

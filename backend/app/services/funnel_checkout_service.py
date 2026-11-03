@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import Any, Mapping, Optional
 from uuid import UUID
 from urllib.parse import urlsplit
@@ -6,7 +7,7 @@ from urllib.parse import urlsplit
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import DigitalProduct, FunnelCheckoutSession
+from app.models.funnel import DeliveryAsset, DigitalProduct, FunnelCheckoutSession
 from app.core.stripe_client import create_stripe_checkout_session
 from app.schemas.funnel import FunnelCheckoutCreate
 from app.config import settings
@@ -58,6 +59,10 @@ def _stripe_attribution_metadata(metadata: Mapping[str, Any]) -> dict[str, str]:
             result[key] = str(value)[:200]
     return result
 
+class NoActiveDeliveryAssetError(Exception):
+    """Raised when a published product cannot fulfill a new checkout."""
+
+
 class FunnelCheckoutService:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -86,7 +91,7 @@ class FunnelCheckoutService:
                 # contain NULL; only an explicit True means deleted.
                 DigitalProduct.is_deleted.is_not(True),
             )
-        )
+        ).with_for_update()
         result = await self.db.execute(stmt)
         product = result.scalar_one_or_none()
 
@@ -94,6 +99,20 @@ class FunnelCheckoutService:
             logger.warning(f"Checkout failed: Product {product_id} not found or not published for org {organization_id}")
             metrics_collector.record_checkout_create_failure("product_unavailable")
             return None
+
+        active_asset_id = await self.db.scalar(
+            select(DeliveryAsset.id)
+            .where(
+                DeliveryAsset.product_id == product_id,
+                DeliveryAsset.organization_id == organization_id,
+                DeliveryAsset.is_active.is_(True),
+            )
+            .limit(1)
+        )
+        if active_asset_id is None:
+            raise NoActiveDeliveryAssetError(
+                "Checkout is unavailable because this product has no active delivery asset"
+            )
 
         # Create local session record
         checkout_session = FunnelCheckoutSession(
@@ -148,6 +167,18 @@ class FunnelCheckoutService:
             )
 
             checkout_session.stripe_session_id = stripe_session.id
+            stripe_expires_at = getattr(stripe_session, "expires_at", None)
+            if isinstance(stripe_expires_at, (int, float)) and not isinstance(
+                stripe_expires_at, bool
+            ):
+                checkout_session.expires_at = datetime.fromtimestamp(
+                    stripe_expires_at, tz=timezone.utc
+                )
+            elif stripe_expires_at is not None:
+                logger.warning(
+                    "Stripe checkout returned invalid expires_at for local session %s",
+                    checkout_session.id,
+                )
             checkout_session.status = "pending"
             await self.db.commit()
 

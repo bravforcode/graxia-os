@@ -158,33 +158,6 @@ class FunnelOrderService:
             checkout_session.status = "completed"
             checkout_session.completed_at = datetime.now()
 
-            await FunnelAnalyticsService(self.db).log_event(
-                organization_id=organization_id,
-                event_type="purchase",
-                product_id=product_id,
-                order_id=order.id,
-                session_id=attribution.get("session_id"),
-                source=attribution.get("source"),
-                medium=attribution.get("medium"),
-                campaign=attribution.get("campaign"),
-                referrer=attribution.get("referrer"),
-                first_touch=attribution.get("first_touch"),
-                last_touch=attribution.get("last_touch"),
-                landing_path=attribution.get("landing_path"),
-                content_id=attribution.get("content_id"),
-                referral_code=attribution.get("referral_code"),
-                metadata_json={
-                    key: attribution[key]
-                    for key in (
-                        "content_id", "plan", "channel", "locale",
-                        "landing_path", "referral_code",
-                    )
-                    if key in attribution
-                },
-                idempotency_key=f"purchase:{order.id}",
-                commit=False,
-            )
-
             referral_code = attribution.get("referral_code")
             referral_session_id = attribution.get("session_id")
             if referral_code and referral_session_id:
@@ -232,8 +205,44 @@ class FunnelOrderService:
 
         await self.db.refresh(order)
 
-        # The checkout lock has been released before provider calls or other
-        # follow-up side effects run.
+        try:
+            await FunnelAnalyticsService(self.db).log_event(
+                organization_id=organization_id,
+                event_type="purchase",
+                product_id=product_id,
+                order_id=order.id,
+                session_id=attribution.get("session_id"),
+                source=attribution.get("source"),
+                medium=attribution.get("medium"),
+                campaign=attribution.get("campaign"),
+                referrer=attribution.get("referrer"),
+                first_touch=attribution.get("first_touch"),
+                last_touch=attribution.get("last_touch"),
+                landing_path=attribution.get("landing_path"),
+                content_id=attribution.get("content_id"),
+                referral_code=attribution.get("referral_code"),
+                metadata_json={
+                    key: attribution[key]
+                    for key in (
+                        "content_id", "plan", "channel", "locale",
+                        "landing_path", "referral_code",
+                    )
+                    if key in attribution
+                },
+                idempotency_key=f"purchase:{order.id}",
+            )
+        except Exception as exc:
+            # Analytics is post-commit; its failure must not prevent delivery
+            # email or make the webhook replay skip fulfillment side effects.
+            await self.db.rollback()
+            logger.warning(
+                "Purchase analytics unavailable after checkout commit: %s",
+                type(exc).__name__,
+            )
+            await self.db.refresh(order)
+
+        # The checkout lock has been released before analytics, provider calls,
+        # or other follow-up side effects run.
         # ── EMAIL CUSTOMER SECURE LINKS ──
         try:
             from app.services.funnel_delivery_email_service import FunnelDeliveryEmailService
