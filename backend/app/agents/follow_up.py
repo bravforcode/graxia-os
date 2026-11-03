@@ -67,6 +67,7 @@ Write the follow-up now."""
 
         async with AsyncSessionLocal() as db:
             draft = ContentDraft(
+                organization_id=sub.organization_id,
                 type="follow_up",
                 title=f"Follow-up: {sub.title[:60] if sub.title else 'Submission'}",
                 content=content,

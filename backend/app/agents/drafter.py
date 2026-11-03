@@ -87,6 +87,7 @@ Write the complete draft now. Make it real — not a template."""
                     return
 
             draft = ContentDraft(
+                organization_id=opp.organization_id,
                 type=draft_type,
                 title=f"Draft: {opp.title[:80]}",
                 content=content,
