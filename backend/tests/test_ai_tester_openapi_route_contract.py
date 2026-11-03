@@ -31,7 +31,7 @@ class TestOpenAPIRouteContract:
                     break
         assert path.exists(), (
             f"OpenAPI spec not found at {self.OPENAPI_PATH.resolve()}. "
-            f"Generate with: cd backend && python scripts/ops/export_openapi.py"
+            f"Generate with: cd backend && python scripts/export_openapi.py --output openapi.json"
         )
 
     def test_openapi_is_valid_json(self):
@@ -78,7 +78,7 @@ class TestOpenAPIRouteContract:
             # Readiness routes may be in a different format or not yet exported
             pytest.skip(
                 f"Readiness route {self.READINESS_BASE} not found in OpenAPI spec. "
-                "Run: cd backend && python scripts/ops/export_openapi.py"
+                "Run: cd backend && python scripts/export_openapi.py --output openapi.json"
             )
 
     def test_api_prefix_routes_documented(self):

@@ -1,68 +1,70 @@
 """
 Phase 8 GDPR Compliance Tests
-Tests for account deletion and data export (GDPR compliance)
+Tests for account erasure and data export (GDPR compliance).
+Routed to the PDPA endpoints in app/api/privacy.py.
 """
 from unittest.mock import AsyncMock, patch
+from uuid import UUID
 
 import pytest
 
+from app.core.compliance_audit import AuditEventType, ComplianceAuditLogger
+from app.models.user import User
+
+ERASURE_URL = "/api/v1/privacy/erasure"
+EXPORT_URL = "/api/v1/privacy/data-export"
+
 
 class TestAccountDeletion:
-    """Test GDPR-compliant account deletion"""
+    """Test GDPR-compliant account erasure (POST /privacy/erasure)"""
 
     @pytest.mark.asyncio
     async def test_delete_account_endpoint_exists(self, async_client):
-        """DELETE /auth/me endpoint should exist"""
-        response = await async_client.delete("/api/v1/auth/me")
-        # Should not return 404
-        assert response.status_code != 404
+        """Erasure endpoint should exist; confirm=false is a non-destructive probe"""
+        response = await async_client.post(ERASURE_URL, json={"confirm": False})
+
+        assert response.status_code == 400
 
     @pytest.mark.asyncio
-    async def test_delete_account_soft_delete(self, async_client, db_session):
-        """Account deletion should soft-delete user"""
-        
-        # Get current user
-        response = await async_client.get("/api/v1/auth/me")
-        if response.status_code == 200:
-            user_data = response.json()
-            
-            # Delete account
-            delete_response = await async_client.delete("/api/v1/auth/me")
-            
-            # Should return 204 No Content on success
-            assert delete_response.status_code in [204, 200, 401]
+    async def test_delete_account_soft_delete(self, async_client):
+        """Anonymize-only erasure should succeed and report method=anonymized"""
+        response = await async_client.post(
+            ERASURE_URL, json={"confirm": True, "anonymize_only": True}
+        )
+
+        assert response.status_code == 200
+        assert response.json()["method"] == "anonymized"
 
     @pytest.mark.asyncio
-    async def test_delete_account_anonymizes_email(self, async_client):
-        """Deleted account should anonymize email"""
-        response = await async_client.delete("/api/v1/auth/me")
-        
-        # After deletion, user should be anonymized
-        if response.status_code == 204:
-            # Try to get user data
-            me_response = await async_client.get("/api/v1/auth/me")
-            # Should be unauthorized (user is deleted)
-            assert me_response.status_code == 401
+    async def test_delete_account_anonymizes_email(self, async_client, db_session):
+        """Erased account should have email and name anonymized"""
+        response = await async_client.post(
+            ERASURE_URL, json={"confirm": True, "anonymize_only": True}
+        )
+
+        assert response.status_code == 200
+        user = await db_session.get(User, UUID(response.json()["user_id"]))
+        assert user.email.endswith("@anonymized.local")
+        assert user.full_name == "Deleted User"
 
     @pytest.mark.asyncio
     async def test_delete_account_inactivates_user(self, async_client, db_session):
-        """Deleted account should set is_active to False"""
-        # This test verifies the user record is marked inactive
-        # Actual implementation may vary based on auth flow
-        response = await async_client.delete("/api/v1/auth/me")
-        
-        # Should succeed
-        assert response.status_code in [204, 200]
+        """Full erasure should set is_active to False"""
+        response = await async_client.post(ERASURE_URL, json={"confirm": True})
+
+        assert response.status_code == 200
+        assert response.json()["method"] == "scrubbed"
+        user = await db_session.get(User, UUID(response.json()["user_id"]))
+        assert user.is_active is False
 
     @pytest.mark.asyncio
-    async def test_delete_account_clears_cookies(self, async_client):
-        """Account deletion should clear auth cookies"""
-        response = await async_client.delete("/api/v1/auth/me")
-        
-        # Check for Set-Cookie header with deletion
-        if response.status_code == 204:
-            # Cookies should be cleared
-            pass  # Implementation-specific
+    async def test_delete_account_revokes_sessions(self, async_client):
+        """Erasure should revoke the caller's sessions, so /auth/me no longer authorizes"""
+        response = await async_client.post(ERASURE_URL, json={"confirm": True})
+
+        assert response.status_code == 200
+        me_response = await async_client.get("/api/v1/auth/me")
+        assert me_response.status_code == 401
 
     @pytest.mark.asyncio
     async def test_deleted_account_cannot_login(self, public_async_client):
@@ -73,141 +75,127 @@ class TestAccountDeletion:
             "/api/v1/auth/login",
             data={"username": "deleted@deleted.graxia.io", "password": "any"}
         )
-        
+
         # Should fail to login
         assert response.status_code in [401, 403]
 
     @pytest.mark.asyncio
     async def test_delete_account_requires_auth(self, public_async_client):
-        """Account deletion should require authentication"""
-        response = await public_async_client.delete("/api/v1/auth/me")
-        
-        # Should return 401 Unauthorized
+        """Erasure should require authentication"""
+        response = await public_async_client.post(ERASURE_URL, json={"confirm": False})
+
         assert response.status_code == 401
 
 
 class TestDataExport:
-    """Test GDPR data export functionality"""
+    """Test GDPR data export functionality (POST /privacy/data-export)"""
 
     @pytest.mark.asyncio
     async def test_export_data_endpoint_exists(self, async_client):
-        """GET /auth/me/export endpoint should exist"""
-        response = await async_client.get("/api/v1/auth/me/export")
-        
-        # Should not return 404
-        assert response.status_code != 404
+        """Data export endpoint should exist"""
+        response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_export_data_returns_machine_readable(self, async_client):
-        """Data export should return machine-readable JSON"""
-        response = await async_client.get("/api/v1/auth/me/export")
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Should have export metadata
-            assert "export_metadata" in data
-            assert "user_id" in data["export_metadata"]
-            assert "exported_at" in data["export_metadata"]
-            assert "format_version" in data["export_metadata"]
+        """Data export should return machine-readable JSON with export metadata"""
+        response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
+        body = response.json()
+        assert "export_id" in body
+        assert "exported_at" in body
+        assert isinstance(body["data"], dict)
 
     @pytest.mark.asyncio
     async def test_export_contains_profile_data(self, async_client):
         """Data export should include user profile"""
-        response = await async_client.get("/api/v1/auth/me/export")
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Should have profile section
-            assert "profile" in data
-            profile = data["profile"]
-            assert "email" in profile or "full_name" in profile
+        response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
+        user = response.json()["data"]["user"]
+        assert "email" in user
+        assert "full_name" in user
 
     @pytest.mark.asyncio
     async def test_export_contains_usage_data(self, async_client):
-        """Data export should include usage data"""
-        response = await async_client.get("/api/v1/auth/me/export")
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # May contain various data categories
-            # Not all may be present for new users
-            possible_keys = [
-                "opportunities", "contacts", "submissions",
-                "email_threads", "usage_logs", "audit_logs"
-            ]
-            # At least check structure is valid
-            assert isinstance(data, dict)
+        """Data export should include consent and order categories"""
+        response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert isinstance(data["consents"], list)
+        assert isinstance(data["orders"], list)
 
     @pytest.mark.asyncio
     async def test_export_data_requires_auth(self, public_async_client):
         """Data export should require authentication"""
-        response = await public_async_client.get("/api/v1/auth/me/export")
-        
+        response = await public_async_client.post(EXPORT_URL)
+
         # Should return 401 Unauthorized
         assert response.status_code == 401
 
     @pytest.mark.asyncio
     async def test_export_data_logged(self, async_client):
-        """Data export should be logged for audit"""
-        with patch("app.services.audit_service.log_audit_event", new_callable=AsyncMock) as mock_audit:
-            mock_audit.return_value = None
-            
-            response = await async_client.get("/api/v1/auth/me/export")
-            
-            # Export should be attempted
-            assert response.status_code in [200, 401]
+        """Data export should be recorded in the compliance audit log"""
+        with patch.object(ComplianceAuditLogger, "log_event", new_callable=AsyncMock) as mock_audit:
+            response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
+        mock_audit.assert_awaited_once()
+        assert mock_audit.await_args.kwargs["event_type"] == AuditEventType.DATA_EXPORT_REQUESTED
 
 
 class TestGDPRCompliance:
     """Test general GDPR compliance features"""
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason="No /privacy.html route in the API; AuthMiddleware fails closed with 403 on unknown paths",
+    )
     @pytest.mark.asyncio
     async def test_privacy_policy_accessible(self, public_async_client):
         """Privacy policy should be publicly accessible"""
         response = await public_async_client.get("/privacy.html")
-        
+
         # Should return 200 or redirect
         assert response.status_code in [200, 301, 302, 404]  # 404 if not in API
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason="No /terms.html route in the API; AuthMiddleware fails closed with 403 on unknown paths",
+    )
     @pytest.mark.asyncio
     async def test_terms_of_service_accessible(self, public_async_client):
         """Terms of service should be publicly accessible"""
         response = await public_async_client.get("/terms.html")
-        
+
         # Should return 200 or redirect
         assert response.status_code in [200, 301, 302, 404]  # 404 if not in API
 
     @pytest.mark.asyncio
     async def test_data_retention_policy(self, async_client):
-        """Data should be retained according to policy"""
-        # This is a policy test - actual implementation
-        # would verify data retention rules
-        response = await async_client.get("/api/v1/auth/me/export")
-        
-        # Should be able to access own data
-        assert response.status_code in [200, 401]
+        """User should be able to access own data"""
+        response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_right_to_be_forgotten(self, async_client):
-        """User should have right to be forgotten (account deletion)"""
-        # Test that deletion endpoint exists and works
-        response = await async_client.delete("/api/v1/auth/me")
-        
-        # Should be able to delete account
-        assert response.status_code in [204, 200, 401]
+        """User should be able to erase their account"""
+        response = await async_client.post(ERASURE_URL, json={"confirm": True})
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "completed"
 
     @pytest.mark.asyncio
     async def test_right_to_data_portability(self, async_client):
-        """User should have right to data portability (export)"""
-        # Test that export endpoint exists and returns portable format
-        response = await async_client.get("/api/v1/auth/me/export")
-        
-        if response.status_code == 200:
-            # Should be JSON (portable format)
-            assert response.headers.get("content-type", "").startswith("application/json")
+        """Export should be returned as JSON (portable format)"""
+        response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
+        assert response.headers.get("content-type", "").startswith("application/json")
 
 
 class TestGDPRAuditLogging:
@@ -215,23 +203,22 @@ class TestGDPRAuditLogging:
 
     @pytest.mark.asyncio
     async def test_account_deletion_logged(self, async_client):
-        """Account deletion should be logged"""
-        with patch("app.services.audit_service.log_audit_event", new_callable=AsyncMock) as mock_audit:
-            mock_audit.return_value = None
-            
-            response = await async_client.delete("/api/v1/auth/me")
-            
-            # Should log the deletion
-            # Note: Actual logging depends on implementation
-            assert response.status_code in [204, 200, 401]
+        """Account erasure should be recorded in the compliance audit log"""
+        with patch.object(ComplianceAuditLogger, "log_event", new_callable=AsyncMock) as mock_audit:
+            response = await async_client.post(
+                ERASURE_URL, json={"confirm": True, "anonymize_only": True}
+            )
+
+        assert response.status_code == 200
+        mock_audit.assert_awaited_once()
+        assert mock_audit.await_args.kwargs["event_type"] == AuditEventType.DATA_DELETION_REQUESTED
 
     @pytest.mark.asyncio
     async def test_data_export_logged(self, async_client):
-        """Data export should be logged"""
-        with patch("app.services.audit_service.log_audit_event", new_callable=AsyncMock) as mock_audit:
-            mock_audit.return_value = None
-            
-            response = await async_client.get("/api/v1/auth/me/export")
-            
-            # Should log the export
-            assert response.status_code in [200, 401]
+        """Data export should be recorded in the compliance audit log"""
+        with patch.object(ComplianceAuditLogger, "log_event", new_callable=AsyncMock) as mock_audit:
+            response = await async_client.post(EXPORT_URL)
+
+        assert response.status_code == 200
+        mock_audit.assert_awaited_once()
+        assert mock_audit.await_args.kwargs["event_type"] == AuditEventType.DATA_EXPORT_REQUESTED
