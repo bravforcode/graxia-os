@@ -8,16 +8,11 @@ from __future__ import annotations
 from collections.abc import Callable, Awaitable
 from uuid import UUID
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.auth.context import AuthContext, LocalDevAuthContext
-from app.middleware.auth import (
-    AuthLevel,
-    build_auth_context,
-    classify_route,
-    find_route_template,
-)
+from app.auth.dependencies import get_auth_context
 from app.config import settings
 from app.core.errors import build_error_response
 from app.core.request_context import get_correlation_id, get_request_id
@@ -26,7 +21,7 @@ from app.core.request_context import get_correlation_id, get_request_id
 class AuthContextMiddleware(BaseHTTPMiddleware):
     """Populates request.state.auth_context for all requests.
 
-    - Staging/production: Uses verified JWT or internal authentication only.
+    - Staging/production: Resolves verified JWT/session and persisted user tenant.
     - Local/test: Falls back to LocalDevAuthContext.
 
     This runs after the existing AuthMiddleware to ensure auth is established.
@@ -43,6 +38,10 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
         request_id = request.headers.get("X-Graxia-Request-Id", "").strip()
 
         if env in ("staging", "production"):
+            # Public/anon traffic (store browsing, login, Stripe webhooks,
+            # delivery links, health) must not be blocked by the org gate.
+            from app.middleware.auth import AuthLevel, classify_route, find_route_template
+
             template = find_route_template(request)
             level = classify_route(request.method, template) if template else AuthLevel.PUBLIC
             internal_route = template and (
@@ -52,82 +51,26 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
                 ("POST", "/api/v1/integrations/alerts/telegram"),
             }
 
-            if internal_route:
-                # AuthMiddleware performs the authoritative internal-token
-                # verification later in the stack. Do not manufacture a
-                # service context from arbitrary actor headers here.
-                request.state.auth_context = None
-                return await call_next(request)
-
-            if level == AuthLevel.PUBLIC:
+            if internal_route or level == AuthLevel.PUBLIC:
+                # Internal routes: AuthMiddleware performs the authoritative
+                # internal-token verification. Never build a context from
+                # caller headers here.
                 request.state.auth_context = None
                 return await call_next(request)
 
             try:
-                payload = await build_auth_context(request)
-                user_id = str(payload.get("sub") or "")
-                role = str(payload.get("role") or "user").strip().lower()
-                resolved_actor_type = (
-                    role if role in {"admin", "service", "system", "agent"} else "user"
+                # Use the same verified persisted-user resolver as API dependencies.
+                request.state.auth_context = await get_auth_context(
+                    request, x_graxia_org_id=org_id_header or None,
+                    x_graxia_actor_type=None, x_graxia_actor_id=None,
+                    x_graxia_request_id=request_id or None, x_graxia_scopes=None,
                 )
-                token_org_id = None
-                if payload.get("organization_id"):
-                    token_org_id = UUID(str(payload["organization_id"]))
-
-                header_org_id = None
-                if org_id_header:
-                    header_org_id = UUID(org_id_header)
-                if token_org_id and header_org_id and token_org_id != header_org_id:
-                    return build_error_response(
-                        request,
-                        code="AUTH_INVALID",
-                        message="Authentication is invalid",
-                        status_code=401,
-                    )
-
-                organization_id = token_org_id or header_org_id
-                if organization_id is None and user_id:
-                    from app.database import AsyncSessionLocal
-                    from app.models.user import User
-
-                    async with AsyncSessionLocal() as db:
-                        user = await db.get(User, UUID(user_id))
-                        organization_id = user.organization_id if user else None
-
-                if organization_id is None:
-                    return build_error_response(
-                        request,
-                        code="ORG_REQUIRED",
-                        message="Organization context is required",
-                        status_code=401,
-                    )
-
-                request.state.auth_context = AuthContext(
-                    actor_type=resolved_actor_type,
-                    actor_id=user_id or None,
-                    organization_id=organization_id,
-                    environment=env,
-                    auth_method="bearer_jwt",
-                    is_authenticated=True,
-                    is_internal=resolved_actor_type in {"service", "system", "agent"},
-                    request_id=request_id or get_request_id(request),
-                    correlation_id=get_correlation_id(request),
-                )
-            except (TypeError, ValueError, KeyError):
+            except HTTPException as exc:
+                request.state.auth_context = None
                 return build_error_response(
-                    request,
-                    code="AUTH_INVALID",
-                    message="Authentication is invalid",
-                    status_code=401,
+                    request, code="AUTH_INVALID", message="Authentication is invalid",
+                    status_code=exc.status_code,
                 )
-            except Exception:  # noqa: BLE001 — fail closed on auth resolution errors
-                return build_error_response(
-                    request,
-                    code="AUTH_REQUIRED",
-                    message="Authentication required",
-                    status_code=401,
-                )
-
             return await call_next(request)
 
         # Build context
