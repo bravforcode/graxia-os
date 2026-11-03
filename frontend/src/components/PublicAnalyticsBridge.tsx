@@ -20,7 +20,13 @@ export default function PublicAnalyticsBridge() {
     if (SKIP_PREFIXES.some((prefix) => location.pathname.startsWith(prefix))) return;
 
     const attribution = captureAttribution(window.location.href);
-    const eventFields = getAttributionEventFields({ path: location.pathname });
+    const guideSlug = location.pathname.startsWith("/guides/")
+      ? location.pathname.slice("/guides/".length).split("/")[0]
+      : undefined;
+    const eventFields = getAttributionEventFields({
+      path: location.pathname,
+      content_id: guideSlug,
+    });
     const idempotencyKey = `page_view:${attribution.session_id}:${location.pathname}`;
     void funnelApi.logPublicEvent({
       organization_id: STORE_ORG_ID,
@@ -34,4 +40,3 @@ export default function PublicAnalyticsBridge() {
 
   return null;
 }
-

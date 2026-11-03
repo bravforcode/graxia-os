@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "recorded_at_utc": "2026-09-18T11:18:46Z",
+  "workflow": {
+    "repository": "bravforcode/graxia-os",
+    "run_id": "35338815518",
+    "pull_request": 52,
+    "required_check": "Secret Scanning",
+    "conclusion": "failure"
+  },
+  "finding_summary": {
+    "verified_rule": "TelegramBotToken",
+    "finding_scope": "historical repository content",
+    "value_recorded": false,
+    "paths_recorded": false
+  },
+  "decision": "do_not_bypass_required_security_check",
+  "required_remediation": [
+    "identify the owning Telegram bot credential",
+    "revoke or rotate the credential at its provider",
+    "remove any current-tree occurrence without exposing the value",
+    "create and verify a private recovery bundle before any history rewrite",
+    "re-run Secret Scanning and only then merge the canonical PR"
+  ],
+  "protected_repositories": ["krisphy", "adminmate-ai"]
+}

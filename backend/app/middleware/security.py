@@ -7,6 +7,7 @@ import hmac
 import re
 import secrets
 
+from app.audit.security_events import safe_path_for_logging
 from app.config import settings
 from app.core.errors import build_error_response
 from app.core.monitoring import metrics_collector
@@ -176,6 +177,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+        safe_path = safe_path_for_logging(path)
         if request.method not in UNSAFE_METHODS or path in CSRF_EXEMPT_PATHS:
             return await call_next(request)
 
@@ -192,7 +194,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         header_token_present = header_token is not None and len(header_token) > 0
         
         if not (cookie_token_present and header_token_present):
-            metrics_collector.record_csrf_violation(path)
+            metrics_collector.record_csrf_violation(safe_path)
             await log_audit_event(
                 app=request.app,
                 action="security.csrf",
@@ -206,7 +208,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 session_id=getattr(request.state, "session_id", None),
                 ip_address=request.client.host if request.client else "unknown",
                 user_agent=request.headers.get("user-agent"),
-                request_path=path,
+                request_path=safe_path,
                 request_method=request.method,
             )
             return build_error_response(
@@ -214,12 +216,13 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 code="PERMISSION_DENIED",
                 message="Not authorized to access this resource",
                 status_code=403,
+                legacy_detail="CSRF token missing",
             )
 
         # SECURITY: Use hmac.compare_digest for constant-time string comparison
         # to prevent timing attacks that could leak token information.
         if not hmac.compare_digest(cookie_token, header_token):
-            metrics_collector.record_csrf_violation(path)
+            metrics_collector.record_csrf_violation(safe_path)
             await log_audit_event(
                 app=request.app,
                 action="security.csrf",
@@ -233,7 +236,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 session_id=getattr(request.state, "session_id", None),
                 ip_address=request.client.host if request.client else "unknown",
                 user_agent=request.headers.get("user-agent"),
-                request_path=path,
+                request_path=safe_path,
                 request_method=request.method,
             )
             return build_error_response(
@@ -241,10 +244,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 code="PERMISSION_DENIED",
                 message="Not authorized to access this resource",
                 status_code=403,
+                legacy_detail="CSRF token invalid",
             )
 
         if not validate_csrf_token_signature(cookie_token, request.state.session_id):
-            metrics_collector.record_csrf_violation(path)
+            metrics_collector.record_csrf_violation(safe_path)
             await log_audit_event(
                 app=request.app,
                 action="security.csrf",
@@ -258,7 +262,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 session_id=getattr(request.state, "session_id", None),
                 ip_address=request.client.host if request.client else "unknown",
                 user_agent=request.headers.get("user-agent"),
-                request_path=path,
+                request_path=safe_path,
                 request_method=request.method,
             )
             return build_error_response(
@@ -266,6 +270,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 code="PERMISSION_DENIED",
                 message="Not authorized to access this resource",
                 status_code=403,
+                legacy_detail="CSRF token forged",
             )
 
         return await call_next(request)

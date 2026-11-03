@@ -34,6 +34,7 @@ export default function ApprovalDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadApproval = useCallback(async () => {
+    if (!id) return;
     setLoading(true);
     try {
       const result = await getApprovalById(id!);
@@ -45,9 +46,8 @@ export default function ApprovalDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!id) return;
     void loadApproval();
-  }, [id, loadApproval]);
+  }, [loadApproval]);
 
   async function handleApprove() {
     if (!id) return;

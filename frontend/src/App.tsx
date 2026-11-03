@@ -41,6 +41,8 @@ const PublicProductPage = lazy(() => import("./pages/funnel/PublicProductPage"))
 const CheckoutSuccess = lazy(() => import("./pages/funnel/CheckoutSuccess"));
 const DeliveryAccessPage = lazy(() => import("./pages/funnel/DeliveryAccessPage"));
 const FunnelAnalytics = lazy(() => import("./pages/funnel/FunnelAnalytics"));
+const ReferralRedirect = lazy(() => import("./pages/ReferralRedirect"));
+const ContentBatchPage = lazy(() => import("./pages/ContentBatchPage"));
 
 function RouteFallback() {
   return (
@@ -64,9 +66,15 @@ export function AppRoutes() {
         <Route path="/f/:organization_id/:slug" element={<PublicProductPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/delivery/:token" element={<DeliveryAccessPage />} />
+        <Route path="/r/:code" element={<ReferralRedirect />} />
         <Route path="/revenue-os" element={<PageTransition><RevenueOSFunnel /></PageTransition>} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
+        <Route path="/refund" element={<LegalPage type="refund" />} />
+        <Route path="/delivery" element={<LegalPage type="delivery" />} />
+        <Route path="/delivery-info" element={<LegalPage type="delivery" />} />
+        <Route path="/refund" element={<LegalPage type="refund" />} />
+        <Route path="/delivery" element={<LegalPage type="delivery" />} />
 
         {/* Protected routes */}
         <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
@@ -98,6 +106,7 @@ export function AppRoutes() {
           <Route path="products" element={<ProductList />} />
           <Route path="products/:id" element={<ProductEditor />} />
           <Route path="funnel/analytics" element={<FunnelAnalytics />} />
+          <Route path="content" element={<ContentBatchPage />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -109,6 +118,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter
+        basename={import.meta.env.BASE_URL}
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,

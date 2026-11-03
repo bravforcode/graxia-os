@@ -4,11 +4,10 @@ from typing import Any
 from uuid import UUID as UUIDType
 
 from sqlalchemy import UUID as SQLUUID
-from sqlalchemy import CheckConstraint, ForeignKey, DateTime, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.config import settings
 from .base import Base
 
 
@@ -31,7 +30,6 @@ class AutomationRun(Base):
             ondelete="CASCADE",
             name="fk_automation_runs_organization_id_organizations",
         ),
-        default=lambda: getattr(settings, "LEGACY_ORGANIZATION_ID", uuid.UUID("00000000-0000-0000-0000-000000000001")),
         nullable=False,
         index=True,
     )

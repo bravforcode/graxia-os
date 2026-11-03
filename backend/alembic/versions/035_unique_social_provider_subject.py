@@ -1,7 +1,7 @@
 """Enforce one local account per Supabase subject.
 
-Revision ID: 025_unique_social_provider_subject
-Revises: 024_organic_attribution_consent
+Revision ID: 035_unique_social_provider_subject
+Revises: 034_production_schema_reconcile
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "025_unique_social_provider_subject"
-down_revision: str | Sequence[str] | None = "024_organic_attribution_consent"
+revision: str = "035_unique_social_provider_subject"
+down_revision: str | Sequence[str] | None = "034_production_schema_reconcile"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

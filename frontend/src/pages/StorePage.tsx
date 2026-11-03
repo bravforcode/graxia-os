@@ -26,6 +26,7 @@ import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { SkeletonProductGrid } from "../components/ui/Skeleton";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 import { SupportChat } from "../components/chat/SupportChat";
+import { siteUrl } from "../lib/site";
 
 const ALL_CATEGORIES: ProductCategory[] = Object.keys(CATEGORY_META) as ProductCategory[];
 
@@ -89,7 +90,7 @@ export default function StorePage() {
         "@context": "https://schema.org", "@type": "CollectionPage",
         name: "Graxia — Digital Products Marketplace",
         description: "Browse premium digital products: templates, courses, tools, and resources for creators, developers, and entrepreneurs.",
-        url: "https://graxia-os-funnel.vercel.app/store",
+        url: siteUrl("/store"),
       }) }} />
 
       {/* Background — layered: grid texture + aurora blobs (evidence: Aceternity grid-dark + aurora drift) */}

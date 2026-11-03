@@ -13,7 +13,7 @@ primary_region = "sin"  # Singapore
 
 # Worker doesn't need HTTP service, just run the process
 [processes]
-  worker = "celery -A app.tasks.celery_app worker -Q default,critical -c 1 -n worker@%h --loglevel=info"
+  worker = "celery -A app.tasks.celery_app worker -Q default,critical,background -c 1 -n worker@%h --loglevel=info"
 
 [[vm]]
   memory = "256mb"

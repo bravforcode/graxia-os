@@ -5,11 +5,20 @@ claim.
 
 ## Deployment
 
+- Free public host (current): `https://bravforcode.github.io/graxia/`
+- Published artifact repository: `https://github.com/bravforcode/graxia`
+- GitHub Pages status: `built`, HTTPS enforced, custom domain: none
+- This is a free provider subpath, not an owned custom root domain. No
+  `vercel.app` URL is used as the public site.
+- The following Vercel deployment details are historical evidence from the
+  earlier infrastructure and are not the current public URL:
+
 - Vercel project: `phirawits-projects/graxia-os-funnel`
-- Production deployment: `dpl_5oMQb4nA4vg6YV3KEMqhS4PgAmX9`
+- Production deployment: `dpl_FYEa12si89Yaut1PaB7SnGSCB8C7`
 - Deployment status: `Ready`
-- Production alias: `https://graxia-os-funnel.vercel.app`
-- Store API bundle: `72.79 MB`
+- Public canonical is now the GitHub Pages URL above; `graxia.store` is not
+  owned or used.
+- Store API bundle: `73.49 MB`
 - Traffic capacity layer deployed in `dpl_9Xv6dCifEbj2KELx7VSxcsR3ZXih`:
   public HTML/assets/sitemap/robots receive cache headers; health remains
   non-cacheable.
@@ -19,18 +28,21 @@ claim.
 - Previous bundle failure: `392.08 MB > 225 MB`; fixed by excluding caches,
   tests, worktrees, and local artifacts in `.vercelignore`.
 
-## Production smoke evidence
+## Public host smoke evidence
 
-Verified on the production alias:
+Verified on the free public host:
 
 - `/` — HTTP 200
-- `/store` — HTTP 200
-- `/guides/ai-prompt-workflows` — HTTP 200
-- `/free/prompt-pack-lite` — HTTP 200
+- `/store` and other client-side routes — GitHub Pages returns HTTP 404 but
+  serves the app's `404.html` SPA fallback with the root mount and base-path
+  assets; browser navigation can continue without a server 504.
 - `/sitemap.xml` — HTTP 200
 - `/robots.txt` — HTTP 200
-- `/api/v1/system/health` — HTTP 200
-- `/health` — HTTP 200
+- Main JS/CSS assets — HTTP 200
+
+The free host is static-only. Checkout, lead capture, delivery, analytics
+writes, and webhooks are not claimed as live on this host until a separate
+non-Vercel API provider is authorized and deployed.
 - System health returned `status=ok`, `readiness.is_ready=true`,
   `readiness.mode=running`, and zero readiness issues.
 - Production HTML contains the temporary Vercel canonical URL and no old
@@ -43,10 +55,20 @@ No Stripe checkout or charge was executed as part of this verification.
 ## Database migration
 
 - Target selected from Vercel Production Environment Variables.
-- Observed before upgrade: `021_add_funnel_v5_models`.
-- Upgrade completed through `024_organic_attribution_consent`.
-- Observed after upgrade: `024_organic_attribution_consent (head)`.
+- Observed before upgrade: `024_organic_attribution_consent (mergepoint)`.
+- Upgrade completed through `029_funnel_lead_magnet_runtime_table`.
+- Observed after upgrade: `029_funnel_lead_magnet_runtime_table (head)`.
+- The first upgrade attempt exposed a legacy `alembic_version.version_num`
+  `varchar(32)` limit; migration `025_conversion_event_touch_attribution`
+  now expands that column to 64 characters before recording the longer growth
+  revision IDs. The second production run completed all five upgrades.
 - Production env was pulled to a temporary file and deleted after the run.
+- A disposable SQLite migration check cannot run the existing PostgreSQL
+  baseline because migration `002` requires `pgcrypto`; production/staging
+  migration evidence therefore remains pending a PostgreSQL target.
+- The repository-wide destructive-migration checker still reports pre-existing
+  unannotated patterns in migrations `002`, `003`, `004`, `019`, and the legacy
+  orchestration migration; none of the Growth OS migrations `025`–`029` match.
 
 ## Catalog and delivery assets
 
@@ -68,6 +90,7 @@ No Stripe checkout or charge was executed as part of this verification.
   Stripe configuration, admin auth, and `RESEND_API_KEY`.
 - Production URL and payment safety flags were set without exposing secret
   values: `APP_BASE_URL`, `FRONTEND_URL`, `ALLOWED_CORS_ORIGINS`,
+  `PUBLIC_FUNNEL_ORGANIZATION_ID`, `REVENUE_BRIDGE_HMAC_SECRET` (sensitive),
   `NO_LIVE_PAYMENT_MODE=true`, and `ALLOW_LIVE_STRIPE=false`.
 - Existing local Graxia provider values were imported only for missing
   production names; the imported values were not printed and provider
@@ -86,7 +109,9 @@ No Stripe checkout or charge was executed as part of this verification.
 ## DNS blocker
 
 The temporary canonical surface is `https://graxia-os-funnel.vercel.app`.
-`graxia.store` is attached to the Vercel project, but DNS is not configured.
+`graxia.store` is attached to the Vercel project, but DNS is not configured
+from the verification host; the app therefore continues to publish the
+temporary Vercel URL in canonical, sitemap, and robots metadata.
 Vercel requests this registrar-side record:
 
 ```text

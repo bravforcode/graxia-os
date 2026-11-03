@@ -3,7 +3,6 @@ Billing endpoints. Stripe checkout, portal, usage, cancellation.
 """
 
 from datetime import UTC, datetime, timedelta
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -19,7 +18,7 @@ from app.core.stripe_client import (
     get_price_id,
 )
 from app.database import get_db
-from app.middleware.auth import get_current_user_from_token
+from app.middleware.auth import get_current_user_from_token, require_role
 from app.models.organization import PLAN_LIMITS, Organization
 from app.models.usage_log import UsageLog
 from app.models.user import User
@@ -31,32 +30,13 @@ class CheckoutIn(BaseModel):
     plan: str  # "starter" | "pro"
 
 
-async def _get_authorized_billing_org(
-    db: AsyncSession, user: User
-) -> Organization:
-    """Resolve billing tenant from the persisted authenticated admin user."""
-    user_id = getattr(user, "id", None)
-    organization_id = getattr(user, "organization_id", None)
-    role = str(getattr(user, "role", "") or "").strip().lower()
-    if (
-        not isinstance(user_id, UUID)
-        or getattr(user, "is_active", False) is not True
-        or role != "admin"
-        or not isinstance(organization_id, UUID)
-        or not organization_id.int
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Billing changes require an active organization admin.",
-        )
-
-    org = await db.get(Organization, organization_id)
-    if org is None or getattr(org, "id", None) != organization_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Billing organization could not be verified.",
-        )
-    return org
+async def _require_billing_admin(
+    user: User = Depends(get_current_user_from_token),
+) -> User:
+    await require_role("admin", user)
+    if not user.organization_id or not user.organization:
+        raise HTTPException(status_code=400, detail="No organization found")
+    return user
 
 
 @router.get("/plans")
@@ -75,10 +55,9 @@ async def list_plans():
 async def start_checkout(
     body: CheckoutIn,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user_from_token),
+    user: User = Depends(_require_billing_admin),
 ):
     """Start 14-day free trial. No card required during trial."""
-    org = await _get_authorized_billing_org(db, user)
     if body.plan not in PLAN_LIMITS or body.plan == "free":
         raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}")
 
@@ -88,6 +67,13 @@ async def start_checkout(
             status_code=503,
             detail="Billing not configured. Contact support@graxia.io",
         )
+
+    # Load the authenticated user's own organization into this request's
+    # session. The auth dependency may have loaded the relationship in a
+    # separate session, so mutating user.organization here is not durable.
+    org: Organization | None = await db.get(Organization, user.organization_id)
+    if not org:
+        raise HTTPException(status_code=400, detail="No organization found")
 
     if org.stripe_subscription_id:
         raise HTTPException(
@@ -136,11 +122,10 @@ async def start_checkout(
 @router.post("/portal")
 async def open_portal(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user_from_token),
+    user: User = Depends(_require_billing_admin),
 ):
     """Open Stripe Customer Portal for self-service management."""
-    org = await _get_authorized_billing_org(db, user)
+    org = user.organization
     if not org or not org.stripe_customer_id:
         raise HTTPException(
             status_code=400,
@@ -157,7 +142,7 @@ async def get_usage(
     user: User = Depends(get_current_user_from_token),
 ):
     """Current month usage vs plan limits."""
-    org = await db.get(Organization, user.organization_id) if user.organization_id else None
+    org = user.organization
     if not org:
         raise HTTPException(status_code=400, detail="No organization")
 
@@ -191,10 +176,10 @@ async def get_usage(
 @router.post("/cancel")
 async def cancel_plan(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user_from_token),
+    user: User = Depends(_require_billing_admin),
 ):
     """Cancel at end of billing period. Does not immediately downgrade."""
-    org = await _get_authorized_billing_org(db, user)
+    org = await db.get(Organization, user.organization_id)
     if not org or not org.stripe_subscription_id:
         raise HTTPException(status_code=400, detail="No active subscription")
     await cancel_stripe_subscription(org.stripe_subscription_id)

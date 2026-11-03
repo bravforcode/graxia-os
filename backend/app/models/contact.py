@@ -27,6 +27,10 @@ class Contact(Base, TenantMixin):
             "contact_type IN ('client','lead','mentor','founder','investor','recruiter','collaborator','event_organizer','other')",
             name="ck_contact_type",
         ),
+        CheckConstraint(
+            "NOT marketing_consent OR (marketing_consent_at IS NOT NULL AND consent_version IS NOT NULL AND length(trim(consent_version)) > 0)",
+            name="ck_contact_marketing_consent_audit",
+        ),
         CheckConstraint("relationship_strength BETWEEN 1 AND 5", name="ck_contact_rel_strength"),
         CheckConstraint("value_score BETWEEN 1 AND 10", name="ck_contact_value_score"),
         Index(

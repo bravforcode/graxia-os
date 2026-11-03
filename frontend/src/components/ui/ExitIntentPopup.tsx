@@ -21,7 +21,7 @@ export default function ExitIntentPopup() {
     try {
       if (sessionStorage.getItem("ai-factory-exit-popup")) return;
     } catch {
-      // Storage may be unavailable in restricted browsing contexts.
+      // Storage may be unavailable; the popup can still be shown.
     }
 
     const handleMouseLeave = (e: MouseEvent) => {
@@ -31,7 +31,7 @@ export default function ExitIntentPopup() {
         try {
           sessionStorage.setItem("ai-factory-exit-popup", "1");
         } catch {
-          // Storage may be unavailable in restricted browsing contexts.
+          // Storage may be unavailable; continue without session persistence.
         }
         document.removeEventListener("mouseleave", handleMouseLeave);
       }
@@ -57,9 +57,7 @@ export default function ExitIntentPopup() {
           ...getAttributionEventFields({ cta: "exit_intent_popup", channel: "popup" }),
           idempotency_key: `exit_intent:${getAttributionEventFields().session_id}`,
         }),
-      }).catch(() => {
-        // Analytics delivery is best-effort; preserve the existing success state.
-      });
+      }).catch(() => {});
     },
     [email]
   );

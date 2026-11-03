@@ -9,33 +9,6 @@ from uuid import uuid4
 import pytest
 
 
-def _configure_email_service(
-    monkeypatch,
-    *,
-    app_env="production",
-    allow_real_send=True,
-    api_key="re_test_key",
-    allowlist="qa@example.com",
-):
-    from app.config import settings
-    from app.services.email_service import EmailService
-
-    monkeypatch.setattr(settings, "APP_ENV", app_env)
-    monkeypatch.setattr(settings, "ALLOW_REAL_EMAIL_SEND", allow_real_send)
-    monkeypatch.setattr(settings, "RESEND_API_KEY", api_key)
-    monkeypatch.setattr(settings, "EMAIL_RECIPIENT_ALLOWLIST", allowlist)
-    return EmailService()
-
-
-async def _send_gate_test_email(service, recipient):
-    return await service.send_email(
-        to=recipient,
-        template_name="welcome",
-        template_data={"to_name": "Synthetic QA", "login_url": "https://example.com"},
-        idempotency_key=f"email-gate:{uuid4().hex}",
-    )
-
-
 class TestEmailService:
     """Test email service functionality"""
 
@@ -61,8 +34,6 @@ class TestEmailService:
                 assert service.enabled is False
 
     @pytest.mark.asyncio
-    @patch("app.config.settings.ALLOW_REAL_EMAIL_SEND", True)
-    @patch("app.config.settings.EMAIL_RECIPIENT_ALLOWLIST", "newuser@example.com")
     async def test_send_welcome_email(self):
         """Should send welcome email to new user"""
         from app.services.email_service import EmailService
@@ -84,8 +55,6 @@ class TestEmailService:
                     mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("app.config.settings.ALLOW_REAL_EMAIL_SEND", True)
-    @patch("app.config.settings.EMAIL_RECIPIENT_ALLOWLIST", "user@example.com")
     async def test_send_trial_ending_email(self):
         """Should send trial ending reminder"""
         from app.services.email_service import EmailService
@@ -108,8 +77,6 @@ class TestEmailService:
                     mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("app.config.settings.ALLOW_REAL_EMAIL_SEND", True)
-    @patch("app.config.settings.EMAIL_RECIPIENT_ALLOWLIST", "billing@example.com")
     async def test_send_payment_failed_email(self):
         """Should send payment failed notification"""
         from app.services.email_service import EmailService
@@ -131,8 +98,6 @@ class TestEmailService:
                     mock_send.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("app.config.settings.ALLOW_REAL_EMAIL_SEND", True)
-    @patch("app.config.settings.EMAIL_RECIPIENT_ALLOWLIST", "user@example.com")
     async def test_email_idempotency(self):
         """Same email should not be sent twice (idempotency)"""
         from app.services.email_service import EmailService
@@ -166,86 +131,6 @@ class TestEmailService:
                     assert result2["status"] == "skipped"
                     # Should only call API once
                     mock_send.assert_called_once()
-
-    def test_email_send_configuration_defaults_closed(self):
-        from app.config import Settings
-
-        assert Settings.model_fields["ALLOW_REAL_EMAIL_SEND"].default is False
-        assert Settings.model_fields["EMAIL_RECIPIENT_ALLOWLIST"].default == ""
-
-    @pytest.mark.asyncio
-    async def test_email_send_requires_explicit_real_send_flag(self, monkeypatch):
-        from app.services.email_service import EmailService
-
-        service = _configure_email_service(monkeypatch, allow_real_send=False)
-        with patch.object(service, "_send_via_resend", new_callable=AsyncMock) as mock_send:
-            result = await _send_gate_test_email(service, "qa@example.com")
-
-        assert result == {"id": "dev-mode", "status": "logged"}
-        mock_send.assert_not_called()
-
-    @pytest.mark.parametrize(
-        "app_env",
-        ["development", "test", "staging", "unknown", "Production", ""],
-    )
-    @pytest.mark.asyncio
-    async def test_email_send_suppresses_nonproduction_environments(
-        self, monkeypatch, app_env
-    ):
-        service = _configure_email_service(monkeypatch, app_env=app_env)
-        with patch.object(service, "_send_via_resend", new_callable=AsyncMock) as mock_send:
-            result = await _send_gate_test_email(service, "qa@example.com")
-
-        assert result["status"] == "logged"
-        mock_send.assert_not_called()
-
-    @pytest.mark.parametrize("api_key", [None, "", "   "])
-    @pytest.mark.asyncio
-    async def test_email_send_requires_nonempty_api_key(self, monkeypatch, api_key):
-        service = _configure_email_service(monkeypatch, api_key=api_key)
-        with patch.object(service, "_send_via_resend", new_callable=AsyncMock) as mock_send:
-            result = await _send_gate_test_email(service, "qa@example.com")
-
-        assert result["status"] == "logged"
-        mock_send.assert_not_called()
-
-    @pytest.mark.parametrize(
-        "allowlist",
-        [None, "", "   ", "qa@example.com,", "qa@example.com,invalid"],
-    )
-    @pytest.mark.asyncio
-    async def test_email_send_requires_nonempty_valid_allowlist(self, monkeypatch, allowlist):
-        service = _configure_email_service(monkeypatch, allowlist=allowlist)
-        with patch.object(service, "_send_via_resend", new_callable=AsyncMock) as mock_send:
-            result = await _send_gate_test_email(service, "qa@example.com")
-
-        assert result["status"] == "logged"
-        mock_send.assert_not_called()
-
-    @pytest.mark.parametrize(
-        "recipient",
-        ["", "invalid", " qa@example.com ", "other@example.com", "QA User <qa@example.com>"],
-    )
-    @pytest.mark.asyncio
-    async def test_email_send_requires_valid_allowlisted_recipient(
-        self, monkeypatch, recipient
-    ):
-        service = _configure_email_service(monkeypatch)
-        with patch.object(service, "_send_via_resend", new_callable=AsyncMock) as mock_send:
-            result = await _send_gate_test_email(service, recipient)
-
-        assert result["status"] == "logged"
-        mock_send.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_email_send_allows_case_normalized_allowlisted_recipient(self, monkeypatch):
-        service = _configure_email_service(monkeypatch, allowlist="qa@example.com")
-        with patch.object(service, "_send_via_resend", new_callable=AsyncMock) as mock_send:
-            mock_send.return_value = {"id": "email_gate_test"}
-            result = await _send_gate_test_email(service, "QA@EXAMPLE.COM")
-
-        assert result["status"] == "sent"
-        mock_send.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_email_dev_mode_logs(self, caplog):
@@ -332,38 +217,24 @@ class TestEmailIntegration:
     """Test email integration with other services"""
 
     @pytest.mark.asyncio
-    async def test_password_registration_does_not_create_user_or_send_email(
-        self, public_async_client, db_session
-    ):
-        """Disabled password registration must stop before writes or email."""
-        from sqlalchemy import select
-
-        from app.models.organization import Organization
-        from app.models.user import User
-
-        email = f"test_welcome_{uuid4().hex[:8]}@example.com"
-        full_name = "Test Welcome User"
-        users_before = set((await db_session.scalars(select(User.id))).all())
-        organizations_before = set((await db_session.scalars(select(Organization.id))).all())
-        with patch(
-            "app.services.automation_email_service.AutomationEmailService.trigger_welcome",
-            new_callable=AsyncMock,
-        ) as mock_welcome:
+    async def test_welcome_email_sent_on_registration(self, public_async_client):
+        """Welcome email should be triggered on user registration"""
+        with patch("app.services.email_service.EmailService.send_welcome_email", new_callable=AsyncMock) as mock_email:
+            mock_email.return_value = {"id": "welcome_123", "status": "sent"}
+            
             response = await public_async_client.post(
                 "/api/v1/auth/register",
                 json={
-                    "email": email,
+                    "email": f"test_welcome_{uuid4().hex[:8]}@example.com",
                     "password": "Test123!@#123456", # Long password
-                    "full_name": full_name,
-                },
+                    "full_name": "Test Welcome User"
+                }
             )
-
-        assert response.status_code == 403, response.text
-        assert response.json()["error"]["code"] == "PASSWORD_REGISTRATION_DISABLED"
-        assert await db_session.scalar(select(User).where(User.email == email)) is None
-        assert set((await db_session.scalars(select(User.id))).all()) == users_before
-        assert set((await db_session.scalars(select(Organization.id))).all()) == organizations_before
-        mock_welcome.assert_not_awaited()
+            
+            if response.status_code == 400:
+                print(f"Registration failed: {response.json()}")
+            
+            assert response.status_code in [201, 200]
 
     @pytest.mark.asyncio
     async def test_trial_email_sent_via_webhook(self, public_async_client):

@@ -14,10 +14,10 @@ const PRODUCTS = [
     period: "/เดือน",
     badge: null,
     accent: "paper",
-    promise: "สำหรับร้านเริ่มขาย — ปิดการขายครบวงจรช่องทางเดียว",
-    features: ["1 ช่องทางขาย (Shopee / Shopify / TikTok)", "ออเดอร์ → ส่งของ → ใบเสร็จ ตาม workflow", "อีเมลติดตามลูกค้าพื้นฐาน", "CEO Dashboard เมื่อมี telemetry", "ผู้ใช้ 1 คน"],
+    promise: "สำหรับร้านเริ่มขาย — workflow ตามช่องทางที่ตั้งค่าไว้กับ provider",
+    features: ["ช่องทางขายตาม provider ที่ตั้งค่าไว้", "ออเดอร์ → ส่งของ → ใบเสร็จ ตาม workflow", "อีเมลติดตามลูกค้าพื้นฐาน", "CEO Dashboard เมื่อมี telemetry", "ผู้ใช้ 1 คน"],
     cta: "เริ่ม Starter",
-    subtext: "ยกเลิกได้ทุกเดือน",
+    subtext: "การยกเลิกเป็นไปตามเงื่อนไขของแผนและ provider",
   },
   {
     id: "9c0c0481-aee7-4c45-8ef8-596a737d6326",
@@ -28,10 +28,10 @@ const PRODUCTS = [
     period: "/เดือน",
     badge: "นิยมสุด",
     accent: "brass",
-    promise: "สำหรับร้านที่ต้องการรวมทุกช่องทางและ workflow ไว้ในระบบเดียว",
-    features: ["ทุกช่องทาง + สต็อกกลาง", "แคมเปญ + ขออนุมัติก่อนยิงแอด (CEO)", "AI เปลี่ยนงบ/ปิดแคมเปญแทนคน", "ผู้ใช้ 5 คน + สิทธิ์ Approvals", "Affiliate + Email อัตโนมัติ"],
+    promise: "สำหรับร้านที่ต้องการรวมช่องทางและ workflow ตาม provider ที่ตั้งค่าไว้",
+    features: ["ช่องทางและสต็อกตาม provider ที่ตั้งค่าไว้", "แคมเปญ + ขออนุมัติก่อนยิงแอด (CEO)", "AI แนะนำและร่างการปรับงบ/แคมเปญ — ต้องอนุมัติก่อนดำเนินการ", "ผู้ใช้ 5 คน + สิทธิ์ Approvals", "อีเมลที่ได้รับ consent + affiliate ตาม provider ที่ตั้งค่าไว้"],
     cta: "เริ่ม Growth",
-    subtext: "ยกเลิกได้ทุกเดือน",
+    subtext: "การยกเลิกเป็นไปตามเงื่อนไขของแผนและ provider",
   },
   {
     id: "aff2aa7a-e681-4f4a-9d98-18759dcd06cb",
@@ -246,7 +246,7 @@ export default function RevenueOSFunnel() {
             <div className="font-mono text-[11px] tracking-[0.14em] text-[#B45309]">PRICING — checkout พร้อมหลักฐานก่อนเปิดใช้งานจริง</div>
             <h2 className="font-[DM_Serif_Display] text-[32px] md:text-[40px] leading-none tracking-[-0.02em] text-[#0F172A] mt-1">เลือกขนาดตามยอดขาย</h2>
           </div>
-          <div className="font-mono text-xs text-[#64748B] border border-[#0F172A]/10 px-3 py-1.5 bg-white">ยกเลิกได้ทุกเดือน • ใบเสร็จอัตโนมัติ</div>
+          <div className="font-mono text-xs text-[#64748B] border border-[#0F172A]/10 px-3 py-1.5 bg-white">เงื่อนไขแผนและ provider • ใบเสร็จตามสถานะ provider</div>
         </div>
 
         {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-3">{error}</div>}
@@ -323,7 +323,7 @@ export default function RevenueOSFunnel() {
           <div className="w-full max-w-[420px] rounded-2xl bg-white p-6 border border-[#0F172A]/10 shadow-xl">
             <div className="font-mono text-[11px] tracking-[0.14em] text-[#B45309]">CHECKOUT — STEP 1/1</div>
             <h3 className="font-semibold text-[#0F172A] mt-1">ใส่อีเมลเพื่อรับใบเสร็จ</h3>
-            <p className="text-sm text-[#475569] mt-1">Stripe จะส่งใบเสร็จและลิงก์เข้าใช้งานไปที่อีเมลนี้</p>
+            <p className="text-sm text-[#475569] mt-1">สถานะใบเสร็จและลิงก์เข้าใช้งานขึ้นกับ provider และการตั้งค่าที่เปิดใช้งานจริง</p>
             <input
               autoFocus
               type="email"
@@ -356,7 +356,7 @@ export default function RevenueOSFunnel() {
             {[
               { q: "ยกเลิกได้ไหม? เก็บเงินยังไง?", a: "แผนและการยกเลิกขึ้นกับ checkout provider และเงื่อนไขที่เปิดใช้งานจริง ตรวจข้อมูลจาก provider ก่อนสรุปสถานะ" },
               { q: "ต่างจากจ้างแอดมินยังไง?", a: "Revenue OS วาง approval gate และ ledger ตาม workflow ที่ตั้งค่าไว้ ไม่อ้าง ROAS หรือผลลัพธ์จนกว่าจะมีหลักฐาน" },
-              { q: "ต้องย้ายร้านไหม?", a: "ไม่ต้อง — ต่อ Shopee/Shopify/TikTok เดิมได้เลย ระบบซิงก์สต็อกกลางให้" },
+              { q: "ต้องย้ายร้านไหม?", a: "การเชื่อมต่อ Shopee/Shopify/TikTok และการซิงก์สต็อกขึ้นกับ provider กับ scope ที่ตั้งค่าไว้ — ตรวจสอบ provider ก่อนเริ่มใช้งาน" },
               { q: "Scale ต่างจาก Growth ยังไง?", a: "Scale เพิ่ม onboarding, incident workflow และ support ตาม scope ที่ตกลงกัน ไม่อ้าง SLA หรือผลลัพธ์จนกว่าจะมีหลักฐาน" },
             ].map((f) => (
               <details key={f.q} className="group p-6 open:bg-[#F8F6F3]">

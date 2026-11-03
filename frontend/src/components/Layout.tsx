@@ -18,7 +18,7 @@ import {
   Target,
   UserPlus,
   Users,
-    Command,
+  Command,
   TerminalSquare,
 } from 'lucide-react'
 

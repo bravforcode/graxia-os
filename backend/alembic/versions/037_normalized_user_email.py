@@ -1,7 +1,7 @@
 """Enforce normalized, case-insensitive user email uniqueness.
 
-Revision ID: 027_normalized_user_email
-Revises: 026_openclaw_cost_precision
+Revision ID: 037_normalized_user_email
+Revises: 036_openclaw_cost_precision
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "027_normalized_user_email"
-down_revision: str | Sequence[str] | None = "026_openclaw_cost_precision"
+revision: str = "037_normalized_user_email"
+down_revision: str | Sequence[str] | None = "036_openclaw_cost_precision"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

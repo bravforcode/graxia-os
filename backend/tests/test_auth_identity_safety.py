@@ -55,10 +55,10 @@ def _load_provider_id_migration():
         Path(__file__).parents[1]
         / "alembic"
         / "versions"
-        / "025_unique_social_provider_subject.py"
+        / "035_unique_social_provider_subject.py"
     )
     spec = importlib.util.spec_from_file_location(
-        "migration_025_unique_social_provider_subject", migration_path
+        "migration_035_unique_social_provider_subject", migration_path
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -645,10 +645,10 @@ def _load_normalized_email_migration():
         Path(__file__).parents[1]
         / "alembic"
         / "versions"
-        / "027_normalized_user_email.py"
+        / "037_normalized_user_email.py"
     )
     spec = importlib.util.spec_from_file_location(
-        "migration_027_normalized_user_email", migration_path
+        "migration_037_normalized_user_email", migration_path
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

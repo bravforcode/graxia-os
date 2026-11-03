@@ -21,10 +21,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base, TenantMixin
+from .base import Base
 
 
-class ContentDraft(Base, TenantMixin):
+class ContentDraft(Base):
     __tablename__ = "content_drafts"
     __table_args__ = (
         CheckConstraint(

@@ -2,8 +2,7 @@ import logging
 from datetime import date
 
 from app.agents.base import BaseAgent
-from app.core.control_plane import create_draft_review_request, _trusted_approval_owner
-from app.auth.context import AuthContext
+from app.core.control_plane import create_draft_review_request
 
 logger = logging.getLogger(__name__)
 
@@ -11,9 +10,8 @@ logger = logging.getLogger(__name__)
 class FollowUpAgent(BaseAgent):
     name = "follow_up"
 
-    async def run(self, *, auth: AuthContext | None = None) -> int:
+    async def run(self) -> int:
         """Check for due follow-ups and generate reminder messages."""
-        owner = _trusted_approval_owner(auth)
         from sqlalchemy import select
 
         from app.database import AsyncSessionLocal
@@ -22,7 +20,6 @@ class FollowUpAgent(BaseAgent):
         async with AsyncSessionLocal() as db:
             due = await db.execute(
                 select(Submission).where(
-                    Submission.organization_id == owner,
                     Submission.follow_up_date <= date.today(),
                     Submission.status.in_(["sent", "opened"]),
                 )
@@ -32,17 +29,14 @@ class FollowUpAgent(BaseAgent):
         count = 0
         for sub in submissions:
             try:
-                await self._handle_followup(sub, auth=auth)
+                await self._handle_followup(sub)
                 count += 1
             except Exception as e:
                 logger.error(f"Follow-up failed for {sub.id}: {e}")
 
         return count
 
-    async def _handle_followup(self, sub, *, auth: AuthContext | None = None) -> None:
-        owner = _trusted_approval_owner(auth)
-        if sub.organization_id != owner:
-            raise ValueError("approval_foreign_submission")
+    async def _handle_followup(self, sub) -> None:
         from app.core.identity import identity
         from app.database import AsyncSessionLocal
         from app.models.content_draft import ContentDraft
@@ -73,7 +67,6 @@ Write the follow-up now."""
 
         async with AsyncSessionLocal() as db:
             draft = ContentDraft(
-                organization_id=owner,
                 type="follow_up",
                 title=f"Follow-up: {sub.title[:60] if sub.title else 'Submission'}",
                 content=content,
@@ -92,7 +85,7 @@ Write the follow-up now."""
                 draft_title=draft.title,
                 preview_text=draft.content,
                 requested_by=self.name,
-                auth=auth,
+                organization_id=sub.organization_id,
             )
 
 

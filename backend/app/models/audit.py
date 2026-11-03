@@ -15,6 +15,7 @@ class AuditLog(Base):
     __tablename__ = "audit_log"
 
     id: Mapped[UUIDType] = mapped_column(SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[UUIDType | None] = mapped_column(SQLUUID(as_uuid=True), nullable=True)
     event_id: Mapped[UUIDType] = mapped_column(SQLUUID(as_uuid=True), default=uuid.uuid4, nullable=False)
     action: Mapped[str] = mapped_column(String(200), nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False, default="legacy.audit")
@@ -29,7 +30,7 @@ class AuditLog(Base):
     request_path: Mapped[str | None] = mapped_column(String(500))
     request_method: Mapped[str | None] = mapped_column(String(16))
     outcome: Mapped[str] = mapped_column(String(20), nullable=False, default="success")
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSONB, default=dict)
     details: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
     triggered_by: Mapped[str | None] = mapped_column(String(100))
     success: Mapped[bool | None] = mapped_column(Boolean, default=True)

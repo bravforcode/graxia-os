@@ -1,7 +1,7 @@
 """Add single-use organization invitations without changing existing accounts.
 
-Revision ID: 029_invite_only_identity
-Revises: 028_telegram_owner_pairing
+Revision ID: 039_invite_only_identity
+Revises: 038_telegram_owner_pairing
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "029_invite_only_identity"
-down_revision: str | Sequence[str] | None = "028_telegram_owner_pairing"
+revision: str = "039_invite_only_identity"
+down_revision: str | Sequence[str] | None = "038_telegram_owner_pairing"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

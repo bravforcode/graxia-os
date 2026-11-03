@@ -458,6 +458,7 @@ export async function getFunnelAnalytics(orgId?: string): Promise<FunnelAnalytic
 export async function getApprovals(
   params?: { status?: string; limit?: number; offset?: number },
 ): Promise<ApprovalRequestSummary[]> {
+  void _orgId;
   try {
     const { default: api } = await import("./api");
     const result = await api.getApprovals(params);

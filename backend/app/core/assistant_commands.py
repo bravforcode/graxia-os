@@ -74,13 +74,12 @@ async def execute_assistant_command(text: str | None) -> str:
 async def _render_status() -> str:
     from sqlalchemy import desc, func, select
 
-    from app.core.control_plane import count_pending_approvals
     from app.core.google_workspace import google_workspace
     from app.database import AsyncSessionLocal
     from app.models.automation_run import AutomationRun
 
     readiness = get_runtime_state()
-    pending_approvals = await count_pending_approvals()
+    pending_approvals = "unavailable (tenant context required)"
     google_health = await google_workspace.health()
 
     async with AsyncSessionLocal() as db:
@@ -294,6 +293,7 @@ async def _trigger_brief() -> str:
 async def _trigger_scan() -> str:
     from app.config import settings
     from app.core.control_plane import (
+        LEGACY_ORGANIZATION_ID,
         create_run,
         mark_run_completed,
         mark_run_failed,
@@ -302,11 +302,11 @@ async def _trigger_scan() -> str:
     from app.tasks.daily_scan import run_daily_scan
 
     run = await create_run(
-        organization_id=settings.AUTOMATION_ORGANIZATION_ID,
         name="Telegram/manual scan",
         task_type="daily_scan",
         trigger_source="telegram_command",
         context={"command": "/scan"},
+        organization_id=LEGACY_ORGANIZATION_ID,
     )
 
     async def _runner() -> None:

@@ -15,11 +15,23 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "content_publish_attempts",
-        sa.Column("claim_expires_at", sa.DateTime(timezone=True), nullable=True),
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("content_publish_attempts"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("content_publish_attempts")}
+    if "claim_expires_at" not in columns:
+        op.add_column(
+            "content_publish_attempts",
+            sa.Column("claim_expires_at", sa.DateTime(timezone=True), nullable=True),
+        )
 
 
 def downgrade() -> None:
-    op.drop_column("content_publish_attempts", "claim_expires_at")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("content_publish_attempts"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("content_publish_attempts")}
+    if "claim_expires_at" in columns:
+        op.drop_column("content_publish_attempts", "claim_expires_at")

@@ -16,9 +16,9 @@ describe("organic attribution", () => {
     window.history.replaceState(
       {},
       "",
-      "/store?utm_source=google&utm_medium=organic&utm_campaign=prompt",
+      "/store?utm_source=google&utm_medium=organic&utm_campaign=prompt&referral_code=partner-7",
     );
-    captureAttribution("https://graxia.store/store?utm_source=google&utm_medium=organic&utm_campaign=prompt");
+    captureAttribution("https://graxia.store/store?utm_source=google&utm_medium=organic&utm_campaign=prompt&referral_code=partner-7");
 
     window.history.replaceState(
       {},
@@ -31,6 +31,7 @@ describe("organic attribution", () => {
     expect(attribution.first_touch?.source).toBe("google");
     expect(attribution.last_touch?.source).toBe("line");
     expect(attribution.landing_path).toBe("/store");
+    expect(attribution.referral_code).toBe("partner-7");
   });
 
   it("exposes only non-PII event fields", () => {
@@ -40,7 +41,10 @@ describe("organic attribution", () => {
 
     expect(fields.source).toBe("x");
     expect(fields.medium).toBe("social");
+    expect(fields.first_touch?.source).toBe("x");
+    expect(fields.last_touch?.source).toBe("x");
+    expect(fields.landing_path).toBe("/store");
     expect(fields.metadata_json).toEqual({ content_id: "product-1" });
-    expect(JSON.stringify(fields)).not.toContain("bad");
+    expect(JSON.stringify(fields)).not.toContain("bad@example.com");
   });
 });

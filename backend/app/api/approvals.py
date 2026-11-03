@@ -6,17 +6,19 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import AuthContext
-from app.auth.dependencies import require_permission
+from app.auth.dependencies import get_auth_context, require_organization, require_permission
+from app.auth.org_boundary import assert_same_org
 from app.core.control_plane import (
     ApprovalAlreadyProcessedError,
     queue_approval_request,
     resolve_approval_batch,
     resolve_approval_request,
-    _trusted_approval_owner,
 )
-from app.core.errors import AppError
+from app.core.errors import ConflictError
 from app.database import get_db
 from app.models.approval_request import ApprovalRequest
+from app.models.user import User
+from app.middleware.auth import get_current_user_from_token, require_role
 from app.schemas.approval import (
     ApprovalBatchResponse,
     ApprovalDecisionResponse,
@@ -33,10 +35,27 @@ ResultLimit = Annotated[int, Query(ge=1, le=100)]
 ResultOffset = Annotated[int, Query(ge=0)]
 
 
+async def _require_organization_admin(
+    auth: AuthContext = Depends(require_organization),
+    user: User = Depends(get_current_user_from_token),
+) -> AuthContext:
+    await require_role("admin", user)
+    assert_same_org(auth, user.organization_id)
+    return auth
+
+
+async def _require_org_approval_resolution(
+    auth: AuthContext = Depends(require_permission("approvals:resolve")),
+    user: User = Depends(get_current_user_from_token),
+) -> AuthContext:
+    assert_same_org(auth, user.organization_id)
+    return auth
+
+
 @router.get("", response_model=ApprovalList)
 async def list_approvals(
     db: DbSession,
-    auth: AuthContext = Depends(require_permission("approvals:read")),
+    auth: AuthContext = Depends(_require_organization_admin),
     status: ApprovalStatus = None,
     batch_key: BatchKey = None,
     limit: ResultLimit = 20,
@@ -59,7 +78,11 @@ async def list_approvals(
 
 
 @router.get("/{approval_id}", response_model=ApprovalRequestOut)
-async def get_approval(approval_id: UUID, db: DbSession, auth: AuthContext = Depends(require_permission("approvals:read"))) -> ApprovalRequestOut:
+async def get_approval(
+    approval_id: UUID,
+    db: DbSession,
+    auth: AuthContext = Depends(_require_organization_admin),
+) -> ApprovalRequestOut:
     approval = await db.get(ApprovalRequest, approval_id)
     if approval is None or approval.organization_id != auth.organization_id:
         raise HTTPException(status_code=404, detail="Approval not found")
@@ -70,20 +93,22 @@ async def get_approval(approval_id: UUID, db: DbSession, auth: AuthContext = Dep
 async def approve_approval(
     approval_id: UUID,
     db: DbSession = None,
-    auth: AuthContext = Depends(require_permission("approvals:resolve")),
+    auth: AuthContext = Depends(_require_org_approval_resolution),
     note: str = "",
 ) -> ApprovalDecisionResponse:
-    owner = _trusted_approval_owner(auth)
     # Verify org scope before resolving
     approval = await db.get(ApprovalRequest, approval_id)
     if approval is None or approval.organization_id != auth.organization_id:
         raise HTTPException(status_code=404, detail="Approval not found")
     try:
         approval = await resolve_approval_request(
-            approval_id, "approved", note=note or None, organization_id=owner,
+            approval_id,
+            "approved",
+            note=note or None,
+            organization_id=auth.organization_id,
         )
     except ApprovalAlreadyProcessedError as exc:
-        raise AppError("CONFLICT", "Approval already processed", 409) from exc
+        raise ConflictError("Approval already processed") from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(
@@ -97,20 +122,22 @@ async def approve_approval(
 async def reject_approval(
     approval_id: UUID,
     db: DbSession = None,
-    auth: AuthContext = Depends(require_permission("approvals:resolve")),
+    auth: AuthContext = Depends(_require_org_approval_resolution),
     note: str = "",
 ) -> ApprovalDecisionResponse:
-    owner = _trusted_approval_owner(auth)
     # Verify org scope before resolving
     approval = await db.get(ApprovalRequest, approval_id)
     if approval is None or approval.organization_id != auth.organization_id:
         raise HTTPException(status_code=404, detail="Approval not found")
     try:
         approval = await resolve_approval_request(
-            approval_id, "rejected", note=note or None, organization_id=owner,
+            approval_id,
+            "rejected",
+            note=note or None,
+            organization_id=auth.organization_id,
         )
     except ApprovalAlreadyProcessedError as exc:
-        raise AppError("CONFLICT", "Approval already processed", 409) from exc
+        raise ConflictError("Approval already processed") from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(
@@ -124,13 +151,13 @@ async def reject_approval(
 async def approve_batch(
     batch_key: str,
     note: str = "",
-    auth: AuthContext = Depends(require_permission("approvals:resolve")),
+    auth: AuthContext = Depends(_require_org_approval_resolution),
 ) -> ApprovalBatchResponse:
     count = await resolve_approval_batch(
         batch_key,
         "approved",
         note=note or None,
-        organization_id=_trusted_approval_owner(auth),
+        organization_id=auth.organization_id,
         audit_actor_id=auth.actor_id,
         audit_source="api",
     )
@@ -141,13 +168,13 @@ async def approve_batch(
 async def reject_batch(
     batch_key: str,
     note: str = "",
-    auth: AuthContext = Depends(require_permission("approvals:resolve")),
+    auth: AuthContext = Depends(_require_org_approval_resolution),
 ) -> ApprovalBatchResponse:
     count = await resolve_approval_batch(
         batch_key,
         "rejected",
         note=note or None,
-        organization_id=_trusted_approval_owner(auth),
+        organization_id=auth.organization_id,
         audit_actor_id=auth.actor_id,
         audit_source="api",
     )
@@ -161,7 +188,7 @@ async def create_approval_from_event(
     confidence: float = 0.5,
     metadata: dict | None = None,
     *,
-    auth: AuthContext | None = None,
+    organization_id: UUID,
 ) -> ApprovalRequest:
     """Create an approval request from an event payload.
 
@@ -176,7 +203,6 @@ async def create_approval_from_event(
         Created ApprovalRequest instance
     """
     return await queue_approval_request(
-        auth=auth,
         title=what_action,
         action_type=action_type,
         subject_type=None,
@@ -191,4 +217,5 @@ async def create_approval_from_event(
             "confidence": confidence,
         },
         requested_by="system",
+        organization_id=organization_id,
     )

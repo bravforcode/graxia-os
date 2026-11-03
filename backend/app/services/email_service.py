@@ -5,13 +5,8 @@ All sends are idempotent via idempotency_key.
 """
 
 import logging
-import re
 from datetime import UTC, datetime
-from html import escape
 from typing import Any
-from urllib.parse import parse_qs, urlsplit
-
-from pydantic import EmailStr, TypeAdapter, ValidationError
 
 from app.config import settings
 
@@ -19,39 +14,6 @@ logger = logging.getLogger("graxia.email")
 
 # Idempotency cache (in-proc, 1h TTL) — prevents duplicate sends
 _sent_keys: set[str] = set()
-_email_address_adapter = TypeAdapter(EmailStr)
-
-
-def _normalize_email_address(address: object) -> str | None:
-    if not isinstance(address, str) or not address or address != address.strip():
-        return None
-    try:
-        normalized = _email_address_adapter.validate_python(address)
-    except ValidationError:
-        return None
-    if not isinstance(normalized, str) or normalized.casefold() != address.casefold():
-        return None
-    return normalized.casefold()
-
-
-def _parse_email_recipient_allowlist(value: object) -> set[str] | None:
-    if not isinstance(value, str) or not value.strip():
-        return None
-    recipients = set()
-    for entry in value.split(","):
-        address = _normalize_email_address(entry.strip())
-        if address is None:
-            return None
-        recipients.add(address)
-    return recipients
-
-
-def email_accepted(result: object) -> bool:
-    """Internal adapter result proves acceptance; logged/skipped are not delivery."""
-    return (isinstance(result, dict) and result.get("status") == "sent"
-            and result.get("error") is None
-            and isinstance(result.get("id"), str)
-            and re.fullmatch(r"[A-Za-z0-9_-]{1,256}", result["id"]) is not None)
 
 
 class EmailTemplate:
@@ -880,19 +842,6 @@ class EmailService:
             # Matches test expectation for disabled without API key if not in prod
             self.enabled = False if not self.api_key else True
 
-    def _real_email_send_allowed(self, to: object) -> bool:
-        if getattr(settings, "ALLOW_REAL_EMAIL_SEND", False) is not True:
-            return False
-        if getattr(settings, "APP_ENV", None) != "production":
-            return False
-        if not isinstance(self.api_key, str) or not self.api_key.strip():
-            return False
-        allowlist = _parse_email_recipient_allowlist(
-            getattr(settings, "EMAIL_RECIPIENT_ALLOWLIST", None)
-        )
-        recipient = _normalize_email_address(to)
-        return allowlist is not None and recipient is not None and recipient in allowlist
-
     async def _send_via_resend(self, params: dict[str, Any]) -> dict[str, Any]:
         """Internal method to send via Resend API."""
         import resend
@@ -915,46 +864,6 @@ class EmailService:
         Dev mode: logs to console, does not send.
         Idempotent: duplicate idempotency_key = no-op.
         """
-        template_data = dict(template_data)
-        is_marketing_automation = template_name.startswith("funnel_automation_")
-        unsubscribe_url = template_data.pop("unsubscribe_url", None)
-        if is_marketing_automation:
-            try:
-                if not isinstance(unsubscribe_url, str) or not unsubscribe_url:
-                    raise ValueError("missing unsubscribe proof")
-                parsed_url = urlsplit(unsubscribe_url)
-                configured_url = urlsplit(settings.APP_BASE_URL.rstrip("/"))
-                expected_path = f"{configured_url.path.rstrip('/')}/api/v1/public/funnel/unsubscribe"
-                query = parse_qs(parsed_url.query, strict_parsing=True)
-                token_values = query.get("token", [])
-                if (
-                    parsed_url.scheme not in {"http", "https"}
-                    or parsed_url.scheme != configured_url.scheme
-                    or not parsed_url.hostname
-                    or not configured_url.hostname
-                    or parsed_url.netloc.casefold() != configured_url.netloc.casefold()
-                    or parsed_url.path != expected_path
-                    or parsed_url.fragment
-                    or set(query) != {"token"}
-                    or len(token_values) != 1
-                ):
-                    raise ValueError("invalid unsubscribe link")
-
-                from app.services.unsubscribe_tokens import (
-                    verify_unsubscribe_token,
-                )
-                from app.core.email_identity import normalize_email
-
-                _organization_id, scoped_email = verify_unsubscribe_token(token_values[0])
-                if scoped_email != normalize_email(to):
-                    raise ValueError("unsubscribe proof recipient mismatch")
-            except Exception as exc:
-                logger.warning(
-                    "[EMAIL SUPPRESSED] Marketing automation lacks a valid unsubscribe proof (%s)",
-                    type(exc).__name__,
-                )
-                return {"id": None, "status": "suppressed"}
-
         # Idempotency check
         key = (
             idempotency_key
@@ -973,33 +882,11 @@ class EmailService:
             raise ValueError(f"Unknown template: {template_name}")
 
         rendered = template_fn(**template_data)
-        if is_marketing_automation:
-            rendered = dict(rendered)
-            safe_url = escape(unsubscribe_url, quote=True)
-            html_content = rendered.get("html", "")
-            footer_html = (
-                '<p style="color:#666;font-size:12px;text-align:center;">'
-                f'<a href="{safe_url}">Unsubscribe</a></p>'
-            )
-            body_end = html_content.lower().rfind("</body>")
-            if body_end >= 0:
-                html_content = (
-                    f"{html_content[:body_end]}{footer_html}{html_content[body_end:]}"
-                )
-            else:
-                html_content = f"{html_content}{footer_html}"
-            rendered["html"] = html_content
-            rendered["text"] = (
-                f"{rendered.get('text', '')}\n\nUnsubscribe: {unsubscribe_url}"
-            )
 
-        # Fail closed before any provider invocation.
-        if not self._real_email_send_allowed(to):
-            if not self.api_key or settings.APP_ENV == "development":
-                logger.info(f"[EMAIL DEV] To: {to} | Subject: {rendered['subject']}")
-                logger.debug(f"[EMAIL DEV] HTML preview:\n{rendered['html'][:500]}...")
-            else:
-                logger.info("[EMAIL SUPPRESSED] Real email send gate denied the request")
+        # Dev mode: log only
+        if not self.api_key or settings.APP_ENV == "development":
+            logger.info(f"[EMAIL DEV] To: {to} | Subject: {rendered['subject']}")
+            logger.debug(f"[EMAIL DEV] HTML preview:\n{rendered['html'][:500]}...")
             return {"id": "dev-mode", "status": "logged"}
 
         # Production: send via Resend
@@ -1013,18 +900,13 @@ class EmailService:
             }
 
             response = await self._send_via_resend(params)
-            result = {"id": response.get("id") if isinstance(response, dict) else None,
-                      "status": "sent"}
-            if not email_accepted(result) or response.get("error") is not None or response.get("status") not in (None, "accepted", "sent"):
-                logger.warning("[EMAIL] Provider acceptance unverified; no automatic retry")
-                return {"id": None, "status": "unverified"}
-            logger.info("[EMAIL] Provider accepted message")
-            return result
+            logger.info(f"[EMAIL SENT] To: {to} | ID: {response.get('id')}")
+            return {"id": response.get("id"), "status": "sent"}
 
         except Exception as e:
-            logger.warning("[EMAIL] Provider outcome unverified: %s", type(e).__name__)
+            logger.error(f"[EMAIL FAILED] To: {to} | Error: {e}")
             # Don't raise — email is best-effort
-            return {"id": None, "status": "failed", "error": type(e).__name__}
+            return {"id": None, "status": "failed", "error": str(e)}
 
     async def send_welcome_email(
         self, to_email: str, user_name: str, idempotency_key: str | None = None

@@ -33,6 +33,9 @@ COPY --from=builder /install /usr/local
 
 COPY . .
 
+# Runtime configuration is validated with the resolved Compose environment
+# by the deploy workflow before database startup and migrations.
+
 RUN groupadd --gid 1001 graxia \
     && useradd --uid 1001 --gid 1001 --create-home --shell /usr/sbin/nologin graxia \
     && mkdir -p /app/logs /app/backups \
@@ -41,7 +44,5 @@ RUN groupadd --gid 1001 graxia \
 USER 1001:1001
 EXPOSE 8000
 
-# Production config is checked at start, not build time: env is injected at runtime.
-# Validator exit 1 = invalid config (refuse to start); 0 or 2 (not production) continue.
-# PORT: fly.toml sets 8080, compose uses 8000.
-CMD ["sh", "-c", "python scripts/validate_production_config.py; rc=$?; if [ \"$rc\" -eq 1 ]; then exit 1; fi; exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8000}\" --workers 1"]
+# PORT: fly.toml sets 8080; compose overrides this command and serves on 8000.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8000}\" --workers 1 --no-access-log"]

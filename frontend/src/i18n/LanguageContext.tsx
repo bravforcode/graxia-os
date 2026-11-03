@@ -15,7 +15,7 @@ function getInitialLocale(): Locale {
     const saved = localStorage.getItem("ai-factory-lang");
     if (saved === "th" || saved === "en") return saved;
   } catch {
-    // Language preference is optional when browser storage is unavailable.
+    // Storage may be unavailable in privacy mode or during server rendering.
   }
   return "en";
 }
@@ -31,8 +31,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Sync <html lang> + localized document title (audit: i18n #4)
   useEffect(() => {
     document.documentElement.lang = locale;
-    // Currently supported locales (th/en) use left-to-right text.
-    document.documentElement.dir = "ltr";
+    // RTL-ready: set dir for future RTL locales (e.g. 'ar'); th/en are LTR
+    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
     document.title = locale === "th" ? "Graxia — เครื่องมือ AI และสินค้าดิจิทัล" : "Graxia — AI tools and digital products";
   }, [locale]);
 
@@ -42,7 +42,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem("ai-factory-lang", next);
       } catch {
-        // Language preference is optional when browser storage is unavailable.
+        // Keep the language for this session when storage is unavailable.
       }
       return next;
     });
@@ -68,7 +68,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Keep the provider and its context hook together as this module's public API.
+// This module intentionally exports the provider and its paired hook together.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useLang() {
   const ctx = useContext(LanguageContext);

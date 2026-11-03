@@ -26,7 +26,10 @@ Demand research
 - `ContentEngine` approval queue and `content_ops` dry-run gate.
 - First/last-touch attribution, consent evidence, event dedupe, and
   attribution reporting.
-- Vercel production alias: `https://graxia-os-funnel.vercel.app`.
+- Free public host: `https://bravforcode.github.io/graxia/`.
+- No owned custom domain exists yet; do not publish `graxia.store`.
+- Static host/API boundary remains explicit: no live checkout or revenue claim
+  is made from the GitHub Pages artifact alone.
 
 ## Capacity rules
 

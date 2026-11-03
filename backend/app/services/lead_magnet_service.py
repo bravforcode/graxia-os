@@ -4,15 +4,21 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func, select, and_, update
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import LeadMagnet, FunnelOrder, FunnelOrderItem
+from app.models.funnel import (
+    LeadMagnet,
+    FunnelOrder,
+    FunnelOrderItem,
+    DeliveryAsset,
+    DigitalProduct,
+)
 from app.models.contact import Contact
 from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.funnel_analytics_service import FunnelAnalyticsService
+from app.services.public_funnel_service import require_public_funnel_organization
 from app.schemas.funnel import LeadMagnetCreate, LeadMagnetUpdate
-from app.core.email_identity import normalize_email
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +35,7 @@ class LeadMagnetService:
             name=payload.name,
             slug=payload.slug,
             target_product_id=payload.target_product_id,
+            delivery_asset_id=payload.delivery_asset_id,
             promise=payload.promise,
             file_url=payload.file_url,
             landing_page_url=payload.landing_page_url,
@@ -109,23 +116,52 @@ class LeadMagnetService:
         marketing_consent: bool = False,
         consent_version: Optional[str] = None,
         session_id: Optional[str] = None,
+        public: bool = False,
     ) -> Tuple[Contact, Optional[str]]:
+        if public:
+            organization_id = require_public_funnel_organization(organization_id)
         # Find lead magnet
         lm = await self.get_lead_magnet_by_slug(organization_id, slug)
         if not lm:
             raise ValueError(f"Lead magnet not found with slug {slug} for organization {organization_id}")
 
-        if lm.status != "published":
+        if lm.status not in {"published", "active"}:
             raise ValueError(f"Lead magnet with slug {slug} is not published")
         if marketing_consent and not consent_version:
             raise ValueError("consent_version is required when marketing_consent is true")
+
+        if not lm.delivery_asset_id:
+            raise ValueError("Lead magnet is unavailable: delivery asset is not configured")
+        delivery_service = FunnelDeliveryService(self.db)
+        delivery_asset = await self.db.scalar(
+            select(DeliveryAsset).where(
+                DeliveryAsset.id == lm.delivery_asset_id,
+                DeliveryAsset.organization_id == organization_id,
+                DeliveryAsset.is_active.is_(True),
+            )
+        )
+        if (
+            delivery_asset is None
+            or (lm.target_product_id and lm.target_product_id != delivery_asset.product_id)
+            or not delivery_service.asset_has_verified_payload(delivery_asset)
+        ):
+            raise ValueError("Lead magnet is unavailable: delivery asset is not verified")
+        product = await self.db.scalar(
+            select(DigitalProduct).where(
+                DigitalProduct.id == delivery_asset.product_id,
+                DigitalProduct.organization_id == organization_id,
+                DigitalProduct.status == "published",
+            )
+        )
+        if product is None:
+            raise ValueError("Lead magnet is unavailable: delivery product is not published")
 
         # Create/Get contact
         stmt = select(Contact).where(
             and_(
                 Contact.organization_id == organization_id,
                 Contact.email == email,
-                Contact.is_deleted.is_(False)
+                Contact.is_deleted == False
             )
         )
         result = await self.db.execute(stmt)
@@ -147,12 +183,15 @@ class LeadMagnetService:
             )
             self.db.add(contact)
             await self.db.flush()
-        elif marketing_consent:
+        elif marketing_consent and not public:
+            # Internal/admin callers may record an explicit consent change.
             contact.marketing_consent = True
             contact.marketing_consent_at = datetime.now(timezone.utc)
             contact.consent_version = consent_version
             contact.marketing_unsubscribed = False
             contact.marketing_unsubscribed_at = None
+        # Public capture must never resubscribe an existing contact from an
+        # unchecked email claim. A prior unsubscribe remains authoritative.
 
         # Increment opt-in count
         lm.opt_in_count += 1
@@ -179,21 +218,19 @@ class LeadMagnetService:
                 f"lead_capture:{organization_id}:{email.lower()}:{slug}:{session_id}"
                 if session_id else None
             ),
+            commit=False,
         )
 
-        raw_token = None
-        if lm.target_product_id:
-            # Grant free digital asset delivery access
+        try:
             order = FunnelOrder(
                 id=uuid.uuid4(),
                 organization_id=organization_id,
                 contact_id=contact.id,
-                status="paid",
+                status="comped",
                 subtotal_amount=Decimal("0.00"),
                 total_amount=Decimal("0.00"),
-                currency="USD",
+                currency=product.currency,
                 customer_email=email,
-                paid_at=datetime.utcnow()
             )
             self.db.add(order)
             await self.db.flush()
@@ -202,43 +239,46 @@ class LeadMagnetService:
                 id=uuid.uuid4(),
                 organization_id=organization_id,
                 order_id=order.id,
-                product_id=lm.target_product_id,
+                product_id=product.id,
                 quantity=1,
                 unit_amount=Decimal("0.00"),
                 total_amount=Decimal("0.00"),
-                currency="USD"
+                currency=product.currency,
             )
             self.db.add(item)
             await self.db.flush()
 
-            # Grant delivery access using FunnelDeliveryService
-            delivery_service = FunnelDeliveryService(self.db)
-            access_grants = await delivery_service.grant_delivery_access_for_order(
+            access_grant = await delivery_service.grant_delivery_access_for_asset(
                 organization_id=organization_id,
-                order_id=order.id
+                order_id=order.id,
+                product_id=product.id,
+                delivery_asset_id=delivery_asset.id,
+                commit=False,
             )
-            
-            if access_grants:
-                raw_token = access_grants[0][1]
+            if access_grant is None:
+                raise RuntimeError("Could not grant the assigned lead-magnet asset")
+            _, raw_token = access_grant
 
-        await self.db.commit()
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
         await self.db.refresh(contact)
 
         return contact, raw_token
 
-    async def unsubscribe(self, organization_id: uuid.UUID, email: str) -> None:
-        stmt = (
-            update(Contact)
-            .where(
-                Contact.organization_id == organization_id,
-                func.lower(func.trim(Contact.email)) == normalize_email(email),
-                Contact.is_deleted.is_(False),
-            )
-            .values(
-                marketing_unsubscribed=True,
-                marketing_unsubscribed_at=datetime.now(timezone.utc),
-            )
-            .execution_options(synchronize_session=False)
+    async def unsubscribe(
+        self, organization_id: uuid.UUID, email: str, *, public: bool = False
+    ) -> None:
+        if public:
+            organization_id = require_public_funnel_organization(organization_id)
+        stmt = select(Contact).where(
+            Contact.organization_id == organization_id,
+            Contact.email == email,
+            Contact.is_deleted == False,
         )
-        await self.db.execute(stmt)
-        await self.db.commit()
+        contact = (await self.db.execute(stmt)).scalar_one_or_none()
+        if contact:
+            contact.marketing_unsubscribed = True
+            contact.marketing_unsubscribed_at = datetime.now(timezone.utc)
+            await self.db.commit()

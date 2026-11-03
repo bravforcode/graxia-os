@@ -13,6 +13,7 @@ import { ANIMATIONS, staggerDelay } from "../../lib/animations";
 import { ScrollReveal } from "../../components/ui/ScrollReveal";
 import { SkeletonProductDetail } from "../../components/ui/Skeleton";
 import { getAttributionEventFields } from "../../lib/attribution";
+import { siteUrl } from "../../lib/site";
 
 export default function PublicProductPage() {
   const { organization_id, slug } = useParams<{ organization_id: string; slug: string }>();
@@ -96,8 +97,8 @@ export default function PublicProductPage() {
         idempotency_key: `checkout_start:${getAttributionEventFields().session_id}:${product.id}`,
       }).catch(() => {});
 
-      const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = window.location.href;
+      const successUrl = siteUrl("/checkout/success?session_id={CHECKOUT_SESSION_ID}");
+      const cancelUrl = siteUrl(`/store/${productSlug}`);
       const checkoutAttribution = getAttributionEventFields({ content_id: product.id, cta: "checkout" });
 
       const checkout = await funnelApi.createPublicCheckoutSession(product.id, {
@@ -147,6 +148,7 @@ export default function PublicProductPage() {
         medium: attribution.medium,
         campaign: attribution.campaign,
         referrer: attribution.referrer,
+        referral_code: attribution.referral_code,
       });
       setLeadSuccessMsg(locale === "th" ? "สำเร็จ! ตรวจสอบอีเมลของคุณเพื่อรับตัวอย่างฟรี" : "You're in! Check your email for the free sample.");
       if (res.delivery_url) {
@@ -218,7 +220,7 @@ export default function PublicProductPage() {
               price: price,
               priceCurrency: currency,
               availability: "https://schema.org/InStock",
-              seller: { "@type": "Organization", name: "Graxia", url: "https://graxia-os-funnel.vercel.app" },
+              seller: { "@type": "Organization", name: "Graxia", url: siteUrl() },
             },
             ...(reviewCount > 0 && rating > 0 ? {
               aggregateRating: {

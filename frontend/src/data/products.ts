@@ -204,7 +204,7 @@ export const PRODUCTS: ProductCatalogItem[] = [
 ];
 
 /** Org id used by the public storefront checkout flow (single-tenant store). */
-export const STORE_ORG_ID = "3da2dc2a-6092-443a-9600-ca22aa0553f0";
+export const STORE_ORG_ID = "627b1001-0fb0-468a-a152-cab1fd51099c";
 
 
 // Helper functions

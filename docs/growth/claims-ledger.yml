@@ -1,6 +1,6 @@
 version: 1
 policy: "Do not publish a numeric or outcome claim without current evidence."
-canonical_domain: https://graxia-os-funnel.vercel.app
+canonical_domain: https://bravforcode.github.io/graxia
 claims:
   - id: revenue
     status: blocked

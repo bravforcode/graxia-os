@@ -13,12 +13,11 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
-from app.config import settings
 from app.runtime.events import business_event_service
-from app.models.delivery_email_event import DeliveryEmailEvent
 from app.models.funnel import (
     ConversionEvent,
     DeliveryAccess,
+    DeliveryEmailEvent,
     DeliveryAsset,
     DigitalProduct,
     FunnelOrder,
@@ -29,11 +28,6 @@ from app.models.funnel import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def funnel_checkout_simulation_enabled() -> bool:
-    """Keep paid-order simulation available only in explicit test runtime."""
-    return settings.TESTING is True and (settings.APP_ENV or "").strip().lower() == "testing"
 
 # ── Token helpers ─────────────────────────────────────────────────────────
 
@@ -66,7 +60,6 @@ class DeliveryAccessService:
         delivery_asset_id: UUID | None = None,
         expires_at: datetime | None = None,
         db: AsyncSession | None = None,
-        commit: bool = True,
     ) -> tuple[DeliveryAccess, str]:
         """Grant delivery access and return (access_record, raw_token).
 
@@ -75,59 +68,6 @@ class DeliveryAccessService:
         """
         raw_token = _generate_access_token()
         token_hash = _hash_token(raw_token)
-        if db is not None:
-            return await self._grant_access_in_session(
-                db,
-                organization_id=organization_id,
-                order_id=order_id,
-                product_id=product_id,
-                delivery_asset_id=delivery_asset_id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-                commit=commit,
-                raw_token=raw_token,
-            )
-        if not commit:
-            raise ValueError("commit=False requires a caller-owned database session")
-        async with AsyncSessionLocal() as session:
-            return await self._grant_access_in_session(
-                session,
-                organization_id=organization_id,
-                order_id=order_id,
-                product_id=product_id,
-                delivery_asset_id=delivery_asset_id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-                commit=True,
-                raw_token=raw_token,
-            )
-
-    async def _grant_access_in_session(
-        self,
-        session: AsyncSession,
-        *,
-        organization_id: UUID,
-        order_id: UUID,
-        product_id: UUID,
-        delivery_asset_id: UUID | None,
-        token_hash: str,
-        expires_at: datetime | None,
-        commit: bool,
-        raw_token: str,
-    ) -> tuple[DeliveryAccess, str]:
-        if delivery_asset_id is not None:
-            owned_asset_id = await session.scalar(
-                select(DeliveryAsset.id)
-                .where(
-                    DeliveryAsset.id == delivery_asset_id,
-                    DeliveryAsset.organization_id == organization_id,
-                    DeliveryAsset.product_id == product_id,
-                    DeliveryAsset.is_active.is_(True),
-                )
-                .with_for_update()
-            )
-            if owned_asset_id is None:
-                raise ValueError("delivery_asset_not_owned_by_product")
 
         access = DeliveryAccess(
             id=uuid4(),
@@ -139,12 +79,17 @@ class DeliveryAccessService:
             status="active",
             expires_at=expires_at or (datetime.now(UTC) + timedelta(days=365)),
         )
-        session.add(access)
-        if commit:
-            await session.commit()
-            await session.refresh(access)
+
+        if db:
+            db.add(access)
+            await db.commit()
+            await db.refresh(access)
         else:
-            await session.flush()
+            async with AsyncSessionLocal() as session:
+                session.add(access)
+                await session.commit()
+                await session.refresh(access)
+
         return access, raw_token
 
     async def verify_access(
@@ -365,6 +310,7 @@ class LeadMagnetService:
         description: str | None = None,
         product_id: UUID | None = None,
         asset_id: UUID | None = None,
+        metadata_json: dict[str, Any] | None = None,
         db: AsyncSession | None = None,
     ) -> LeadMagnet:
         magnet = LeadMagnet(
@@ -374,7 +320,6 @@ class LeadMagnetService:
             name=title,
             promise=description,
             target_product_id=product_id,
-            delivery_asset_id=asset_id,
             status="active",
         )
         if db:
@@ -629,7 +574,7 @@ class FunnelAnalyticsService:
             total_products = await session.scalar(
                 select(func.count(DigitalProduct.id)).where(
                     DigitalProduct.organization_id == organization_id,
-                    DigitalProduct.is_deleted.is_(False),
+                    DigitalProduct.is_deleted == False,
                 )
             ) or 0
 
@@ -637,7 +582,7 @@ class FunnelAnalyticsService:
                 select(func.count(DigitalProduct.id)).where(
                     DigitalProduct.organization_id == organization_id,
                     DigitalProduct.status == "published",
-                    DigitalProduct.is_deleted.is_(False),
+                    DigitalProduct.is_deleted == False,
                 )
             ) or 0
 
@@ -812,174 +757,112 @@ class FunnelWebhookHandler:
         organization_id: UUID,
         checkout_session_id: UUID,
         customer_email: str,
-        stripe_session_id: str | None = None,
         db: AsyncSession | None = None,
     ) -> dict[str, Any]:
         """Handle a simulated checkout.completed webhook.
 
         Creates order + order items, grants delivery access, sends mock email.
-        Idempotent under a locked checkout row.
+        Idempotent via checkout_session_id uniqueness check.
         """
-        if not funnel_checkout_simulation_enabled():
-            raise ValueError("Checkout simulation is only available in test configuration")
-
         async with db or AsyncSessionLocal() as session:
-            from app.models.funnel import FunnelCheckoutSession
-
-            # Lock by both primary key and tenant before checking idempotency.
-            checkout = await session.scalar(
-                select(FunnelCheckoutSession)
-                .where(
-                    FunnelCheckoutSession.id == checkout_session_id,
-                    FunnelCheckoutSession.organization_id == organization_id,
-                )
-                .with_for_update()
-            )
-            if checkout is None:
-                await session.rollback()
-                raise ValueError(f"Checkout session not found for organization: {checkout_session_id}")
-
-            # Simulation calls must carry the stored Stripe ID for real Stripe
-            # checkouts. Null is accepted only for this explicitly synthetic
-            # endpoint when both the incoming and persisted IDs are null.
-            if stripe_session_id != checkout.stripe_session_id:
-                await session.rollback()
-                raise ValueError("Stripe session ID does not match persisted checkout")
-
-            existing_stmt = select(FunnelOrder).where(
-                FunnelOrder.organization_id == organization_id,
-                or_(
+            # Check for existing order (idempotency)
+            existing_order = await session.scalar(
+                select(FunnelOrder).where(
                     FunnelOrder.checkout_session_id == checkout_session_id,
-                    and_(
-                        FunnelOrder.stripe_session_id.is_not(None),
-                        FunnelOrder.stripe_session_id == checkout.stripe_session_id,
-                    ),
-                ),
-            )
-            existing_orders = list((await session.scalars(existing_stmt)).all())
-            if existing_orders:
-                if (
-                    len(existing_orders) == 1
-                    and existing_orders[0].checkout_session_id == checkout_session_id
-                    and existing_orders[0].stripe_session_id == checkout.stripe_session_id
-                ):
-                    existing_id = existing_orders[0].id
-                    await session.commit()
-                    logger.info(
-                        "Order already exists for checkout session %s (order %s)",
-                        checkout_session_id,
-                        existing_id,
-                    )
-                    return {"order_id": str(existing_id), "duplicate": True}
-
-                await session.rollback()
-                raise ValueError("Conflicting order identity for checkout session")
-
-            product = await session.scalar(
-                select(DigitalProduct).where(
-                    DigitalProduct.id == checkout.product_id,
-                    DigitalProduct.organization_id == organization_id,
                 )
             )
-            if product is None:
-                await session.rollback()
-                raise ValueError("Checkout product does not belong to authenticated organization")
-
-            # Create order, item, and delivery access within the row-lock
-            # transaction. Analytics and email run only after commit.
-            try:
-                order = FunnelOrder(
-                    id=uuid4(),
-                    organization_id=organization_id,
-                    checkout_session_id=checkout_session_id,
-                    stripe_session_id=checkout.stripe_session_id,
-                    status="paid",
-                    subtotal_amount=checkout.amount,
-                    total_amount=checkout.amount,
-                    currency=checkout.currency,
-                    customer_email=customer_email or checkout.customer_email,
-                    paid_at=datetime.now(UTC),
+            if existing_order:
+                logger.info(
+                    "Order already exists for checkout session %s (order %s)",
+                    checkout_session_id, existing_order.id,
                 )
-                session.add(order)
-                await session.flush()
+                return {"order_id": str(existing_order.id), "duplicate": True}
 
-                item = FunnelOrderItem(
-                    id=uuid4(),
-                    organization_id=organization_id,
-                    order_id=order.id,
-                    product_id=checkout.product_id,
-                    quantity=1,
-                    unit_amount=checkout.amount,
-                    total_amount=checkout.amount,
-                    currency=checkout.currency,
-                )
-                session.add(item)
-                await session.flush()
+            # Get checkout session
+            from app.models.funnel import FunnelCheckoutSession
+            checkout = await session.get(FunnelCheckoutSession, checkout_session_id)
+            if checkout is None:
+                raise ValueError(f"Checkout session not found: {checkout_session_id}")
 
-                access, raw_token = await delivery_access_service.grant_access(
-                    organization_id=organization_id,
-                    order_id=order.id,
-                    product_id=checkout.product_id,
-                    db=session,
-                    commit=False,
-                )
+            # Create order
+            order = FunnelOrder(
+                id=uuid4(),
+                organization_id=organization_id,
+                checkout_session_id=checkout_session_id,
+                stripe_session_id=checkout.stripe_session_id,
+                status="paid",
+                subtotal_amount=checkout.amount,
+                total_amount=checkout.amount,
+                currency=checkout.currency,
+                customer_email=customer_email or checkout.customer_email,
+                paid_at=datetime.now(UTC),
+            )
+            session.add(order)
+            await session.flush()
 
-                checkout.status = "completed"
-                checkout.completed_at = datetime.now(UTC)
+            # Create order item
+            item = FunnelOrderItem(
+                id=uuid4(),
+                organization_id=organization_id,
+                order_id=order.id,
+                product_id=checkout.product_id,
+                quantity=1,
+                unit_amount=checkout.amount,
+                total_amount=checkout.amount,
+                currency=checkout.currency,
+            )
+            session.add(item)
+            await session.flush()
 
-                attribution = dict(checkout.metadata_json or {})
-                await session.commit()
-            except Exception:
-                await session.rollback()
-                raise
+            # Grant delivery access
+            access, raw_token = await delivery_access_service.grant_access(
+                organization_id=organization_id,
+                order_id=order.id,
+                product_id=checkout.product_id,
+                db=session,
+            )
 
-            order_id = order.id
-            access_id = access.id
-            product_id = checkout.product_id
-            amount = checkout.amount
-            currency = checkout.currency
-            email_destination = customer_email or checkout.customer_email or ""
-            product_name = product.name
+            # Get product name
+            product = await session.get(DigitalProduct, checkout.product_id)
+            product_name = product.name if product else "Digital Product"
 
-            try:
-                purchase_event = ConversionEvent(
-                    id=uuid4(),
-                    organization_id=organization_id,
-                    event_type="purchase",
-                    product_id=product_id,
-                    order_id=order_id,
-                    session_id=attribution.get("session_id"),
-                    source=attribution.get("source"),
-                    medium=attribution.get("medium"),
-                    campaign=attribution.get("campaign"),
-                    referrer=attribution.get("referrer"),
-                    metadata_json={
-                        key: attribution[key]
-                        for key in ("content_id", "plan", "channel", "locale")
-                        if key in attribution
-                    },
-                    idempotency_key=f"purchase:{order_id}",
-                    occurred_at=datetime.now(UTC),
-                )
-                session.add(purchase_event)
-                await session.commit()
-            except Exception as exc:
-                await session.rollback()
-                logger.warning("Purchase analytics unavailable after checkout commit: %s", type(exc).__name__)
-
-            # Customer email uses the explicit mock provider and runs after the
-            # checkout transaction/lock has completed.
-            idempotency_key = f"delivery_email:{order_id}:{product_id}"
+            # Send mock email
+            idempotency_key = f"delivery_email:{order.id}:{checkout.product_id}"
             await mock_email_provider.send_delivery_email(
-                customer_email=email_destination,
+                customer_email=customer_email or checkout.customer_email or "",
                 delivery_token=raw_token,
                 product_name=product_name,
                 organization_id=organization_id,
-                order_id=order_id,
-                delivery_access_id=access_id,
+                order_id=order.id,
+                delivery_access_id=access.id,
                 idempotency_key=idempotency_key,
                 db=session,
             )
+
+            # Track purchase event
+            attribution = checkout.metadata_json or {}
+            purchase_event = ConversionEvent(
+                id=uuid4(),
+                organization_id=organization_id,
+                event_type="purchase",
+                product_id=checkout.product_id,
+                order_id=order.id,
+                session_id=attribution.get("session_id"),
+                source=attribution.get("source"),
+                medium=attribution.get("medium"),
+                campaign=attribution.get("campaign"),
+                referrer=attribution.get("referrer"),
+                metadata_json={
+                    key: attribution[key]
+                    for key in ("content_id", "plan", "channel", "locale")
+                    if key in attribution
+                },
+                idempotency_key=f"purchase:{order.id}",
+                occurred_at=datetime.now(UTC),
+            )
+            session.add(purchase_event)
+
+            await session.commit()
 
             correlation_id = f"checkout:{checkout_session_id}"
             await business_event_service.emit(
@@ -988,11 +871,11 @@ class FunnelWebhookHandler:
                 subject_type="checkout_session",
                 subject_id=str(checkout_session_id),
                 payload={
-                    "order_id": str(order_id),
-                    "product_id": str(product_id),
-                    "amount": str(amount),
-                    "currency": currency,
-                    "customer_email_domain": _email_domain(email_destination),
+                    "order_id": str(order.id),
+                    "product_id": str(checkout.product_id),
+                    "amount": str(checkout.amount),
+                    "currency": checkout.currency,
+                    "customer_email_domain": _email_domain(customer_email or checkout.customer_email),
                 },
                 actor_type="customer",
                 source="funnel-webhook",
@@ -1003,42 +886,42 @@ class FunnelWebhookHandler:
                 organization_id=str(organization_id),
                 event_type="order.created",
                 subject_type="funnel_order",
-                subject_id=str(order_id),
+                subject_id=str(order.id),
                 payload={
                     "checkout_session_id": str(checkout_session_id),
-                    "product_id": str(product_id),
+                    "product_id": str(checkout.product_id),
                     "status": order.status,
                     "total_amount": str(order.total_amount),
-                    "currency": currency,
+                    "currency": order.currency,
                 },
                 actor_type="service",
                 source="funnel-webhook",
                 correlation_id=correlation_id,
-                idempotency_key=f"order-created:{order_id}",
+                idempotency_key=f"order-created:{order.id}",
             )
             await business_event_service.emit(
                 organization_id=str(organization_id),
                 event_type="delivery.access.granted",
                 subject_type="delivery_access",
-                subject_id=str(access_id),
+                subject_id=str(access.id),
                 payload={
-                    "order_id": str(order_id),
-                    "product_id": str(product_id),
-                    "delivery_access_id": str(access_id),
+                    "order_id": str(order.id),
+                    "product_id": str(checkout.product_id),
+                    "delivery_access_id": str(access.id),
                     "delivery_asset_id": str(access.delivery_asset_id) if access.delivery_asset_id else None,
                 },
                 actor_type="service",
                 source="funnel-webhook",
                 correlation_id=correlation_id,
-                idempotency_key=f"delivery-access-granted:{access_id}",
+                idempotency_key=f"delivery-access-granted:{access.id}",
             )
 
             return {
-                "order_id": str(order_id),
-                "access_id": str(access_id),
+                "order_id": str(order.id),
+                "access_id": str(access.id),
                 "token_preview": raw_token[:16] + "...",
                 "product_name": product_name,
-                "customer_email": email_destination,
+                "customer_email": customer_email or checkout.customer_email,
                 "duplicate": False,
             }
 

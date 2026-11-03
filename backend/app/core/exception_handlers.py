@@ -68,12 +68,28 @@ async def handle_app_error(request: Request, exc: AppError):
 async def handle_http_exception(request: Request, exc: HTTPException):
     code, message = _map_http_exception(exc)
     await _emit_safe_error_audit(request, code, message, exc.status_code)
+    legacy_detail = None
+    auth_endpoint = request.url.path.startswith("/api/v1/auth/")
+    form_lockout = (
+        request.url.path == "/api/v1/auth/login"
+        and request.headers.get("content-type", "").lower().startswith(
+            "application/x-www-form-urlencoded"
+        )
+        and "locked" in str(exc.detail or "").lower()
+    )
+    if (
+        auth_endpoint
+        and isinstance(exc.detail, str)
+        and (exc.status_code != 429 or form_lockout)
+    ):
+        legacy_detail = exc.detail
     return build_error_response(
         request,
         code=code,
         message=message,
         status_code=exc.status_code,
         headers=exc.headers,
+        legacy_detail=legacy_detail,
     )
 
 

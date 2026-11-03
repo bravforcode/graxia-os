@@ -4,7 +4,7 @@ Context-aware skill execution with conversation history
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID as UUIDType
 

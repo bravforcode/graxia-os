@@ -15,14 +15,7 @@ from sqlalchemy import select
 
 from app.database import AsyncSessionLocal
 from app.models.funnel import FunnelCheckoutSession, FunnelOrder, ConversionEvent
-from app.services.automation_email_service import (
-    AutomationEmailService,
-    _normalized_email_digest,
-    _win_back_event_email_digest,
-    win_back_candidates_statement,
-)
-from app.services.delivery_email_attempts import DeliveryEmailAttemptStore
-from app.services.email_service import email_accepted
+from app.services.automation_email_service import AutomationEmailService
 
 logger = logging.getLogger("graxia.tasks.funnel_runtime")
 
@@ -53,9 +46,7 @@ async def scan_abandoned_carts(limit: int = BATCH_LIMIT) -> int:
         sent = 0
         for cs in rows:
             try:
-                result = await svc.trigger_abandoned_cart(cs.organization_id, cs.id)
-                if not email_accepted(result):
-                    continue
+                await svc.trigger_abandoned_cart(cs.organization_id, cs.id)
                 cs.abandoned_email_sent_at = datetime.now(UTC)
                 sent += 1
             except Exception as exc:  # noqa: BLE001 — one bad email must not kill the scan
@@ -100,13 +91,11 @@ async def _scan_order_emails(
             if str(order.id) in already:
                 continue
             try:
-                result = await service_trigger(svc, order)
-                if not email_accepted(result):
-                    continue
+                await service_trigger(svc, order)
                 db.add(ConversionEvent(
                     organization_id=order.organization_id,
                     event_type=event_type,
-                    metadata_json={"order_id": str(order.id), "provider_reference": result["id"]},
+                    metadata_json={"order_id": str(order.id)},
                 ))
                 sent += 1
             except Exception as exc:  # noqa: BLE001
@@ -119,7 +108,7 @@ async def _scan_order_emails(
 
 async def scan_review_requests(limit: int = BATCH_LIMIT) -> int:
     async def _trigger(svc, order):
-        return await svc.trigger_review_request(
+        await svc.trigger_review_request(
             organization_id=order.organization_id,
             order_id=order.id,
         )
@@ -128,7 +117,7 @@ async def scan_review_requests(limit: int = BATCH_LIMIT) -> int:
 
 async def scan_cross_sells(limit: int = BATCH_LIMIT) -> int:
     async def _trigger(svc, order):
-        return await svc.trigger_cross_sell(
+        await svc.trigger_cross_sell(
             organization_id=order.organization_id,
             order_id=order.id,
         )
@@ -137,71 +126,66 @@ async def scan_cross_sells(limit: int = BATCH_LIMIT) -> int:
 
 async def scan_win_backs(limit: int = BATCH_LIMIT) -> int:
     """Find customers whose last purchase is older than 30 days and email them (dedup 7d)."""
+    from sqlalchemy import func
+
     async with AsyncSessionLocal() as db:
-        now = datetime.now(UTC)
-        cutoff = now - WIN_BACK_AFTER
-        recently_contacted = now - timedelta(days=7)
-        result = await db.execute(win_back_candidates_statement(cutoff, limit))
+        cutoff = datetime.now(UTC) - WIN_BACK_AFTER
+        recently_contacted = datetime.now(UTC) - timedelta(days=7)
+
+        subq = (
+            select(
+                FunnelOrder.customer_email,
+                FunnelOrder.organization_id,
+                func.max(FunnelOrder.paid_at).label("last_paid_at"),
+            )
+            .where(
+                FunnelOrder.customer_email.isnot(None),
+                FunnelOrder.status == "paid",
+            )
+            .group_by(FunnelOrder.customer_email, FunnelOrder.organization_id)
+            .having(func.max(FunnelOrder.paid_at) < cutoff)
+            .limit(limit)
+            .subquery()
+        )
+        result = await db.execute(
+            select(subq.c.customer_email, subq.c.organization_id, subq.c.last_paid_at)
+        )
         inactive = result.all()
         if not inactive:
             return 0
 
-        organization_ids = {row.organization_id for row in inactive}
         recent = await db.execute(
-            select(
-                ConversionEvent.organization_id,
-                ConversionEvent.metadata_json,
-            ).where(
-                ConversionEvent.organization_id.in_(organization_ids),
+            select(ConversionEvent.metadata_json).where(
                 ConversionEvent.event_type == "win_back_sent",
                 ConversionEvent.occurred_at >= recently_contacted,
             )
         )
         already_contacted = set()
-        for organization_id, metadata_json in recent.all():
-            email_digest = _win_back_event_email_digest(metadata_json)
-            if email_digest:
-                already_contacted.add((organization_id, email_digest))
+        for evt in recent.scalars().all():
+            if evt and "email" in evt:
+                already_contacted.add(evt["email"])
 
         svc = AutomationEmailService(db)
-        attempt_store = DeliveryEmailAttemptStore()
         sent = 0
         for row in inactive:
             email = row.customer_email
-            if not isinstance(email, str) or not email.strip():
-                continue
-            email_digest = _normalized_email_digest(email)
-            if (row.organization_id, email_digest) in already_contacted:
-                continue
-            claim = await attempt_store.claim_win_back(
-                row.organization_id, row.order_id, email, now=now
-            )
-            if not claim.acquired:
+            if email in already_contacted:
                 continue
             try:
-                result = await svc.trigger_win_back(
+                await svc.trigger_win_back(
                     organization_id=row.organization_id,
                     customer_email=email,
                     customer_name=email.split("@")[0].capitalize(),
-                    idempotency_key=claim.key,
                 )
-            except Exception as exc:  # noqa: BLE001
-                await attempt_store.finish_win_back(claim, "unknown")
-                logger.warning(
-                    "Win-back outcome unknown for organization %s (%s)",
-                    row.organization_id,
-                    type(exc).__name__,
-                )
-                continue
-
-            if email_accepted(result):
-                await attempt_store.finish_win_back(claim, "sent", result["id"])
+                db.add(ConversionEvent(
+                    organization_id=row.organization_id,
+                    event_type="win_back_sent",
+                    metadata_json={"email": email},
+                ))
                 sent += 1
-            elif (isinstance(result, dict) and result.get("status") == "suppressed"
-                  and result.get("error") is None):
-                await attempt_store.finish_win_back(claim, "suppressed")
-            else:
-                await attempt_store.finish_win_back(claim, "unknown")
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"Win-back failed for {email}: {exc}")
+        await db.commit()
         if sent:
             logger.info(f"[RUNTIME] Win-back emails sent: {sent}")
         return sent

@@ -4,6 +4,7 @@ export type AttributionTouch = {
   campaign?: string;
   referrer?: string;
   path: string;
+  referral_code?: string;
 };
 
 export type AttributionContext = {
@@ -12,6 +13,7 @@ export type AttributionContext = {
   last_touch?: AttributionTouch;
   landing_path: string;
   content_id?: string;
+  referral_code?: string;
 };
 
 const ATTRIBUTION_KEY = "graxia_attribution_v1";
@@ -24,6 +26,8 @@ const EVENT_METADATA_KEYS = new Set([
   "plan",
   "channel",
   "locale",
+  "landing_path",
+  "referral_code",
 ]);
 
 function clip(value: string | null | undefined): string | undefined {
@@ -68,6 +72,9 @@ function touchFromUrl(rawUrl: string): AttributionTouch {
     campaign: clip(url.searchParams.get("utm_campaign")),
     referrer: safeReferrer(document.referrer),
     path: clip(url.pathname) ?? "/",
+    referral_code: clip(
+      url.searchParams.get("referral_code") ?? url.searchParams.get("ref"),
+    ),
   };
   return touch;
 }
@@ -80,6 +87,7 @@ export function captureAttribution(rawUrl = window.location.href): AttributionCo
     first_touch: previous?.first_touch ?? touch,
     last_touch: touch,
     landing_path: previous?.landing_path ?? touch.path,
+    referral_code: previous?.referral_code ?? touch.referral_code,
   };
   localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(next));
   return next;
@@ -105,6 +113,11 @@ export function getAttributionEventFields(
     medium: touch?.medium,
     campaign: touch?.campaign,
     referrer: touch?.referrer,
+    first_touch: attribution.first_touch,
+    last_touch: attribution.last_touch,
+    landing_path: attribution.landing_path,
+    referral_code: attribution.referral_code,
+    content_id: safeMetadata.content_id ?? attribution.content_id,
     metadata_json: safeMetadata,
   };
 }

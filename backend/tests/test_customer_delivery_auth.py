@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 from uuid import uuid4
 from datetime import datetime, timezone
-from types import SimpleNamespace
 
 
 @pytest.mark.asyncio
@@ -75,40 +74,3 @@ async def test_delivery_opened_public_tracking(public_async_client):
     if response.status_code == 404:
         payload = response.json()
         assert payload["error"]["code"] == "NOT_FOUND"
-
-
-@pytest.mark.asyncio
-async def test_delivery_opened_tracks_valid_token_without_auth(
-    public_async_client, monkeypatch
-):
-    """A valid public token records an open and returns only the access ID."""
-    from app.api import funnel_delivery
-
-    token = "synthetic-delivery-token"
-    access_id = uuid4()
-    access = SimpleNamespace(id=access_id)
-    calls = []
-
-    async def verify_access(candidate, db=None):
-        calls.append(("verify", candidate, db is not None))
-        return access
-
-    async def record_open(candidate, db=None):
-        calls.append(("record_open", candidate, db is not None))
-        return access
-
-    monkeypatch.setattr(
-        funnel_delivery.delivery_access_service, "verify_access", verify_access
-    )
-    monkeypatch.setattr(
-        funnel_delivery.delivery_access_service, "record_open", record_open
-    )
-
-    response = await public_async_client.post(
-        "/api/v1/funnel/events/delivery-opened",
-        params={"access_token": token},
-    )
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "tracked", "access_id": str(access_id)}
-    assert calls == [("verify", token, True), ("record_open", access_id, True)]

@@ -1,7 +1,7 @@
 """Add tenant-bound Telegram owner pairing records.
 
-Revision ID: 028_telegram_owner_pairing
-Revises: 027_normalized_user_email
+Revision ID: 038_telegram_owner_pairing
+Revises: 037_normalized_user_email
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "028_telegram_owner_pairing"
-down_revision: str | Sequence[str] | None = "027_normalized_user_email"
+revision: str = "038_telegram_owner_pairing"
+down_revision: str | Sequence[str] | None = "037_normalized_user_email"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

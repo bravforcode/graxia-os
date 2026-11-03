@@ -65,8 +65,19 @@ class ApprovalRequiredError(AppError):
         super().__init__("APPROVAL_REQUIRED", message, 403)
 
 
-def build_error_body(request: Request, code: str, message: str) -> dict[str, object]:
-    return {
+class ConflictError(AppError):
+    def __init__(self, message: str = "Resource state conflict") -> None:
+        super().__init__("CONFLICT", message, 409)
+
+
+def build_error_body(
+    request: Request,
+    code: str,
+    message: str,
+    *,
+    legacy_detail: str | None = None,
+) -> dict[str, object]:
+    body: dict[str, object] = {
         "error": {
             "code": code,
             "message": message,
@@ -74,6 +85,9 @@ def build_error_body(request: Request, code: str, message: str) -> dict[str, obj
             "correlation_id": get_correlation_id(request),
         }
     }
+    if legacy_detail is not None:
+        body["detail"] = legacy_detail
+    return body
 
 
 def build_error_response(
@@ -83,9 +97,10 @@ def build_error_response(
     message: str,
     status_code: int,
     headers: dict[str, str] | None = None,
+    legacy_detail: str | None = None,
 ) -> JSONResponse:
     response = JSONResponse(
-        build_error_body(request, code, message),
+        build_error_body(request, code, message, legacy_detail=legacy_detail),
         status_code=status_code,
         headers=headers or {},
     )

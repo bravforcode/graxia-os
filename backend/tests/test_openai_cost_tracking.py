@@ -95,10 +95,10 @@ def test_cost_precision_migration_preserves_existing_data_and_tiny_row_sums():
         Path(__file__).parents[1]
         / "alembic"
         / "versions"
-        / "026_openclaw_cost_precision.py"
+        / "036_openclaw_cost_precision.py"
     )
     spec = importlib.util.spec_from_file_location(
-        "migration_026_openclaw_cost_precision", migration_path
+        "migration_036_openclaw_cost_precision", migration_path
     )
     assert spec is not None and spec.loader is not None
     migration = importlib.util.module_from_spec(spec)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { MetricCard } from "@/components/admin/MetricCard";
@@ -40,16 +40,18 @@ export default function TokenROIPage() {
   const [input, setInput] = useState<Required<TokenRoiInput>>(DEFAULT_INPUT);
   const [result, setResult] = useState<TokenRoiSummary | null>(null);
 
-  const load = useCallback(async (nextInput: TokenRoiInput = DEFAULT_INPUT) => {
+  useEffect(() => {
+    void load(DEFAULT_INPUT);
+    // Initial evaluation intentionally uses the stable baseline, not changing form input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function load(nextInput: TokenRoiInput = input) {
     setLoading(true);
     const summary = await getTokenRoiSummary(nextInput);
     setResult(summary);
     setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    void load(DEFAULT_INPUT);
-  }, [load]);
+  }
 
   async function handleEvaluate() {
     setSubmitting(true);
@@ -68,7 +70,7 @@ export default function TokenROIPage() {
         title="Token ROI Dashboard"
         description="Scenario-based evaluator for token savings, retries, quality gates, and stale-context cost."
         actions={
-          <Button variant="outline" size="sm" onClick={() => void load(input)} loading={loading}>
+          <Button variant="outline" size="sm" onClick={() => void load()} loading={loading}>
             <RefreshCw className="h-4 w-4" /> Refresh
           </Button>
         }

@@ -133,9 +133,9 @@ class TestWebhookHMACSignatureVerification:
                 content=body,
                 headers={"Content-Type": "application/json"},
             )
-
+        
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized — HMAC signature required"
+        assert response.json()["detail"] == "Unauthorized"
     
     @pytest.mark.asyncio
     async def test_missing_timestamp_rejected(self, app, mock_settings, webhook_secret):
@@ -239,9 +239,9 @@ class TestWebhookHMACSignatureVerification:
                     "X-Graxia-Timestamp": str(timestamp),
                 },
             )
-
+        
         assert response.status_code == 401
-        assert response.json()["detail"] == "Unauthorized — HMAC signature required"
+        assert response.json()["detail"] == "Unauthorized"
     
     @pytest.mark.asyncio
     async def test_empty_body_signature_verification(self, app, mock_settings, webhook_secret):
@@ -342,7 +342,7 @@ class TestWebhookHMACSignatureVerification:
                     )
                 
                 assert response.status_code == 401
-                assert response.json()["detail"] == "Unauthorized — HMAC signature required"
+                assert response.json()["detail"] == "Unauthorized"
     
     @pytest.mark.asyncio
     async def test_request_body_restoration(self, app, mock_settings, webhook_secret):

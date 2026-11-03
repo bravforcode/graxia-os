@@ -20,6 +20,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLang } from "../i18n/LanguageContext";
 import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
+import { siteUrl } from "../lib/site";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 
 /** Lyra-style typewriter (evidence: lyra.marqraft.com hero type span). */
@@ -96,7 +97,7 @@ export default function LandingPage() {
             "@context": "https://schema.org",
             "@type": "Organization",
         name: "Graxia",
-        url: "https://graxia-os-funnel.vercel.app/",
+        url: siteUrl(),
             description: t("brand.description"),
             sameAs: [],
           }),

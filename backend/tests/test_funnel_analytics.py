@@ -50,7 +50,7 @@ class TestFunnelAnalytics:
         }
         res_bad = await public_async_client.post("/api/v1/funnel/events", json=bad_payload)
         assert res_bad.status_code == 400
-        assert "Invalid event type" in res_bad.json()["error"]["message"]
+        assert "Invalid event type" in res_bad.json()["detail"]
 
     async def test_public_event_idempotency_and_metadata_redaction(
         self, public_async_client: AsyncClient, db_session: AsyncSession
@@ -79,6 +79,63 @@ class TestFunnelAnalytics:
         assert stored is not None
         assert stored.idempotency_key == payload["idempotency_key"]
         assert stored.metadata_json == {"cta": "buy_now", "content_id": "product-1"}
+
+    async def test_public_event_persists_first_and_last_touch_without_pii(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        org = await OrganizationFactory.build(db_session)
+        payload = {
+            "organization_id": str(org.id),
+            "event_type": "lead_capture",
+            "source": "line",
+            "medium": "social",
+            "campaign": "launch",
+            "referrer": "https://line.me/post?email=legacy@example.com",
+            "first_touch": {
+                "source": "google",
+                "medium": "organic",
+                "campaign": "prompt",
+                "referrer": "https://google.com/search?q=prompt",
+                "path": "/store",
+            },
+            "last_touch": {
+                "source": "line",
+                "medium": "social",
+                "campaign": "launch",
+                "referrer": "https://line.me/post?email=private@example.com",
+                "path": "/revenue-os",
+            },
+            "landing_path": "/store",
+            "content_id": "product-1",
+            "referral_code": "partner-7",
+            "metadata_json": {
+                "landing_path": "/store",
+                "content_id": "product-1",
+                "referral_code": "partner-7",
+                "email": "private@example.com",
+            },
+        }
+
+        response = await public_async_client.post("/api/v1/funnel/events", json=payload)
+
+        assert response.status_code == 201, response.text
+        event = await db_session.get(ConversionEvent, UUID(response.json()["id"]))
+        assert event is not None
+        assert event.source == "line"
+        assert event.first_touch_source == "google"
+        assert event.first_touch_referrer == "https://google.com/search"
+        assert event.first_touch_path == "/store"
+        assert event.last_touch_source == "line"
+        assert event.last_touch_referrer == "https://line.me/post"
+        assert event.last_touch_path == "/revenue-os"
+        assert event.landing_path == "/store"
+        assert event.content_id == "product-1"
+        assert event.referral_code == "partner-7"
+        assert event.metadata_json == {
+            "landing_path": "/store",
+            "content_id": "product-1",
+            "referral_code": "partner-7",
+        }
 
     async def test_attribution_summary_groups_events_and_revenue(
         self, async_client: AsyncClient, db_session: AsyncSession

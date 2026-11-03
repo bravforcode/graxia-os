@@ -4,8 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.agents.base import BaseAgent
-from app.core.control_plane import create_draft_review_request, _trusted_approval_owner
-from app.auth.context import AuthContext
+from app.core.control_plane import create_draft_review_request
 
 logger = logging.getLogger(__name__)
 
@@ -13,19 +12,17 @@ logger = logging.getLogger(__name__)
 class Drafter(BaseAgent):
     name = "drafter"
 
-    async def handle_decided_opportunity(self, payload: dict, *, auth: AuthContext | None = None) -> None:
-        _trusted_approval_owner(auth)
+    async def handle_decided_opportunity(self, payload: dict) -> None:
         opp_id = payload.get("opportunity_id")
         decision = payload.get("decision")
         if decision != "do_now":
             return
         try:
-            await self._draft_for_opportunity(uuid.UUID(opp_id), auth=auth)
+            await self._draft_for_opportunity(uuid.UUID(opp_id))
         except Exception as e:
             logger.error(f"Drafter failed for {opp_id}: {e}", exc_info=True)
 
-    async def _draft_for_opportunity(self, opp_id: uuid.UUID, *, auth: AuthContext | None = None) -> None:
-        owner = _trusted_approval_owner(auth)
+    async def _draft_for_opportunity(self, opp_id: uuid.UUID) -> None:
         from sqlalchemy import select
 
         from app.config import settings
@@ -36,13 +33,12 @@ class Drafter(BaseAgent):
 
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)
-            if not opp or opp.organization_id != owner:
+            if not opp:
                 return
             existing_draft = (
                 await db.execute(
                     select(ContentDraft)
                     .where(ContentDraft.opportunity_id == opp_id)
-                    .where(ContentDraft.organization_id == owner)
                     .where(ContentDraft.status.in_(["pending", "approved", "sent"]))
                     .limit(1)
                 )
@@ -91,7 +87,6 @@ Write the complete draft now. Make it real — not a template."""
                     return
 
             draft = ContentDraft(
-                organization_id=owner,
                 type=draft_type,
                 title=f"Draft: {opp.title[:80]}",
                 content=content,
@@ -110,7 +105,7 @@ Write the complete draft now. Make it real — not a template."""
                 draft_title=draft.title,
                 preview_text=draft.content,
                 requested_by=self.name,
-                auth=auth,
+                organization_id=opp.organization_id,
             )
             await self.log_audit(
                 "draft.created",

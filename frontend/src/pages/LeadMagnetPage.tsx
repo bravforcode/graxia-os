@@ -6,6 +6,7 @@ import { funnelApi } from "../api/funnel";
 import { STORE_ORG_ID, getProductBySlug } from "../data/products";
 import { getLeadMagnet } from "../data/organic";
 import { getAttributionEventFields } from "../lib/attribution";
+import { siteUrl } from "../lib/site";
 
 export default function LeadMagnetPage() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -28,7 +29,7 @@ export default function LeadMagnetPage() {
       link.rel = "canonical";
       document.head.appendChild(link);
     }
-    link.href = `https://graxia-os-funnel.vercel.app/free/${definition.slug}`;
+    link.href = siteUrl(`/free/${definition.slug}`);
   }, [definition, locale]);
 
   if (!definition) {
@@ -46,7 +47,6 @@ export default function LeadMagnetPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!definition) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -66,6 +66,7 @@ export default function LeadMagnetPage() {
         medium: attribution.medium,
         campaign: attribution.campaign,
         referrer: attribution.referrer,
+        referral_code: attribution.referral_code,
       });
       setDeliveryUrl(result.delivery_url ?? null);
       setSubmitted(true);

@@ -2,8 +2,8 @@
 
 Additive only: the existing audit_log table (352 rows) is left untouched.
 
-Revision ID: 030_audit_logs_table
-Revises: 029_invite_only_identity
+Revision ID: 040_audit_logs_table
+Revises: 039_invite_only_identity
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 
-revision: str = "030_audit_logs_table"
-down_revision: str | Sequence[str] | None = "029_invite_only_identity"
+revision: str = "040_audit_logs_table"
+down_revision: str | Sequence[str] | None = "039_invite_only_identity"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

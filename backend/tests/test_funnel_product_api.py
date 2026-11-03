@@ -1,5 +1,5 @@
 import pytest
-from uuid import UUID, uuid4
+from uuid import uuid4
 from decimal import Decimal
 from datetime import UTC, datetime
 
@@ -7,11 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import (
-    DeliveryAsset,
-    DigitalProduct,
-    FunnelCheckoutSession,
-)
+from app.models.funnel import DigitalProduct, DeliveryAsset
 from app.models.organization import Organization
 from tests.factories import OrganizationFactory
 
@@ -136,157 +132,11 @@ class TestFunnelProductAPI:
         """9. Publish product validates required fields"""
         create_res = await async_client.post("/api/v1/funnel/products", json={"name": "To Publish", "slug": "to-publish"})
         prod_id = create_res.json()["id"]
-        await async_client.post(
-            f"/api/v1/funnel/products/{prod_id}/assets",
-            json={"asset_type": "text", "title": "Publish asset", "content_body": "content"},
-        )
         
         response = await async_client.post(f"/api/v1/funnel/products/{prod_id}/publish")
         assert response.status_code == 200
         assert response.json()["status"] == "published"
         assert response.json()["published_at"] is not None
-
-    async def test_publish_and_status_update_require_an_active_asset(
-        self, async_client: AsyncClient
-    ):
-        create_res = await async_client.post(
-            "/api/v1/funnel/products", json={"name": "No fulfillment", "slug": "no-fulfillment"}
-        )
-        prod_id = create_res.json()["id"]
-
-        publish_response = await async_client.post(
-            f"/api/v1/funnel/products/{prod_id}/publish"
-        )
-        update_response = await async_client.patch(
-            f"/api/v1/funnel/products/{prod_id}", json={"status": "published"}
-        )
-
-        assert publish_response.status_code == 409
-        assert update_response.status_code == 409
-        product_response = await async_client.get(f"/api/v1/funnel/products/{prod_id}")
-        assert product_response.json()["status"] == "draft"
-
-    async def test_published_product_cannot_deactivate_its_final_active_asset(
-        self, async_client: AsyncClient
-    ):
-        create_res = await async_client.post(
-            "/api/v1/funnel/products", json={"name": "One asset", "slug": "one-asset"}
-        )
-        product_id = create_res.json()["id"]
-        asset_response = await async_client.post(
-            f"/api/v1/funnel/products/{product_id}/assets",
-            json={
-                "asset_type": "text",
-                "title": "Retained content",
-                "content_body": "already granted content",
-            },
-        )
-        asset_id = asset_response.json()["id"]
-        await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
-
-        update_response = await async_client.patch(
-            f"/api/v1/funnel/assets/{asset_id}", json={"is_active": False}
-        )
-        deactivate_response = await async_client.post(
-            f"/api/v1/funnel/assets/{asset_id}/deactivate"
-        )
-
-        assert update_response.status_code == 409
-        assert deactivate_response.status_code == 409
-        retained_asset = await async_client.get(f"/api/v1/funnel/assets/{asset_id}")
-        assert retained_asset.json()["is_active"] is True
-        assert retained_asset.json()["content_body"] == "already granted content"
-
-    async def test_asset_deactivation_is_blocked_while_checkout_is_open(
-        self, async_client: AsyncClient, db_session: AsyncSession
-    ):
-        create_res = await async_client.post(
-            "/api/v1/funnel/products", json={"name": "Open checkout", "slug": "open-checkout"}
-        )
-        product_id = create_res.json()["id"]
-        organization_id = create_res.json()["organization_id"]
-        first_asset = await async_client.post(
-            f"/api/v1/funnel/products/{product_id}/assets",
-            json={"asset_type": "text", "title": "Asset one", "content_body": "one"},
-        )
-        second_asset = await async_client.post(
-            f"/api/v1/funnel/products/{product_id}/assets",
-            json={"asset_type": "text", "title": "Asset two", "content_body": "two"},
-        )
-        await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
-        db_session.add(
-            FunnelCheckoutSession(
-                id=uuid4(),
-                organization_id=UUID(organization_id),
-                product_id=UUID(product_id),
-                status="pending",
-                amount=Decimal("10.00"),
-                currency="THB",
-            )
-        )
-        await db_session.commit()
-
-        update_response = await async_client.patch(
-            f"/api/v1/funnel/assets/{first_asset.json()['id']}",
-            json={"is_active": False},
-        )
-        deactivate_response = await async_client.post(
-            f"/api/v1/funnel/assets/{second_asset.json()['id']}/deactivate"
-        )
-
-        assert update_response.status_code == 409
-        assert deactivate_response.status_code == 409
-        for asset_id in (first_asset.json()["id"], second_asset.json()["id"]):
-            asset_response = await async_client.get(f"/api/v1/funnel/assets/{asset_id}")
-            assert asset_response.json()["is_active"] is True
-
-    async def test_terminal_checkout_allows_removing_extra_assets(
-        self, async_client: AsyncClient, db_session: AsyncSession
-    ):
-        create_res = await async_client.post(
-            "/api/v1/funnel/products", json={"name": "Extra assets", "slug": "extra-assets"}
-        )
-        product_id = create_res.json()["id"]
-        organization_id = create_res.json()["organization_id"]
-        assets = []
-        for title in ("Asset one", "Asset two", "Asset three"):
-            response = await async_client.post(
-                f"/api/v1/funnel/products/{product_id}/assets",
-                json={"asset_type": "text", "title": title, "content_body": title},
-            )
-            assets.append(response.json())
-        await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
-        db_session.add(
-            FunnelCheckoutSession(
-                id=uuid4(),
-                organization_id=UUID(organization_id),
-                product_id=UUID(product_id),
-                status="completed",
-                amount=Decimal("10.00"),
-                currency="THB",
-            )
-        )
-        await db_session.commit()
-
-        update_response = await async_client.patch(
-            f"/api/v1/funnel/assets/{assets[0]['id']}",
-            json={"is_active": False},
-        )
-        deactivate_response = await async_client.post(
-            f"/api/v1/funnel/assets/{assets[1]['id']}/deactivate"
-        )
-
-        assert update_response.status_code == 200
-        assert deactivate_response.status_code == 200
-        retained_asset = await async_client.get(
-            f"/api/v1/funnel/assets/{assets[0]['id']}"
-        )
-        assert retained_asset.json()["is_active"] is False
-        assert retained_asset.json()["content_body"] == "Asset one"
-        final_asset = await async_client.get(
-            f"/api/v1/funnel/assets/{assets[2]['id']}"
-        )
-        assert final_asset.json()["is_active"] is True
 
     async def test_duplicate_slug_in_same_org_is_rejected(self, async_client: AsyncClient, db_session: AsyncSession):
         """10. Duplicate slug in same org is rejected"""

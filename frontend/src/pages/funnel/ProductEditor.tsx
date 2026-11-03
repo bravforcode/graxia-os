@@ -1,4 +1,3 @@
-import { isAxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
@@ -110,8 +109,8 @@ export default function ProductEditor() {
       }
     } catch (err: unknown) {
       console.error("Save product failed", err);
-      const detail = isAxiosError<{ detail?: string }>(err)
-        ? err.response?.data?.detail
+      const detail = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
         : undefined;
       setErrorMsg(detail || "An error occurred while saving the product.");
     } finally {

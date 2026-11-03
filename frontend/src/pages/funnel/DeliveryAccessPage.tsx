@@ -1,4 +1,3 @@
-import { isAxiosError } from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { 
@@ -7,7 +6,9 @@ import {
   ExternalLink, 
   AlertTriangle,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Copy,
+  Share2,
 } from "lucide-react";
 import { funnelApi, type DeliveryPayload } from "../../api/funnel";
 import { useLang } from "@/i18n/LanguageContext";
@@ -15,14 +16,15 @@ import { useLang } from "@/i18n/LanguageContext";
 export default function DeliveryAccessPage() {
   const { t } = useLang();
   const { token } = useParams<{ token: string }>();
-  const latestT = useRef(t);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [payload, setPayload] = useState<DeliveryPayload | null>(null);
   const [consuming, setConsuming] = useState(false);
   const [assetUnlocked, setAssetUnlocked] = useState(false);
   const [unlockedPayload, setUnlockedPayload] = useState<DeliveryPayload | null>(null);
+  const [copied, setCopied] = useState(false);
 
+  const latestT = useRef(t);
   const rawToken = token || "";
 
   useEffect(() => {
@@ -37,8 +39,8 @@ export default function DeliveryAccessPage() {
       setPayload(res);
     } catch (err: unknown) {
       console.error("Failed to retrieve delivery payload", err);
-      const detail = isAxiosError<{ detail?: string }>(err)
-        ? err.response?.data?.detail
+      const detail = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
         : undefined;
       setErrorMsg(detail || latestT.current("delivery.invalid"));
     } finally {
@@ -50,7 +52,7 @@ export default function DeliveryAccessPage() {
     if (rawToken) {
       void fetchPayload();
     }
-  }, [rawToken, fetchPayload]);
+  }, [fetchPayload, rawToken]);
 
   const handleConsume = async () => {
     if (!rawToken) return;
@@ -65,12 +67,45 @@ export default function DeliveryAccessPage() {
       setPayload(res);
     } catch (err: unknown) {
       console.error("Failed to consume delivery asset", err);
-      const detail = isAxiosError<{ detail?: string }>(err)
-        ? err.response?.data?.detail
+      const detail = err && typeof err === "object" && "response" in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
         : undefined;
       setErrorMsg(detail || t("delivery.downloadSecured"));
     } finally {
       setConsuming(false);
+    }
+  };
+
+  const handleReferralShare = async () => {
+    const referralUrl = unlockedPayload?.referral_url ?? payload.referral_url;
+    if (!referralUrl) return;
+    const shareData = {
+      title: "Graxia bonus resource",
+      text: "รับ bonus resource ฟรีจาก Graxia",
+      url: referralUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(referralUrl);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2200);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = referralUrl;
+        input.setAttribute("readonly", "true");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2200);
+      }
+    } catch {
+      // User cancellation is not an error state for delivery.
     }
   };
 
@@ -215,6 +250,28 @@ export default function DeliveryAccessPage() {
               </div>
             )}
           </div>
+        )}
+
+        {assetUnlocked && (unlockedPayload?.referral_url || payload.referral_url) && (
+          <section className="border-t border-slate-850 pt-5 space-y-3" aria-labelledby="referral-heading">
+            <div>
+              <h2 id="referral-heading" className="text-sm font-bold text-slate-100">
+                Share a bonus with a friend
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                Your link opens a free bonus resource. Referral attribution is
+                verified server-side and self-referrals do not earn rewards.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleReferralShare}
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+            >
+              {copied ? "Referral link copied" : "Share bonus link"}
+              {copied ? <Copy size={16} /> : <Share2 size={16} />}
+            </button>
+          </section>
         )}
       </div>
     </div>

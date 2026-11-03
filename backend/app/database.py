@@ -14,59 +14,65 @@ logger = logging.getLogger(__name__)
 
 
 def _is_celery_context() -> bool:
-    """Detect Celery worker/beat processes or an explicit NullPool override."""
+    """Detect if executing in Celery worker/beat or explicit NullPool config."""
     pool_class = os.getenv("DB_POOL_CLASS", "").strip().lower()
     if pool_class in ("nullpool", "null_pool", "null"):
         return True
     return any("celery" in str(arg).lower() for arg in sys.argv)
 
-# Enterprise-grade engine with retries and connection pooling
+
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(5),
     wait=tenacity.wait_exponential(multiplier=1, min=2, max=10),
     retry=tenacity.retry_if_exception_type(Exception),
-    before_sleep=lambda retry_state: logger.warning(f"DB connection failed, retrying... ({retry_state.attempt_number})")
+    before_sleep=lambda retry_state: logger.warning(
+        f"DB connection failed, retrying... ({retry_state.attempt_number})"
+    ),
 )
 def _set_sqlite_pragma(dbapi_conn, connection_record):
     """Enable foreign key support for SQLite connections."""
+    import sqlite3
+
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
     cursor.close()
 
-def create_engine_with_retry():
+
+def create_engine_with_retry(force_null_pool: bool | None = None):
     url = settings.DATABASE_URL
     is_sqlite = url.startswith("sqlite")
+    use_null_pool = force_null_pool if force_null_pool is not None else _is_celery_context()
 
     engine_args = {
-        "pool_pre_ping": True,
         "echo": settings.DEBUG if hasattr(settings, "DEBUG") else False,
     }
 
     if is_sqlite:
+        engine_args["pool_pre_ping"] = True
         engine_args["connect_args"] = {"check_same_thread": False}
-    elif _is_celery_context():
-        # Each Celery task runs in its own asyncio loop. A pooled asyncpg connection from a closed loop breaks, so open one per session.
+    elif use_null_pool:
         logger.info("Database engine configured with NullPool (Celery/multi-loop context)")
         engine_args["poolclass"] = NullPool
         engine_args["connect_args"] = {"server_settings": {"application_name": "brav_os_mas"}}
     else:
         engine_args.update({
+            "pool_pre_ping": True,
             "pool_size": settings.DB_POOL_SIZE,
             "max_overflow": settings.DB_MAX_OVERFLOW,
             "pool_timeout": settings.DB_POOL_TIMEOUT_SECONDS,
             "pool_recycle": settings.DB_POOL_RECYCLE_SECONDS,
-            "connect_args": {"server_settings": {"application_name": "brav_os_mas"}}
+            "connect_args": {"server_settings": {"application_name": "brav_os_mas"}},
         })
 
     engine = create_async_engine(url, **engine_args)
 
-    # Enable foreign keys for SQLite
     if is_sqlite:
         event.listen(engine.sync_engine, "connect", _set_sqlite_pragma)
 
     return engine
+
 
 engine = create_engine_with_retry()
 AsyncSessionLocal = async_sessionmaker(
@@ -74,6 +80,7 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
 
 async def get_db():
     async with AsyncSessionLocal() as session:
@@ -90,14 +97,7 @@ async def get_db_session() -> AsyncSession:
 
 @asynccontextmanager
 async def transaction_scope():
-    """
-    Enterprise-grade transaction context manager with automatic rollback on failure.
-
-    Usage:
-        async with transaction_scope() as session:
-            session.add(entity)
-            # Automatically commits on success, rolls back on exception
-    """
+    """Enterprise-grade transaction context manager with automatic rollback on failure."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -114,13 +114,14 @@ async def check_db_health() -> dict:
     try:
         async with AsyncSessionLocal() as session:
             from sqlalchemy import text
+
             result = await session.execute(text("SELECT 1"))
             row = result.scalar()
             return {
                 "status": "healthy",
                 "database": "connected",
                 "query_test": row == 1,
-                "pool_size": engine.pool.size() if hasattr(engine.pool, 'size') else 'N/A',
+                "pool_size": engine.pool.size() if hasattr(engine.pool, "size") else "N/A",
             }
     except Exception as e:
         logger.error(f"Database health check failed: {e}")

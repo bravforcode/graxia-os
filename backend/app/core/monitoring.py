@@ -105,6 +105,18 @@ security_rate_limit_triggered_total = Counter(
     ['rule']
 )
 
+funnel_checkout_create_failures_total = Counter(
+    "funnel_checkout_create_failures_total",
+    "Checkout session creation failures",
+    ["reason"],
+)
+
+funnel_webhook_failures_total = Counter(
+    "funnel_webhook_failures_total",
+    "Funnel webhook failures",
+    ["stage", "reason"],
+)
+
 # Gauges (current state)
 active_jobs = Gauge('active_jobs', 'Number of active jobs')
 active_contacts = Gauge('active_contacts', 'Number of active contacts')
@@ -189,6 +201,26 @@ class MetricsCollector:
     @staticmethod
     def record_rate_limit(rule: str):
         security_rate_limit_triggered_total.labels(rule=rule).inc()
+
+    @staticmethod
+    def record_checkout_create_failure(reason: str):
+        """Record a bounded checkout failure reason; never include request data."""
+        safe_reason = reason.strip()[:64] or "unknown"
+        funnel_checkout_create_failures_total.labels(reason=safe_reason).inc()
+        logger.warning("checkout_create_failed", extra={"reason": safe_reason})
+
+    @staticmethod
+    def record_webhook_failure(stage: str, reason: str):
+        """Record a bounded webhook failure reason; never include payload/secrets."""
+        safe_stage = stage.strip()[:64] or "unknown"
+        safe_reason = reason.strip()[:64] or "unknown"
+        funnel_webhook_failures_total.labels(
+            stage=safe_stage, reason=safe_reason
+        ).inc()
+        logger.warning(
+            "funnel_webhook_failed",
+            extra={"stage": safe_stage, "reason": safe_reason},
+        )
 
     @staticmethod
     def set_dlq_depth(depth: int):

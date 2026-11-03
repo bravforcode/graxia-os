@@ -1,55 +1,40 @@
-# Organic content operations
+# Organic content batch operations
 
-Canonical surface (temporary until DNS is configured): `https://graxia-os-funnel.vercel.app`.
+The weekly batch is deliberately dry-run only until a provider adapter, account
+consent, credentials, and a current human approval are present.
 
-The operating sequence is:
+## Schedule
 
-1. Research and draft.
-2. Repurpose for SEO, short-form, Facebook/Instagram, LINE, and X.
-3. Run claim and UTM/link checks.
-4. Require human approval with an unexpired approval record.
-5. Export a dry-run batch until provider credentials and consent evidence exist.
-6. Canary publish only after provider allowlist, consent, idempotency, and claim gates pass.
-7. Review attribution and conversion events before the next batch.
+Celery beat runs `tasks.organic_content_batch.schedule_weekly` every Monday at
+08:00 in the configured worker timezone. The task creates at most one batch per
+ISO week and queues work; it never performs AI generation in the request path.
 
-Ruflo/content-ops must keep live publishing denied by default. The daily unit is
-one approval batch; no provider token belongs in source control.
+Set these production environment values on the worker before enabling it:
 
-Lead magnets currently planned:
-
-- Prompt Pack Lite
-- Freelance Pricing Calculator Lite
-- N8N/SME Automation Checklist
-
-Public organic surfaces:
-
-- `/guides/ai-prompt-workflows`
-- `/guides/freelance-pricing-systems`
-- `/guides/sme-automation-systems`
-- `/free/prompt-pack-lite`
-- `/free/freelance-pricing-calculator-lite`
-- `/free/n8n-sme-automation-checklist`
-
-Before enabling capture in an environment, publish the three corresponding
-backend records with the fail-closed seed command:
-
-```powershell
-cd "C:\Users\menum\graxia os\backend"
-python scripts/seed_organic_lead_magnets.py --base-url https://<verified-api-host>
+```text
+CONTENT_BATCH_ENABLED=true
+ORGANIC_CONTENT_WEEKLY_ENABLED=true
+ORGANIC_CONTENT_WEEKLY_ORGANIZATION_ID=<public-organization-uuid>
+ORGANIC_CONTENT_WEEKLY_TOPIC=<weekly-topic>
+ORGANIC_CONTENT_WEEKLY_CANONICAL_URL=https://bravforcode.github.io/graxia/
+ORGANIC_CONTENT_WEEKLY_SITE=site_a
+ORGANIC_CONTENT_WEEKLY_LANGUAGE=th
 ```
 
-The command refuses to publish a magnet when its target product is missing.
+The scheduler creates nine items: one pillar article, three supporting/FAQ
+pages, and five platform-specific short-form variants. The worker keeps the
+batch queued if the broker is unavailable so an operator can replay it safely.
 
-The ten AI Factory catalog rows use a separate fail-closed seed command. It
-requires operator-supplied delivery files named after the catalog slug; no
-placeholder asset is accepted:
+## Publishing boundary
 
-```powershell
-cd "C:\Users\menum\graxia os\backend"
-python scripts/seed_graxia_catalog.py `
-  --base-url https://<verified-api-host> `
-  --asset-dir C:\path\to\graxia-assets
-```
+The default result is an export/dry-run. Live publishing requires, per item:
 
-All claims are checked against `claims-ledger.yml`. Missing evidence means the
-claim is omitted or marked as unverified.
+- unexpired human approval;
+- provider in the allowlist;
+- provider account consent that is not revoked;
+- credentials available in production secrets;
+- claim, canonical, UTM, and idempotency checks passing; and
+- a successful canary receipt.
+
+A missing provider or consent is a blocked publish, not a successful publish.
+Never label an exported or dry-run item as published.
