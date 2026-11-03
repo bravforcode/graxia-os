@@ -22,6 +22,23 @@ from app.services.lead_magnet_service import LeadMagnetService
 from app.services.unsubscribe_tokens import create_unsubscribe_token
 from tests.factories import OrganizationFactory
 
+
+async def _add_verified_delivery(db_session: AsyncSession, org_id: UUID, slug: str) -> DeliveryAsset:
+    """Published product plus active text asset, which capture requires."""
+    product = DigitalProduct(
+        id=uuid4(), organization_id=org_id, name=f"{slug} product", slug=f"{slug}-prod",
+        price_amount=Decimal("0.00"), currency="USD", status="published",
+    )
+    db_session.add(product)
+    await db_session.flush()
+    asset = DeliveryAsset(
+        id=uuid4(), product_id=product.id, organization_id=org_id, asset_type="text",
+        title=f"{slug} asset", content_body="Lead magnet content", is_active=True,
+    )
+    db_session.add(asset)
+    await db_session.flush()
+    return asset
+
 @pytest.mark.asyncio
 class TestLeadMagnetAPI:
     """Test the Lead Magnet and Public Capture API layer."""
@@ -142,9 +159,9 @@ class TestLeadMagnetAPI:
             id=uuid4(),
             product_id=product.id,
             organization_id=org.id,
-            asset_type="file",  # Must be one of valid choice constraints
+            asset_type="text",
             title="Super PDF",
-            storage_path="/files/super.pdf",
+            content_body="Lead magnet content",
             is_active=True
         )
         db_session.add(asset)
@@ -157,6 +174,7 @@ class TestLeadMagnetAPI:
             name="Super Lead Magnet",
             slug="super-lm",
             target_product_id=product.id,
+            delivery_asset_id=asset.id,
             promise="Get super powers",
             status="published",
             opt_in_count=0
@@ -203,7 +221,7 @@ class TestLeadMagnetAPI:
         order_res = await db_session.execute(stmt)
         order = order_res.scalar_one()
         assert order.organization_id == org.id
-        assert order.status == "paid"
+        assert order.status == "comped"
         assert order.total_amount == Decimal("0.00")
 
         # Verify DeliveryAccess created
@@ -224,9 +242,11 @@ class TestLeadMagnetAPI:
         org = Organization(id=uuid4(), name="Consent Org", slug="consent-org", status="active")
         db_session.add(org)
         await db_session.flush()
+        asset = await _add_verified_delivery(db_session, org.id, "consent")
         lm = LeadMagnet(
             id=uuid4(), organization_id=org.id, name="Consent Magnet", slug="consent-magnet",
-            status="published", opt_in_count=0
+            status="published", opt_in_count=0, target_product_id=asset.product_id,
+            delivery_asset_id=asset.id,
         )
         db_session.add(lm)
         await db_session.commit()
@@ -302,6 +322,9 @@ class TestLeadMagnetAPI:
         )
         db_session.add(org)
         await db_session.flush()
+        asset = await _add_verified_delivery(db_session, org.id, "safe")
+        lead_magnet.target_product_id = asset.product_id
+        lead_magnet.delivery_asset_id = asset.id
         db_session.add_all([contact, lead_magnet])
         await db_session.commit()
 
@@ -340,9 +363,9 @@ class TestLeadMagnetAPI:
             id=uuid4(),
             product_id=product.id,
             organization_id=org.id,
-            asset_type="file",
+            asset_type="text",
             title="Atomic File",
-            storage_path="/files/atomic.pdf",
+            content_body="Lead magnet content",
             is_active=True,
         )
         lead_magnet = LeadMagnet(
@@ -351,6 +374,7 @@ class TestLeadMagnetAPI:
             name="Atomic Magnet",
             slug="atomic-magnet",
             target_product_id=product.id,
+            delivery_asset_id=asset.id,
             status="published",
             opt_in_count=0,
         )
@@ -364,7 +388,7 @@ class TestLeadMagnetAPI:
 
         monkeypatch.setattr(
             FunnelDeliveryService,
-            "grant_delivery_access_for_order",
+            "grant_delivery_access_for_asset",
             fail_delivery,
         )
 
@@ -418,9 +442,9 @@ class TestLeadMagnetAPI:
             id=uuid4(),
             product_id=product.id,
             organization_id=org.id,
-            asset_type="file",  # Must be one of valid choice constraints
+            asset_type="text",
             title="Gift PDF",
-            storage_path="/files/gift.pdf",
+            content_body="Lead magnet content",
             is_active=True
         )
         db_session.add(asset)
@@ -432,6 +456,7 @@ class TestLeadMagnetAPI:
             name="Gift Lead Magnet",
             slug="gift-lm",
             target_product_id=product.id,
+            delivery_asset_id=asset.id,
             status="published",
             opt_in_count=0
         )

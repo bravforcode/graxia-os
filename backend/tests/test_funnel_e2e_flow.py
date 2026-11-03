@@ -443,6 +443,7 @@ class TestFunnelE2EFlow:
             "slug": "free-biz-checklist-e2e",
             "promise": "Get our 50-point business checklist free",
             "target_product_id": product_id,
+            "delivery_asset_id": asset_res.json()["id"],
         })
         assert lm_res.status_code == 201, f"Lead magnet create failed: {lm_res.text}"
         lm = lm_res.json()
