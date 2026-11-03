@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
+from app.core.errors import AppError
 from app.core.auth import (
     create_access_token,
     create_refresh_token,
@@ -331,13 +332,22 @@ async def get_current_user(request: Request, db=Depends(get_db)) -> User:
 async def register(
     user_data: UserRegister, request: Request, response: Response, db=Depends(get_db)
 ):
+    _check_rate_limit(f"register:{user_data.email.lower()}")
+    if not user_data.invite_token:
+        raise AppError(
+            code="PASSWORD_REGISTRATION_DISABLED",
+            message=(
+                "Password registration is disabled. Continue with Google or sign in "
+                "to an existing account."
+            ),
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
     try:
         existing_user = await _lookup_user_by_email(db, user_data.email)
     except Exception as exc:
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
-    _check_rate_limit(user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
@@ -347,38 +357,29 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 12 characters",
         )
-
-    user_id = uuid4()
+    try:
+        invitation = await consume_invitation(db, user_data.invite_token, user_data.email)
+    except Exception:
+        await db.rollback()
+        raise
     user = User(
-        id=user_id,
+        id=uuid4(),
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
         full_name=user_data.full_name,
-        role="user",
+        role=invitation.role,
+        organization_id=invitation.organization_id,
         is_active=True,
         totp_enabled=False,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
+    db.add(user)
     try:
-        if user_data.invite_token:
-            invitation = await consume_invitation(
-                db, user_data.invite_token, user_data.email
-            )
-            user.role = invitation.role
-            user.organization_id = invitation.organization_id
-            db.add(user)
-        else:
-            organization = _new_personal_organization(
-                user_id=user_id,
-                email=user_data.email,
-                full_name=user_data.full_name,
-            )
-            user.organization_id = organization.id
-            db.add_all([organization, user])
         await db.commit()
         await db.refresh(user)
     except Exception as exc:
+        await db.rollback()
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
@@ -430,7 +431,7 @@ async def register(
     except Exception as exc:
         logger.warning("Welcome email automation skipped: %s", exc)
 
-    logger.info("New user registered: %s", user.email)
+    logger.info("New user registered via invitation: %s", user.email)
     return auth_response
 
 

@@ -61,6 +61,19 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/funnel/public/products/{product_id}/checkout"),
     ("GET", "/api/v1/public/referrals/{code}"),
     ("GET", "/api/v1/public/content/articles/{slug}"),
+    ("GET", "/api/v1/public/funnel/unsubscribe"),
+    ("POST", "/api/v1/public/funnel/unsubscribe/confirm"),
+    # Plain-HTTP probe of the stream endpoint; the handler always answers 401.
+    ("GET", "/v1/graxia/stream"),
+    ("GET", "/t/open.gif"),
+    ("GET", "/t/click"),
+    # Each /internal route enforces X-Internal-API-Key in its own dependency, not here.
+    ("GET", "/internal/health"),
+    ("POST", "/internal/run-lead-hunter"),
+    ("POST", "/internal/daily-report"),
+    ("POST", "/internal/cleanup"),
+    ("POST", "/internal/backup"),
+    ("GET", "/internal/queue-status"),
 }
 
 BLOCKED_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/metrics", "/flower", "/admin")
@@ -88,6 +101,7 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/funnel/events/delivery-opened",
     "/api/v1/public/funnel/lead-magnets/{slug}/capture",
     "/api/v1/public/funnel/unsubscribe",
+    "/api/v1/public/funnel/unsubscribe/confirm",
     "/api/v1/funnel/public/products/{product_id}/checkout",
 }
 INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
@@ -132,7 +146,8 @@ def classify_route(method: str, route_path: str) -> AuthLevel:
         return AuthLevel.ADMIN
     if route_path.startswith("/api/v1") or route_path.startswith("/obsidian"):
         return AuthLevel.AUTHENTICATED
-    return AuthLevel.PUBLIC
+    # Default deny: a mounted route without an explicit classification is refused.
+    return AuthLevel.BLOCKED
 
 
 def route_controls(method: str, route_path: str) -> list[str]:
@@ -238,6 +253,21 @@ async def build_auth_context(request: Request) -> dict[str, Any]:
     return payload
 
 
+def _forbidden(request: Request):
+    """Denial with the safe error envelope; `detail` stays for existing clients."""
+    return build_error_response(
+        request, code="FORBIDDEN", message="Forbidden", status_code=403,
+        legacy_detail="Forbidden",
+    )
+
+
+def _not_found(request: Request):
+    return build_error_response(
+        request, code="NOT_FOUND", message="Not Found", status_code=404,
+        legacy_detail="Not Found",
+    )
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     """Fail-closed route protection using the mounted app routes."""
 
@@ -247,37 +277,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         if route_path is None:
             if is_blocked_surface(path) and settings.STRICT_BOOTSTRAP:
-                return build_error_response(
-                    request,
-                    code="NOT_FOUND",
-                    message="Resource not found",
-                    status_code=404,
-                )
-            # Unmatched paths are never dispatched either way. Keep the API
-            # surface fail-closed (403 hides which /api routes exist); plain
-            # non-API paths have nothing to protect, so answer a normal 404.
-            if not path.startswith("/api/"):
-                return build_error_response(
-                    request,
-                    code="NOT_FOUND",
-                    message="Resource not found",
-                    status_code=404,
-                )
-            return build_error_response(
-                request,
-                code="PERMISSION_DENIED",
-                message="Not authorized to access this resource",
-                status_code=403,
-            )
+                return _not_found(request)
+            return _forbidden(request)
 
         required_level = classify_route(request.method, route_path)
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
-            return build_error_response(
-                request,
-                code="NOT_FOUND",
-                message="Resource not found",
-                status_code=404,
-            )
+            return _not_found(request)
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
             if route_path == "/api/v1/revenue-bridge/events":
                 # The bridge endpoint verifies the provider HMAC envelope
@@ -406,12 +411,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return build_error_response(
-                request,
-                code="PERMISSION_DENIED",
-                message="Not authorized to access this resource",
-                status_code=403,
-            )
+            return _forbidden(request)
 
         request.state.auth_payload = payload
         request.state.session_id = str(payload.get("session_id") or "")
