@@ -21,10 +21,13 @@ class TestBillingIntegration:
         assert response.status_code in [200, 401, 403]
 
     @pytest.mark.asyncio
-    async def test_get_plans_unauthorized(self, public_async_client):
-        """Plans endpoint should require authentication"""
+    async def test_get_plans_is_public_catalog(self, public_async_client):
+        """Plans are a public pricing catalog (PUBLIC_ROUTES) with no tenant data."""
         response = await public_async_client.get("/api/v1/billing/plans")
-        assert response.status_code in [401, 403]
+        assert response.status_code == 200
+        plans = response.json()["plans"]
+        assert [plan["id"] for plan in plans] == ["free", "starter", "pro"]
+        assert all(set(plan) == {"id", "name", "limits"} for plan in plans)
 
     @pytest.mark.asyncio
     async def test_create_checkout_session(self, async_client):
