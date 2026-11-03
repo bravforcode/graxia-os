@@ -21,7 +21,6 @@ async def test_health_readiness_endpoint_accessible(async_client):
     """Health endpoints should work with auth context."""
     resp = await async_client.get(
         "/api/v1/health",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
 
@@ -31,7 +30,6 @@ async def test_readiness_local_agent_readiness(async_client):
     """Local agent readiness must have all expected fields."""
     resp = await async_client.get(
         "/api/v1/health/readiness/local-agent",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -44,7 +42,6 @@ async def test_audit_events_returns_200_with_pagination(async_client):
     """Audit events endpoint returns paginated results."""
     resp = await async_client.get(
         "/api/v1/audit/events?limit=10&offset=0",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -61,7 +58,6 @@ async def test_audit_mcp_returns_200(async_client):
     """MCP audit endpoint returns paginated results."""
     resp = await async_client.get(
         "/api/v1/audit/mcp?limit=5",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -76,7 +72,6 @@ async def test_audit_workflows_returns_200(async_client):
     """Workflow audit endpoint returns paginated results."""
     resp = await async_client.get(
         "/api/v1/audit/workflows",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -89,7 +84,6 @@ async def test_audit_approvals_returns_200(async_client):
     """Approval audit endpoint returns paginated results."""
     resp = await async_client.get(
         "/api/v1/audit/approvals",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -102,7 +96,6 @@ async def test_audit_approvals_filters_by_status(async_client):
     """Approval audit should filter by status."""
     resp = await async_client.get(
         "/api/v1/audit/approvals?status=pending",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
     )
     assert resp.status_code == 200
 
