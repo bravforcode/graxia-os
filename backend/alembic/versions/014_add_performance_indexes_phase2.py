@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "014_add_performance_indexes_phase2"
-down_revision: str | None = "89d09d4d6b03"
+down_revision: str | None = "014a_expand_version"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -24,13 +24,21 @@ def upgrade() -> None:
         postgresql_using="btree",
         if_not_exists=True,
     )
-    # Audit logs — time-range compliance queries
-    op.create_index(
-        "ix_audit_logs_created_at",
-        "audit_logs",
-        ["created_at"],
-        postgresql_using="btree",
-        if_not_exists=True,
+    # Audit logs — time-range compliance queries.
+    # audit_logs is an optional legacy table; the canonical model uses
+    # audit_log. Guard only relation absence. If the relation exists but
+    # lacks created_at, PostgreSQL still raises the schema error.
+    op.execute(
+        """
+        DO $migration$
+        BEGIN
+            IF to_regclass('audit_logs') IS NOT NULL THEN
+                EXECUTE 'CREATE INDEX IF NOT EXISTS ix_audit_logs_created_at '
+                        'ON audit_logs USING btree (created_at)';
+            END IF;
+        END
+        $migration$;
+        """
     )
     # Submissions — pipeline status queries
     op.create_index(

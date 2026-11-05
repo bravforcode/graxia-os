@@ -13,7 +13,6 @@ from app.models.funnel import (
     ConversionEvent,
     DeliveryAccess,
     DeliveryAsset,
-    DeliveryEmailEvent,
     DigitalProduct,
     FunnelCheckoutSession,
     FunnelOrder,
@@ -22,6 +21,7 @@ from app.models.funnel import (
     LeadCapture,
     LeadMagnet,
 )
+from app.models.delivery_email_event import DeliveryEmailEvent
 from app.services.funnel_service import (
     delivery_access_service,
     funnel_analytics_service,
@@ -168,7 +168,8 @@ class TestDeliveryAccessService:
         opened2 = await delivery_access_service.record_open(access.id, db=db_session)
         assert opened2.open_count == 2
         assert opened2.first_opened_at == first_open
-        assert opened2.last_opened_at > first_open
+        # >= : two opens in the same clock tick (Windows resolution) can share a timestamp
+        assert opened2.last_opened_at >= first_open
 
     @pytest.mark.asyncio
     async def test_cross_org_isolation(self, db_session):
@@ -255,6 +256,8 @@ class TestLeadMagnetModel:
         )
         assert magnet.slug == "free-guide"
         assert magnet.status == "active"
+        assert magnet.name == "Free Guide"
+        assert magnet.promise == "A free guide"
 
     @pytest.mark.asyncio
     async def test_get_by_slug(self, db_session):
@@ -262,7 +265,7 @@ class TestLeadMagnetModel:
         await lead_magnet_service.create(organization_id=org.id, slug="my-magnet", title="My Magnet", db=db_session)
         magnet = await lead_magnet_service.get_by_slug("my-magnet", org.id, db=db_session)
         assert magnet is not None
-        assert magnet.title == "My Magnet"
+        assert magnet.name == "My Magnet"
 
         # Wrong org should not find it
         org2 = await OrganizationFactory.build(db_session)

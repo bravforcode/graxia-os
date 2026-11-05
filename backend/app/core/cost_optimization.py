@@ -13,10 +13,9 @@ Features:
 - Automated cost optimization recommendations
 """
 
-import json
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Optional
@@ -26,7 +25,6 @@ from sqlalchemy import Column, DateTime, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.models.base import Base
-from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +228,7 @@ class FinOpsManager:
         """
         Get cost summary for date range.
         """
-        from sqlalchemy import select, func
+        from sqlalchemy import select
         
         # Total cost
         total_result = await self.db.execute(

@@ -7,7 +7,7 @@ No real PII, no real emails, no real payment data.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 

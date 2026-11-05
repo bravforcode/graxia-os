@@ -433,6 +433,7 @@ async def upsert_job_posting(payload: dict[str, Any]) -> JobPosting:
 
         if row is None:
             row = JobPosting(
+                organization_id=payload["organization_id"],
                 title=str(payload.get("title") or "Untitled"),
                 company=str(payload.get("company") or "").strip() or None,
                 source_platform=str(payload.get("source_platform") or "").strip() or None,
@@ -521,10 +522,12 @@ async def update_job_status(
         return row
 
 
-async def request_job_apply_approval(job_id: UUID):
+async def request_job_apply_approval(job_id: UUID, *, auth=None):
+    from app.core.control_plane import _trusted_approval_owner
+    owner = _trusted_approval_owner(auth)
     async with AsyncSessionLocal() as db:
         job = await db.get(JobPosting, job_id)
-        if job is None:
+        if job is None or job.organization_id != owner:
             return None
 
         preview = {
@@ -550,6 +553,7 @@ async def request_job_apply_approval(job_id: UUID):
         details=details,
         preview=preview,
         requested_by="jobs_api",
+        auth=auth,
     )
 
 
@@ -572,6 +576,7 @@ async def upsert_job_posting_from_opportunity(opportunity_id: UUID) -> JobPostin
             "raw_data": dict(opportunity.raw_data or {}),
             "source_hash": opportunity.source_hash or f"opportunity:{opportunity.id}",
             "opportunity_id": opportunity.id,
+            "organization_id": opportunity.organization_id,
         }
     return await upsert_job_posting(payload)
 

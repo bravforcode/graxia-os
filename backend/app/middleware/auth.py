@@ -13,11 +13,11 @@ from app.core.auth import (
     decode_access_token,
     extract_bearer_token,
 )
+from app.core.errors import build_error_response
 from app.services.audit_service import log_audit_event
 from app.services.session_service import SessionService
 from app.models.user import User as _UserORM
 from fastapi import HTTPException, Request, Security, status, Depends
-from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Match
@@ -41,20 +41,39 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/auth/social-login"),
     ("POST", "/api/v1/auth/refresh"),
     ("POST", "/api/v1/auth/logout"),
+    ("GET", "/api/v1/billing/plans"),
     ("GET", "/health"),
+    ("GET", "/health/live"),
+    ("GET", "/health/ready"),
     ("GET", "/"),
     ("GET", "/favicon.ico"),
     ("GET", "/api/v1/system/health"),
     ("GET", "/api/v1/funnel/delivery/{token}"),
+    ("GET", "/api/v1/funnel/delivery/{token}/download"),
     ("POST", "/api/v1/funnel/delivery/{token}/consume"),
+    ("POST", "/api/v1/funnel/events/delivery-opened"),
     ("POST", "/api/v1/funnel/webhooks/stripe"),
     ("POST", "/api/v1/funnel/events"),
+    ("POST", "/api/v1/funnel/events/delivery-opened"),
     ("POST", "/api/v1/public/funnel/lead-magnets/{slug}/capture"),
     ("POST", "/api/v1/public/funnel/unsubscribe"),
     ("GET", "/api/v1/funnel/public/products/{organization_id}/{slug}"),
     ("POST", "/api/v1/funnel/public/products/{product_id}/checkout"),
     ("GET", "/api/v1/public/referrals/{code}"),
     ("GET", "/api/v1/public/content/articles/{slug}"),
+    ("GET", "/api/v1/public/funnel/unsubscribe"),
+    ("POST", "/api/v1/public/funnel/unsubscribe/confirm"),
+    # Plain-HTTP probe of the stream endpoint; the handler always answers 401.
+    ("GET", "/v1/graxia/stream"),
+    ("GET", "/t/open.gif"),
+    ("GET", "/t/click"),
+    # Each /internal route enforces X-Internal-API-Key in its own dependency, not here.
+    ("GET", "/internal/health"),
+    ("POST", "/internal/run-lead-hunter"),
+    ("POST", "/internal/daily-report"),
+    ("POST", "/internal/cleanup"),
+    ("POST", "/internal/backup"),
+    ("GET", "/internal/queue-status"),
 }
 
 BLOCKED_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/metrics", "/flower", "/admin")
@@ -79,8 +98,10 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/funnel/delivery/{token}/consume",
     "/api/v1/funnel/webhooks/stripe",
     "/api/v1/funnel/events",
+    "/api/v1/funnel/events/delivery-opened",
     "/api/v1/public/funnel/lead-magnets/{slug}/capture",
     "/api/v1/public/funnel/unsubscribe",
+    "/api/v1/public/funnel/unsubscribe/confirm",
     "/api/v1/funnel/public/products/{product_id}/checkout",
 }
 INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
@@ -88,12 +109,19 @@ INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/revenue-bridge/events"),
 }
 
+ADMIN_ROUTES: set[tuple[str, str]] = {
+    ("POST", "/api/v1/auth/invitations"),
+    ("DELETE", "/api/v1/auth/invitations/{invitation_id}"),
+}
+
 ROLE_ORDER = {
     "viewer": 0,
     "user": 1,
     "operator": 2,
     "admin": 3,
+    "owner": 3,
 }
+SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 def is_blocked_surface(path: str) -> bool:
@@ -110,7 +138,7 @@ def classify_route(method: str, route_path: str) -> AuthLevel:
         return AuthLevel.PUBLIC
     if key in OPERATOR_ROUTES or route_path.startswith(OPERATOR_PREFIXES):
         return AuthLevel.OPERATOR
-    if route_path.startswith(ADMIN_PREFIXES):
+    if key in ADMIN_ROUTES or route_path.startswith(ADMIN_PREFIXES):
         return AuthLevel.ADMIN
     if route_path.startswith(ADMIN_ROUTE_PREFIXES):
         if key in OPERATOR_ROUTES:
@@ -118,7 +146,8 @@ def classify_route(method: str, route_path: str) -> AuthLevel:
         return AuthLevel.ADMIN
     if route_path.startswith("/api/v1") or route_path.startswith("/obsidian"):
         return AuthLevel.AUTHENTICATED
-    return AuthLevel.PUBLIC
+    # Default deny: a mounted route without an explicit classification is refused.
+    return AuthLevel.BLOCKED
 
 
 def route_controls(method: str, route_path: str) -> list[str]:
@@ -165,8 +194,10 @@ def extract_access_token_from_request(request: Request) -> str | None:
     return extract_bearer_token(request.headers.get("Authorization"))
 
 
-def role_satisfies(required: AuthLevel, actual_role: str) -> bool:
+def role_satisfies(required: AuthLevel, actual_role: str, *, safe_method: bool = False) -> bool:
     if required == AuthLevel.AUTHENTICATED:
+        if actual_role == "viewer":
+            return safe_method
         return ROLE_ORDER.get(actual_role, -1) >= ROLE_ORDER["user"]
     if required == AuthLevel.OPERATOR:
         return ROLE_ORDER.get(actual_role, -1) >= ROLE_ORDER["operator"]
@@ -222,6 +253,21 @@ async def build_auth_context(request: Request) -> dict[str, Any]:
     return payload
 
 
+def _forbidden(request: Request):
+    """Denial with the safe error envelope; `detail` stays for existing clients."""
+    return build_error_response(
+        request, code="FORBIDDEN", message="Forbidden", status_code=403,
+        legacy_detail="Forbidden",
+    )
+
+
+def _not_found(request: Request):
+    return build_error_response(
+        request, code="NOT_FOUND", message="Not Found", status_code=404,
+        legacy_detail="Not Found",
+    )
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     """Fail-closed route protection using the mounted app routes."""
 
@@ -231,12 +277,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         if route_path is None:
             if is_blocked_surface(path) and settings.STRICT_BOOTSTRAP:
-                return JSONResponse({"detail": "Not Found"}, status_code=404)
-            return JSONResponse({"detail": "Forbidden"}, status_code=403)
+                return _not_found(request)
+            return _forbidden(request)
 
         required_level = classify_route(request.method, route_path)
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
-            return JSONResponse({"detail": "Not Found"}, status_code=404)
+            return _not_found(request)
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
             if route_path == "/api/v1/revenue-bridge/events":
                 # The bridge endpoint verifies the provider HMAC envelope
@@ -254,18 +300,33 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
                 # Validate timestamp format
                 if not timestamp_str:
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(
+                        request,
+                        code="AUTH_REQUIRED",
+                        message="Authentication required",
+                        status_code=401,
+                    )
 
                 try:
                     timestamp = int(timestamp_str)
                 except ValueError:
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(
+                        request,
+                        code="AUTH_INVALID",
+                        message="Authentication required",
+                        status_code=401,
+                    )
 
                 # Check timestamp window (5 minutes)
                 import time as time_module
 
                 if abs(time_module.time() - timestamp) > 300:
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(
+                        request,
+                        code="AUTH_INVALID",
+                        message="Authentication required",
+                        status_code=401,
+                    )
 
                 # Read request body (cached by Starlette)
                 body = await request.body()
@@ -279,12 +340,35 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
                 # Verify signature (constant-time comparison)
                 if not hmac.compare_digest(expected_sig, signature):
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(
+                        request,
+                        code="AUTH_INVALID",
+                        message="Authentication required",
+                        status_code=401,
+                    )
 
                 request.state.internal_token_authenticated = True
                 return await call_next(request)
 
-            return JSONResponse({"detail": "Unauthorized — HMAC signature required"}, status_code=401)
+            if not secret:
+                configured_token = (
+                    getattr(settings, "ALERTMANAGER_WEBHOOK_TOKEN", "") or ""
+                ).strip()
+                provided_token = extract_bearer_token(
+                    request.headers.get("Authorization")
+                )
+                if configured_token and provided_token and hmac.compare_digest(
+                    configured_token, provided_token
+                ):
+                    request.state.internal_token_authenticated = True
+                    return await call_next(request)
+
+            return build_error_response(
+                request,
+                code="AUTH_REQUIRED",
+                message="Authentication required",
+                status_code=401,
+            )
 
         if required_level == AuthLevel.PUBLIC:
             return await call_next(request)
@@ -292,14 +376,22 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             payload = await build_auth_context(request)
         except HTTPException as exc:
-            return JSONResponse(
-                {"detail": exc.detail},
+            detail = str(exc.detail or "")
+            code = "AUTH_INVALID" if "invalid" in detail.lower() else "AUTH_REQUIRED"
+            return build_error_response(
+                request,
+                code=code,
+                message="Authentication required",
                 status_code=exc.status_code,
-                headers=exc.headers or {},
+                headers=exc.headers,
             )
 
         user_role = str(payload.get("role") or "user")
-        if not role_satisfies(required_level, user_role):
+        if not role_satisfies(
+            required_level,
+            user_role,
+            safe_method=request.method.upper() in SAFE_METHODS,
+        ):
             await log_audit_event(
                 app=request.app,
                 action="auth.forbidden",
@@ -319,7 +411,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return JSONResponse({"detail": "Forbidden"}, status_code=403)
+            return _forbidden(request)
 
         request.state.auth_payload = payload
         request.state.session_id = str(payload.get("session_id") or "")

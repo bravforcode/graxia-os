@@ -9,7 +9,6 @@ from app.agents.job_hunter import job_hunter_agent
 from app.tasks.base import execute_managed_async_task, idempotent_task
 from app.tasks.celery_app import celery_app
 from app.tasks.queues import DEFAULT_QUEUE
-from app.telegram_bot.bot import send_message
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,6 @@ async def run_job_discovery():
         discovered = result.get("discovered", 0)
         new_jobs = result.get("new", 0)
         duplicates = result.get("duplicates", 0)
-        errors = result.get("errors", [])
         
         # Log results
         logger.info(
@@ -38,30 +36,9 @@ async def run_job_discovery():
             f"{new_jobs} new, {duplicates} duplicates"
         )
         
-        # Send notification if significant results
-        if new_jobs >= 5:
-            message = f"""
-🎯 Job Discovery Update
-
-✨ Found {new_jobs} new opportunities!
-📊 Total discovered: {discovered}
-🔄 Duplicates filtered: {duplicates}
-
-Use /jobs to see top opportunities.
-"""
-            await send_message(message)
-        
-        # Alert on errors
-        if errors:
-            error_msg = f"⚠️ Job discovery had {len(errors)} errors:\n"
-            for err in errors[:3]:  # Show first 3 errors
-                error_msg += f"- {err.get('scraper')}: {err.get('error')[:50]}\n"
-            await send_message(error_msg)
-        
         return result
-    except Exception as e:
-        logger.error(f"Job discovery task failed: {e}", exc_info=True)
-        await send_message(f"❌ Job discovery failed: {str(e)[:100]}")
+    except Exception:
+        logger.error("Job discovery task failed", exc_info=True)
         raise
 
 

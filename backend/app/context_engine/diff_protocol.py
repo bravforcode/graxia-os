@@ -8,7 +8,6 @@ from __future__ import annotations
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any
 
 from app.context_engine.exclusions import ExclusionPolicy
 from app.context_engine.schemas import DiffContext
@@ -169,12 +168,12 @@ class DiffProtocol:
         Counts added/deleted lines and detects changed files.
         """
         lines = diff_text.split("\n")
-        added = sum(1 for l in lines if l.startswith("+") and not l.startswith("+++"))
-        deleted = sum(1 for l in lines if l.startswith("-") and not l.startswith("---"))
+        added = sum(1 for line in lines if line.startswith("+") and not line.startswith("+++"))
+        deleted = sum(1 for line in lines if line.startswith("-") and not line.startswith("---"))
         changed_files = []
-        for l in lines:
-            if l.startswith("diff --git"):
-                parts = l.split(" b/")
+        for line in lines:
+            if line.startswith("diff --git"):
+                parts = line.split(" b/")
                 if len(parts) > 1:
                     changed_files.append(parts[-1])
 

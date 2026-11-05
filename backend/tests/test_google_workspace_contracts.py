@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -99,3 +100,81 @@ async def test_google_workspace_client_initializes_lazily_on_first_real_use(monk
     assert refresh.call_count == 1
     assert build_calls == ["gmail", "calendar"]
     list_execute.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_scopes,allow_mutation", [(False, False), (False, True), (True, False)])
+@pytest.mark.parametrize("cached_services", [False, True])
+@pytest.mark.parametrize("operation", ["send_message", "mark_as_read", "create_calendar_event"])
+async def test_mutations_require_both_flags_before_any_provider_call(
+    monkeypatch, write_scopes, allow_mutation, cached_services, operation
+):
+    monkeypatch.setattr("app.core.google_workspace.settings.GOOGLE_ENABLE_WRITE_SCOPES", write_scopes)
+    monkeypatch.setattr("app.core.google_workspace.settings.ALLOW_REAL_GOOGLE_MUTATION", allow_mutation)
+    client = GoogleWorkspaceClient()
+    initialize = Mock(return_value=False)
+    monkeypatch.setattr(client, "_ensure_initialized", initialize)
+    gmail_service = Mock()
+    calendar_service = Mock()
+    if cached_services:
+        client.gmail_service = gmail_service
+        client.calendar_service = calendar_service
+
+    if operation == "send_message":
+        result = await client.send_message("recipient@example.com", "Test", "Body")
+        assert result is None
+    elif operation == "mark_as_read":
+        result = await client.mark_as_read("message-id")
+        assert result is False
+    else:
+        start = datetime(2026, 1, 1, tzinfo=UTC)
+        result = await client.create_calendar_event("Test", start, start + timedelta(hours=1))
+        assert result is None
+
+    initialize.assert_not_called()
+    assert gmail_service.mock_calls == []
+    assert calendar_service.mock_calls == []
+
+
+@pytest.mark.parametrize("write_scopes,allow_mutation", [(False, False), (False, True), (True, False), (True, True)])
+def test_write_scopes_require_both_flags(monkeypatch, write_scopes, allow_mutation):
+    monkeypatch.setattr("app.core.google_workspace.settings.GOOGLE_ENABLE_WRITE_SCOPES", write_scopes)
+    monkeypatch.setattr("app.core.google_workspace.settings.ALLOW_REAL_GOOGLE_MUTATION", allow_mutation)
+    client = GoogleWorkspaceClient()
+    monkeypatch.setattr(client, "_has_real_credentials", lambda: True)
+    credentials = Mock(valid=True, expired=False)
+    credentials_factory = Mock(return_value=credentials)
+    build_factory = Mock()
+    monkeypatch.setattr("app.core.google_workspace.Credentials", credentials_factory)
+    monkeypatch.setattr("app.core.google_workspace.build", build_factory)
+
+    client._initialize_credentials()
+
+    scopes = credentials_factory.call_args.kwargs["scopes"]
+    assert "https://www.googleapis.com/auth/gmail.readonly" in scopes
+    assert "https://www.googleapis.com/auth/calendar.readonly" in scopes
+    for scope in ("gmail.send", "gmail.modify", "calendar.events"):
+        assert (f"https://www.googleapis.com/auth/{scope}" in scopes) is (write_scopes and allow_mutation)
+    credentials.refresh.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_mutations_call_mocked_provider_when_both_flags_enabled(monkeypatch):
+    monkeypatch.setattr("app.core.google_workspace.settings.GOOGLE_ENABLE_WRITE_SCOPES", True)
+    monkeypatch.setattr("app.core.google_workspace.settings.ALLOW_REAL_GOOGLE_MUTATION", True)
+    client = GoogleWorkspaceClient()
+    client.gmail_service = Mock()
+    messages = client.gmail_service.users.return_value.messages.return_value
+    messages.send.return_value.execute.return_value = {"id": "sent-id"}
+    client.calendar_service = Mock()
+    events = client.calendar_service.events.return_value
+    events.insert.return_value.execute.return_value = {"id": "event-id"}
+
+    assert await client.send_message("recipient@example.com", "Test", "Body") == "sent-id"
+    assert await client.mark_as_read("message-id") is True
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    assert await client.create_calendar_event("Test", start, start + timedelta(hours=1)) == "event-id"
+
+    messages.send.return_value.execute.assert_called_once()
+    messages.modify.return_value.execute.assert_called_once()
+    events.insert.return_value.execute.assert_called_once()

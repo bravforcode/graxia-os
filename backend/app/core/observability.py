@@ -252,7 +252,7 @@ def timed(metric_name: str, labels: dict | None = None):
                 return result
             except Exception as e:
                 duration = time.time() - start
-                logger.error(f"{metric_name} failed", error=str(e), duration=duration)
+                logger.error("%s failed error=%s duration=%.6f", metric_name, str(e), duration)
                 raise
         return wrapper
     return decorator

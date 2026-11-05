@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""graxia-vitals — one JSON line of host health per run (systemd timer, every minute).
+
+Fields: MemAvailable, swap used, PSI (memory/cpu/io some+full avg10/avg60), CPU steal %,
+load, root-disk %, and a derived disk `state` (ok <75%, warn >=75%, critical >=85%).
+
+Modes:
+    graxia-vitals            append JSON line to /var/log/graxia/vitals.jsonl
+                             (+ POST to $VITALS_URL if /etc/graxia/vitals.env defines it)
+    graxia-vitals --print    print JSON only
+    graxia-vitals --check    exit 0 ok / 1 warn / 2 critical (for scripts)
+
+Stdlib only. Never raises on missing PSI (older kernels): fields become null.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+LOG = Path("/var/log/graxia/vitals.jsonl")
+ENV = Path("/etc/graxia/vitals.env")
+WARN_PCT, CRIT_PCT = 75.0, 85.0
+
+
+def meminfo() -> dict[str, int]:
+    out: dict[str, int] = {}
+    for line in Path("/proc/meminfo").read_text().splitlines():
+        k, v = line.split(":", 1)
+        out[k] = int(v.split()[0])  # kB
+    return out
+
+
+def psi(name: str) -> dict:
+    p = Path(f"/proc/pressure/{name}")
+    if not p.exists():
+        return {}
+    res = {}
+    for line in p.read_text().splitlines():
+        kind, *rest = line.split()
+        kv = dict(x.split("=") for x in rest)
+        res[kind] = {"avg10": float(kv["avg10"]), "avg60": float(kv["avg60"])}
+    return res
+
+
+def cpu_times() -> list[int]:
+    return [int(x) for x in Path("/proc/stat").read_text().splitlines()[0].split()[1:]]
+
+
+def steal_pct(interval: float = 1.0) -> float:
+    a = cpu_times()
+    time.sleep(interval)
+    b = cpu_times()
+    total = sum(b) - sum(a)
+    return round(100.0 * (b[7] - a[7]) / total, 2) if total > 0 else 0.0  # index 7 = steal
+
+
+def collect() -> dict:
+    mi = meminfo()
+    st = os.statvfs("/")
+    used_pct = 100.0 * (1 - st.f_bavail / st.f_blocks)
+    state = "critical" if used_pct >= CRIT_PCT else "warn" if used_pct >= WARN_PCT else "ok"
+    return {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "mem_available_mb": mi["MemAvailable"] // 1024,
+        "mem_total_mb": mi["MemTotal"] // 1024,
+        "swap_used_mb": (mi["SwapTotal"] - mi["SwapFree"]) // 1024,
+        "psi_memory": psi("memory"),
+        "psi_cpu": psi("cpu"),
+        "psi_io": psi("io"),
+        "cpu_steal_pct": steal_pct(),
+        "load1": float(Path("/proc/loadavg").read_text().split()[0]),
+        "disk_used_pct": round(used_pct, 1),
+        "disk_free_gb": round(st.f_bavail * st.f_frsize / 1e9, 1),
+        "disk_state": state,
+    }
+
+
+def post(url: str, token: str, data: dict) -> None:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps({"sample": data}).encode(),  # Windmill script arg name
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+    )
+    urllib.request.urlopen(req, timeout=8).read()
+
+
+def load_env() -> dict[str, str]:
+    if not ENV.exists():
+        return {}
+    return dict(
+        line.split("=", 1) for line in ENV.read_text().splitlines() if "=" in line and not line.startswith("#")
+    )
+
+
+def main() -> int:
+    data = collect()
+    if "--print" in sys.argv:
+        print(json.dumps(data, indent=2))
+        return 0
+    if "--check" in sys.argv:
+        print(data["disk_state"], data["disk_used_pct"])
+        return {"ok": 0, "warn": 1, "critical": 2}[data["disk_state"]]
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with LOG.open("a") as fh:
+        fh.write(json.dumps(data) + "\n")
+    env = load_env()
+    if env.get("VITALS_URL"):
+        try:
+            post(env["VITALS_URL"], env.get("VITALS_TOKEN", ""), data)
+        except Exception as e:  # monitoring must never fail the timer
+            print(f"post failed: {e}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

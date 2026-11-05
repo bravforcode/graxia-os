@@ -31,7 +31,6 @@ from app.schemas.content_engine import (
     ContentArticleList,
     ContentArticleOut,
     ContentArticlePatch,
-    ContentEngineStats,
     ContentKeywordCreate,
     ContentKeywordList,
     ContentKeywordOut,

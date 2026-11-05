@@ -9,10 +9,10 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, and_, update, func
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import Coupon, FunnelOrder
+from app.models.funnel import Coupon
 from app.schemas.funnel import CouponCreate, CouponUpdate
 
 logger = logging.getLogger(__name__)

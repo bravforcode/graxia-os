@@ -42,7 +42,7 @@ async def execute_graxia_task(request: SwarmTaskRequest, background_tasks: Backg
             status_code=400, detail="Project description too long (max 50000 characters)"
         )
 
-    logger.info("graxia_task_requested", description_length=len(request.project_description))
+    logger.info("graxia_task_requested description_length=%s", len(request.project_description))
 
     background_tasks.add_task(safe_execute_project, request.project_description)
     return {
@@ -67,7 +67,7 @@ async def approve_graxia_task(task_id: str, request: ApprovalResponse):
     if request.status not in ["approved", "rejected"]:
         raise HTTPException(status_code=400, detail="Status must be 'approved' or 'rejected'")
 
-    logger.info("graxia_approval", task_id=task_id, status=request.status)
+    logger.info("graxia_approval task_id=%s status=%s", task_id, request.status)
 
     msg = AgentMessage(
         sender="UserAPI",

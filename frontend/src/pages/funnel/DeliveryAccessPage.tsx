@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { 
   Download, 
@@ -24,7 +24,12 @@ export default function DeliveryAccessPage() {
   const [unlockedPayload, setUnlockedPayload] = useState<DeliveryPayload | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const latestT = useRef(t);
   const rawToken = token || "";
+
+  useEffect(() => {
+    latestT.current = t;
+  }, [t]);
 
   const fetchPayload = useCallback(async () => {
     try {
@@ -37,11 +42,11 @@ export default function DeliveryAccessPage() {
       const detail = err && typeof err === "object" && "response" in err
         ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
         : undefined;
-      setErrorMsg(detail || t("delivery.invalid"));
+      setErrorMsg(detail || latestT.current("delivery.invalid"));
     } finally {
       setLoading(false);
     }
-  }, [rawToken, t]);
+  }, [rawToken]);
 
   useEffect(() => {
     if (rawToken) {

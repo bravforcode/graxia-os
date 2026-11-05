@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Alert on Telegram when graxia automation fails or stalls. Reads secrets from the env file only.
+# Exit 0 + "ok" when healthy; prints the problems, alerts Telegram and exits 2 otherwise.
+# Note: a container in health state "starting" (right after a deploy) is reported as a problem.
+set -euo pipefail
+ENV_FILE="${GRAXIA_ENV_FILE:-/opt/graxia-os/.env.production}"
+WINDOW="${GRAXIA_CHECK_WINDOW:-1 hour}"
+MAX_FAILED_PCT="${GRAXIA_MAX_FAILED_PCT:-20}"
+PSQL="${GRAXIA_PSQL:-docker exec graxia_prod_postgres sh -c}"
+DISK_MAX_PCT="${GRAXIA_DISK_MAX_PCT:-85}"
+STATE_DIR="${GRAXIA_STATE_DIR:-/var/lib/graxia-autopilot}"
+COOLDOWN_S="${GRAXIA_ALERT_COOLDOWN_S:-7200}"
+CONTAINERS=(graxia_prod_backend graxia_prod_celery graxia_prod_beat graxia_prod_postgres graxia_prod_redis graxia_prod_frontend)
+
+[[ "$WINDOW" =~ ^[0-9]+\ (minute|hour|day)s?$ ]] || { echo "invalid GRAXIA_CHECK_WINDOW: $WINDOW" >&2; exit 2; }
+
+q() { $PSQL "psql -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -Atc \"$1\""; }
+
+problems=()
+# automation_runs has no created_at; queued_at (default now()) is when a run was created.
+if ! row=$(q "select count(*), count(*) filter (where status='failed') from automation_runs where queued_at > now() - interval '$WINDOW'" 2>/dev/null); then
+  problems+=("automation_runs query failed (database unreachable?)")
+elif ! [[ "$row" =~ ^([0-9]+)\|([0-9]+)$ ]]; then
+  problems+=("automation_runs query returned unexpected output")
+else
+  total=${BASH_REMATCH[1]} failed=${BASH_REMATCH[2]}
+  if [ "$total" -eq 0 ]; then
+    problems+=("no automation runs in last $WINDOW")
+  elif [ $((failed * 100 / total)) -gt "$MAX_FAILED_PCT" ]; then
+    problems+=("$failed/$total runs failed in last $WINDOW")
+  fi
+fi
+
+for c in "${CONTAINERS[@]}"; do
+  h=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$c" 2>/dev/null) || h=missing
+  case "$h" in healthy|running) ;; *) problems+=("$c is ${h:-unknown}") ;; esac
+done
+
+disk=$(df -P / | awk 'NR==2 {print $(NF-1)}' | tr -d %)
+if [[ "$disk" =~ ^[0-9]+$ ]]; then
+  [ "$disk" -lt "$DISK_MAX_PCT" ] || problems+=("disk / at ${disk}%")
+else
+  problems+=("could not read disk usage of /")
+fi
+
+[ ${#problems[@]} -eq 0 ] && { echo ok; exit 0; }
+msg="Graxia autopilot alert: $(IFS=';'; echo "${problems[*]}" | sed 's/;/; /g')"
+echo "$msg"
+
+# Cooldown: do not re-send the identical message within COOLDOWN_S seconds.
+last="$STATE_DIR/last-alert"
+now=$(date +%s)
+if [ -f "$last" ] && [ "$(tail -n +2 "$last")" = "$msg" ]; then
+  sent_at=$(head -n1 "$last")
+  if [[ "$sent_at" =~ ^[0-9]+$ ]] && [ $((now - sent_at)) -lt "$COOLDOWN_S" ]; then
+    echo "same alert sent $((now - sent_at))s ago; not re-sending" >&2
+    exit 2
+  fi
+fi
+
+env_val() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | tr -d '\r' | sed -E "s/^([\"'])(.*)\1\$/\2/"; }
+token=$(env_val TELEGRAM_BOT_TOKEN || true)
+chat=$(env_val TELEGRAM_CHAT_ID || true)
+if [ -z "$token" ] || [ -z "$chat" ]; then
+  echo "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing in $ENV_FILE; alert not sent" >&2
+  exit 2
+fi
+# The URL (with the token) goes through stdin so it never appears in the process list.
+if printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$token" \
+  | curl -fsS -m 15 -K - --data-urlencode "chat_id=${chat}" --data-urlencode "text=${msg}" >/dev/null 2>&1; then
+  mkdir -p "$STATE_DIR" && printf '%s\n%s\n' "$now" "$msg" > "$last" || echo "could not write $last" >&2
+else
+  echo "telegram send failed" >&2
+fi
+exit 2

@@ -11,9 +11,10 @@ interface NoticeBannerProps {
   tone?: NoticeTone;
   msg?: string;
   message?: string;
+  onDismiss?: () => void;
 }
 
-export function NoticeBanner({ tone = 'info', msg, message }: NoticeBannerProps) {
+export function NoticeBanner({ tone = 'info', msg, message, onDismiss }: NoticeBannerProps) {
   const text = message ?? msg ?? '';
   return (
     <div
@@ -22,6 +23,11 @@ export function NoticeBanner({ tone = 'info', msg, message }: NoticeBannerProps)
       className={`rounded-[12px] border px-4 py-3 text-sm ${noticeStyles[tone]}`}
     >
       {text}
+      {onDismiss ? (
+        <button type="button" className="ml-3 shrink-0 underline" onClick={onDismiss}>
+          Dismiss
+        </button>
+      ) : null}
     </div>
   );
 }

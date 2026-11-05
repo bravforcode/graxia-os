@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import logging
+import sys
 from datetime import UTC, datetime
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 
 from app.auth.context import AuthContext, LOCAL_DEV_ORGANIZATION_ID
@@ -92,41 +93,178 @@ def _production_docs_present() -> bool:
     return all(path.exists() for path in _PRODUCTION_DOC_PATHS)
 
 
+def _runtime_app(request: Request | None):
+    if request is not None:
+        try:
+            return request.app
+        except (AttributeError, KeyError):
+            return None
+    return getattr(sys.modules.get("app.main"), "app", None)
+
+
+def _middleware_registered(app, module_name: str, class_name: str) -> bool:
+    if app is None:
+        return False
+    try:
+        middleware_class = getattr(import_module(module_name), class_name)
+    except (ImportError, AttributeError):
+        return False
+    return any(
+        getattr(middleware, "cls", None) is middleware_class
+        for middleware in getattr(app, "user_middleware", ())
+    )
+
+
+def _route_for(app, path: str, method: str):
+    if app is None:
+        return None
+    return next((
+        route for route in getattr(app, "routes", ())
+        if getattr(route, "path", None) == path
+        and method.upper() in (getattr(route, "methods", None) or ())
+    ), None)
+
+
+def _route_has_dependency(route, dependency) -> bool:
+    stack = list(getattr(getattr(route, "dependant", None), "dependencies", ()))
+    while stack:
+        current = stack.pop()
+        if getattr(current, "call", None) is dependency:
+            return True
+        stack.extend(getattr(current, "dependencies", ()))
+    return False
+
+
+def _real_auth_context_active(auth: AuthContext) -> bool:
+    actor_id = str(getattr(auth, "actor_id", "") or "").strip()
+    organization_id = str(getattr(auth, "organization_id", "") or "").strip()
+    return (
+        getattr(auth, "is_authenticated", False) is True
+        and getattr(auth, "is_mock_auth", True) is False
+        and getattr(auth, "auth_method", "") == "bearer_jwt"
+        and bool(actor_id)
+        and bool(organization_id)
+        and organization_id != str(LOCAL_DEV_ORGANIZATION_ID)
+    )
+
+
+def _staging_runtime_observations(request: Request | None) -> dict[str, object]:
+    app = _runtime_app(request)
+    auth_middleware_registered = _middleware_registered(
+        app, "app.auth.middleware", "AuthContextMiddleware",
+    )
+    required_routes = (
+        ("/health", "GET"),
+        ("/api/v1/health", "GET"),
+        ("/api/v1/health/readiness", "GET"),
+        ("/api/v1/health/readiness/local-agent", "GET"),
+        ("/api/v1/health/readiness/staging", "GET"),
+        ("/api/v1/health/readiness/production", "GET"),
+        ("/api/v1/health/readiness/beta", "GET"),
+        ("/api/v1/health/readiness/limited-beta-pilot", "GET"),
+    )
+    health_endpoints_present = bool(app is not None) and all(
+        _route_for(app, path, method) is not None
+        for path, method in required_routes
+    )
+    staging_route = _route_for(app, "/api/v1/health/readiness/staging", "GET")
+    staging_auth_guard_present = (
+        auth_middleware_registered
+        and staging_route is not None
+        and _route_has_dependency(staging_route, get_auth_context)
+    )
+
+    rate_middleware_registered = _middleware_registered(
+        app, "app.middleware.rate_limit", "RateLimitMiddleware",
+    )
+    redis_client = getattr(getattr(app, "state", None), "redis", None)
+    backend_mode = "unavailable"
+    if rate_middleware_registered:
+        backend_mode = "redis_configured" if redis_client else "process_local_fallback"
+
+    configured_rule = None
+    request_app_matches_runtime = bool(
+        request is not None and app is not None and request.scope.get("app") is app
+    )
+    if rate_middleware_registered and request_app_matches_runtime:
+        try:
+            rate_limit_module = import_module("app.middleware.rate_limit")
+            middleware = rate_limit_module.RateLimitMiddleware(app)
+            rule = middleware._resolve_rule(request)
+            if (
+                rule is not None
+                and isinstance(rule.name, str)
+                and rule.name
+                and isinstance(rule.limit, int)
+                and rule.limit > 0
+                and isinstance(rule.window_seconds, int)
+                and rule.window_seconds > 0
+            ):
+                configured_rule = {
+                    "name": rule.name,
+                    "limit": rule.limit,
+                    "window_seconds": rule.window_seconds,
+                }
+        except (ImportError, AttributeError, TypeError, ValueError):
+            configured_rule = None
+
+    return {
+        "auth_context_middleware_registered": auth_middleware_registered,
+        "health_endpoints_present": health_endpoints_present,
+        "staging_auth_guard_present": staging_auth_guard_present,
+        "rate_limiting": {
+            "middleware_registered": rate_middleware_registered,
+            "configured_backend_mode": backend_mode,
+            "configured_rule": configured_rule,
+            "request_app_matches_runtime": request_app_matches_runtime,
+            # RateLimitMiddleware writes response headers, but no per-request
+            # evidence into request.state for this endpoint to verify.
+            "enforcement_evidence_available": False,
+        },
+    }
+
+
 def _live_stripe_blocked() -> bool:
-    return (not settings.ALLOW_LIVE_STRIPE) and _stripe_live_mode_blocked()
+    return (not settings.ALLOW_LIVE_STRIPE) or _stripe_live_mode_blocked()
 
 
 def _real_email_provider_blocked() -> bool:
-    return (not settings.ALLOW_REAL_EMAIL_SEND) and _real_email_send_blocked()
+    return (not settings.ALLOW_REAL_EMAIL_SEND) or _real_email_send_blocked()
 
 
 def _real_google_mutation_blocked() -> bool:
-    return (not settings.ALLOW_REAL_GOOGLE_MUTATION) and (not settings.GOOGLE_ENABLE_WRITE_SCOPES)
+    return (not settings.ALLOW_REAL_GOOGLE_MUTATION) or (not settings.GOOGLE_ENABLE_WRITE_SCOPES)
 
 
-async def _build_staging_readiness(auth: AuthContext) -> dict[str, object]:
+async def _build_staging_readiness(
+    auth: AuthContext,
+    request: Request | None = None,
+) -> dict[str, object]:
     readiness = get_runtime_state()
     env = (settings.APP_ENV or "development").lower()
     db_ok = await _database_ok()
+    runtime_observations = _staging_runtime_observations(request)
 
     checks = {
         "database_connectivity": db_ok,
         "runtime_ready": bool(readiness["is_ready"]),
-        "auth_context_middleware": True,
-        "real_auth_context_active": not auth.is_mock_auth,
-        "staging_auth_guard": True,
-        "rate_limiting_active": True,
-        "permissions_ok": True,
-        "org_boundary_ok": True,
-        "safe_errors_ok": True,
-        "security_audit_ok": True,
-        "payload_guard_ok": True,
-        "health_endpoints": True,
-        "route_protection_matrix_ok": True,
-        "mcp_auth_ok": True,
-        "workflow_auth_ok": True,
-        "public_route_limits_ok": True,
-        "customer_token_boundary_ok": True,
+        "auth_context_middleware": runtime_observations["auth_context_middleware_registered"],
+        "real_auth_context_active": _real_auth_context_active(auth),
+        "staging_auth_guard": runtime_observations["staging_auth_guard_present"],
+        # Enforcement has no current-request state marker; do not treat a
+        # configured middleware or Redis client as proof that it ran.
+        "rate_limiting_active": False,
+        "permissions_ok": False,
+        "org_boundary_ok": False,
+        "safe_errors_ok": False,
+        "security_audit_ok": False,
+        "payload_guard_ok": False,
+        "health_endpoints": runtime_observations["health_endpoints_present"],
+        "route_protection_matrix_ok": False,
+        "mcp_auth_ok": False,
+        "workflow_auth_ok": False,
+        "public_route_limits_ok": False,
+        "customer_token_boundary_ok": False,
         "production_live_providers_disabled": _live_stripe_blocked() and _real_email_provider_blocked(),
         "runtime_contracts_present": _module_present("app.runtime.contracts"),
         "runtime_adapters_present": _module_present("app.runtime.adapters"),
@@ -176,17 +314,25 @@ async def _build_staging_readiness(auth: AuthContext) -> dict[str, object]:
     if not checks["real_email_send_blocked"]:
         blockers.append("Real email sending is not blocked.")
 
-    staging_ready = env == "staging" and all(bool(value) for value in checks.values()) and not blockers
+    blockers.extend(
+        f"Required capability '{name}' is not verified."
+        for name, value in checks.items() if value is not True
+    )
+    staging_ready = env == "staging" and all(value is True for value in checks.values()) and not blockers
     return {
         "staging_ready": staging_ready,
         "environment": env,
         "checks": checks,
+        "rate_limiting": runtime_observations["rate_limiting"],
         "runtime": readiness,
         "blockers": blockers,
     }
 
 
-async def _build_production_readiness(auth: AuthContext) -> dict[str, object]:
+async def _build_production_readiness(
+    auth: AuthContext,
+    request: Request | None = None,
+) -> dict[str, object]:
     readiness = get_runtime_state()
     env = (settings.APP_ENV or "development").lower()
     db_ok = await _database_ok()
@@ -194,14 +340,16 @@ async def _build_production_readiness(auth: AuthContext) -> dict[str, object]:
     checks = {
         "database_connectivity": db_ok,
         "runtime_ready": bool(readiness["is_ready"]),
-        "auth_context_middleware": True,
-        "real_auth_context_active": not auth.is_mock_auth,
-        "rate_limiting_active": True,
-        "permissions_ok": True,
-        "org_boundary_ok": True,
-        "safe_errors_ok": True,
-        "security_audit_ok": True,
-        "payload_guard_ok": True,
+        "auth_context_middleware": _middleware_registered(
+            _runtime_app(request), "app.auth.middleware", "AuthContextMiddleware",
+        ),
+        "real_auth_context_active": _real_auth_context_active(auth),
+        "rate_limiting_active": False,
+        "permissions_ok": False,
+        "org_boundary_ok": False,
+        "safe_errors_ok": False,
+        "security_audit_ok": False,
+        "payload_guard_ok": False,
         "production_runbooks_present": _production_docs_present(),
         "live_stripe_blocked": _live_stripe_blocked(),
         "real_email_send_blocked": _real_email_provider_blocked(),
@@ -236,6 +384,11 @@ async def _build_production_readiness(auth: AuthContext) -> dict[str, object]:
     if not checks["production_db_blocked"]:
         blockers.append("Production database is not blocked.")
 
+    blockers.extend(
+        f"Required capability '{name}' is not verified."
+        for name, value in checks.items() if value is not True
+    )
+
     return {
         "production_ready": False,
         "go_no_go_required": True,
@@ -267,15 +420,15 @@ async def health_check(auth: AuthContext = Depends(get_auth_context)):
 
 
 @router.get("/readiness")
-async def readiness_check(auth: AuthContext = Depends(get_auth_context)):
+async def readiness_check(request: Request, auth: AuthContext = Depends(get_auth_context)):
     """Detailed readiness check for staging deployment verification.
 
     Returns local, staging, and production readiness levels.
     """
     readiness = get_runtime_state()
     db_ok = await _database_ok()
-    staging = await _build_staging_readiness(auth)
-    production = await _build_production_readiness(auth)
+    staging = await _build_staging_readiness(auth, request)
+    production = await _build_production_readiness(auth, request)
     env = (settings.APP_ENV or "development").lower()
 
     return {
@@ -292,14 +445,14 @@ async def readiness_check(auth: AuthContext = Depends(get_auth_context)):
             "production_gate_blockers": len(production["blockers"]),
         },
         "local_agent": {
-            "funnel_ready": True,
-            "mcp_readonly_ready": True,
-            "mcp_write_ready": True,
-            "workspace_ready": True,
-            "context_ready": True,
-            "workflow_ready": True,
-            "ui_ready": True,
-            "full_local_agent_ready": True,
+            "funnel_ready": False,
+            "mcp_readonly_ready": False,
+            "mcp_write_ready": False,
+            "workspace_ready": False,
+            "context_ready": False,
+            "workflow_ready": False,
+            "ui_ready": False,
+            "full_local_agent_ready": False,
         },
         "staging": staging,
         "staging_ready": staging["staging_ready"],
@@ -316,30 +469,33 @@ async def readiness_check(auth: AuthContext = Depends(get_auth_context)):
 async def local_agent_readiness(auth: AuthContext = Depends(get_auth_context)):
     """Local agent readiness — granular subsystem status."""
     return {
-        "LOCAL_FUNNEL_READY": True,
-        "LOCAL_MCP_READONLY_READY": True,
-        "LOCAL_MCP_WRITE_READY": True,
-        "LOCAL_WORKSPACE_READY": True,
-        "LOCAL_CONTEXT_READY": True,
-        "LOCAL_WORKFLOW_READY": True,
-        "LOCAL_UI_READY": True,
-        "FULL_LOCAL_AGENT_READY": True,
+        "LOCAL_FUNNEL_READY": False,
+        "LOCAL_MCP_READONLY_READY": False,
+        "LOCAL_MCP_WRITE_READY": False,
+        "LOCAL_WORKSPACE_READY": False,
+        "LOCAL_CONTEXT_READY": False,
+        "LOCAL_WORKFLOW_READY": False,
+        "LOCAL_UI_READY": False,
+        "FULL_LOCAL_AGENT_READY": False,
         "STAGING_READY": False,
         "PRODUCTION_READY": False,
     }
 
 
 @router.get("/readiness/staging")
-async def staging_readiness(auth: AuthContext = Depends(get_auth_context)):
+async def staging_readiness(request: Request, auth: AuthContext = Depends(get_auth_context)):
     """Staging readiness — must pass before any production work."""
-    return await _build_staging_readiness(auth)
+    return await _build_staging_readiness(auth, request)
 
 
-async def _build_beta_readiness(auth: AuthContext) -> dict[str, object]:
+async def _build_beta_readiness(
+    auth: AuthContext,
+    request: Request | None = None,
+) -> dict[str, object]:
     """Build controlled beta readiness status."""
     env = (settings.APP_ENV or "development").lower()
-    staging = await _build_staging_readiness(auth)
-    production = await _build_production_readiness(auth)
+    staging = await _build_staging_readiness(auth, request)
+    production = await _build_production_readiness(auth, request)
     beta_registry = get_beta_registry()
 
     checks = {
@@ -395,12 +551,18 @@ async def _build_beta_readiness(auth: AuthContext) -> dict[str, object]:
 
 
 @router.get("/readiness/production")
-async def production_readiness(auth: AuthContext = Depends(get_auth_context)):
+async def production_readiness(
+    request: Request,
+    auth: AuthContext = Depends(get_auth_context),
+):
     """Production dry-run readiness — always closed until explicit go/no-go."""
-    return await _build_production_readiness(auth)
+    return await _build_production_readiness(auth, request)
 
 
-async def _build_limited_beta_pilot_readiness(auth: AuthContext) -> dict[str, object]:
+async def _build_limited_beta_pilot_readiness(
+    auth: AuthContext,
+    request: Request | None = None,
+) -> dict[str, object]:
     """Build limited beta pilot readiness (Phase 20).
 
     Note: Calls _build_beta_readiness() and _build_staging_readiness(),
@@ -410,8 +572,8 @@ async def _build_limited_beta_pilot_readiness(auth: AuthContext) -> dict[str, ob
     For Phase 21+, consider adding a non-DB fallback path.
     """
     env = (settings.APP_ENV or "development").lower()
-    beta = await _build_beta_readiness(auth)
-    staging = await _build_staging_readiness(auth)
+    beta = await _build_beta_readiness(auth, request)
+    staging = await _build_staging_readiness(auth, request)
 
     checks = {
         "beta_ready": beta["beta_ready"],
@@ -476,12 +638,12 @@ async def _build_limited_beta_pilot_readiness(auth: AuthContext) -> dict[str, ob
 
 
 @router.get("/readiness/beta")
-async def beta_readiness(auth: AuthContext = Depends(get_auth_context)):
+async def beta_readiness(request: Request, auth: AuthContext = Depends(get_auth_context)):
     """Controlled external beta readiness — must pass all gates before beta can open."""
-    return await _build_beta_readiness(auth)
+    return await _build_beta_readiness(auth, request)
 
 
 @router.get("/readiness/limited-beta-pilot")
-async def limited_beta_pilot_readiness(auth: AuthContext = Depends(get_auth_context)):
+async def limited_beta_pilot_readiness(request: Request, auth: AuthContext = Depends(get_auth_context)):
     """Limited beta pilot readiness (Phase 20) — must pass all gates before limited launch."""
-    return await _build_limited_beta_pilot_readiness(auth)
+    return await _build_limited_beta_pilot_readiness(auth, request)

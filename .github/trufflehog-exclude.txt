@@ -1,0 +1,2 @@
+# Test input: a base URL with credentials that the OpenAI client validator must reject.
+^backend/tests/test_openai_llm_provider\.py$

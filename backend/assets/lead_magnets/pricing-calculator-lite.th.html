@@ -1,0 +1,441 @@
+<!-- Internal provenance: New standalone implementation informed only by
+     concepts in backend/assets/catalog/freelance-pricing-calculator.md.
+     That checkout-derived catalog asset was not treated as verified working
+     code; this Lite tool documents its own inputs and formula below. -->
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light">
+  <title>เครื่องคำนวณราคางานเบื้องต้น</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #172a30;
+      background: #edf3f2;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
+    main {
+      width: min(100%, 54rem);
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.35rem;
+      color: #31585a;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 0.5rem;
+      font-size: clamp(1.7rem, 5vw, 2.35rem);
+      line-height: 1.25;
+    }
+
+    .intro { max-width: 70ch; color: #344b51; }
+
+    .panel {
+      margin-top: 1.25rem;
+      padding: clamp(1rem, 4vw, 1.6rem);
+      border: 1px solid #b8c9c7;
+      border-radius: 1rem;
+      background: #fff;
+      box-shadow: 0 0.4rem 1.4rem rgb(23 42 48 / 7%);
+    }
+
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend { margin-bottom: 1rem; font-size: 1.2rem; font-weight: 750; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .field { min-width: 0; }
+
+    label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      min-height: 2.9rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid #61777b;
+      border-radius: 0.55rem;
+      color: inherit;
+      background: #fff;
+      font: inherit;
+    }
+
+    input[aria-invalid="true"] { border: 2px solid #a32222; }
+
+    .help, .field-error {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .help { color: #40565b; }
+    .field-error { color: #8d1717; font-weight: 650; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    button {
+      min-height: 2.9rem;
+      padding: 0.65rem 1rem;
+      border: 2px solid #155456;
+      border-radius: 0.55rem;
+      color: #fff;
+      background: #155456;
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    button.secondary { color: #155456; background: #fff; }
+    button:hover { background: #0d4143; }
+    button.secondary:hover { color: #fff; }
+
+    :focus-visible {
+      outline: 3px solid #a34e00;
+      outline-offset: 3px;
+    }
+
+    #form-errors {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-left: 4px solid #a32222;
+      color: #641313;
+      background: #fff0f0;
+    }
+
+    #form-errors:empty { display: none; }
+
+    .result-panel { border-top: 0.35rem solid #155456; }
+    .result-panel h2 { margin-bottom: 0.3rem; font-size: 1.35rem; }
+    #calculation-status { min-height: 1.6rem; color: #344b51; }
+
+    .results {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(10rem, auto);
+      gap: 0.65rem 1rem;
+      margin: 1rem 0 0;
+    }
+
+    .results dt { color: #344b51; }
+    .results dd { margin: 0; text-align: right; font-weight: 750; }
+    .results dd.price { color: #104b4d; font-size: 1.2rem; }
+
+    .formula {
+      margin: 1.1rem 0 0;
+      padding: 0.9rem 1rem;
+      border-radius: 0.6rem;
+      background: #f0f5f4;
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      margin: 1rem 0 0;
+      padding: 0.9rem 1rem;
+      border: 1px solid #9c7b34;
+      border-radius: 0.6rem;
+      color: #453713;
+      background: #fff8e8;
+    }
+
+    @media (max-width: 38rem) {
+      body { padding: 1rem 0.75rem; }
+      .field-grid { grid-template-columns: 1fr; }
+      .results { grid-template-columns: 1fr; gap: 0.15rem; }
+      .results dd { margin-bottom: 0.65rem; text-align: left; }
+    }
+
+    @media print {
+      body { padding: 0; background: #fff; }
+      .panel { box-shadow: none; }
+      .actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">เครื่องมือวางแผนสำหรับ SME และฟรีแลนซ์</p>
+    <h1>เครื่องคำนวณราคางานเบื้องต้น</h1>
+    <p class="intro">
+      ประเมินต้นทุนจากค่าใช้จ่ายประจำที่จัดสรรตามชั่วโมงทำงาน แล้วคำนวณราคา
+      ก่อนภาษีตามอัตรากำไรขั้นต้นที่ต้องการ ตัวเลขเป็นค่าประมาณจากข้อมูลที่กรอก
+      ไม่ใช่ราคาตลาดหรือคำแนะนำด้านราคา
+    </p>
+
+    <section class="panel" aria-labelledby="inputs-title">
+      <fieldset>
+        <legend id="inputs-title">กรอกข้อมูลของคุณ</legend>
+        <div class="field-grid">
+          <div class="field">
+            <label for="monthly-overhead">ค่าใช้จ่ายประจำที่ต้องครอบคลุมต่อเดือน (บาท)</label>
+            <input id="monthly-overhead" name="monthly-overhead" type="number" min="0" step="any" inputmode="decimal" aria-describedby="overhead-help overhead-error">
+            <span class="help" id="overhead-help">เช่น ค่าเช่า ซอฟต์แวร์ อินเทอร์เน็ต หรือค่าตอบแทนเจ้าของที่ต้องการรวมในต้นทุน ไม่รวมค่าใช้จ่ายเฉพาะงานด้านล่าง</span>
+            <span class="field-error" id="overhead-error"></span>
+          </div>
+
+          <div class="field">
+            <label for="billable-hours">ชั่วโมงที่เรียกเก็บเงินได้ต่อเดือน</label>
+            <input id="billable-hours" name="billable-hours" type="number" min="0" max="744" step="any" inputmode="decimal" aria-describedby="billable-help billable-error">
+            <span class="help" id="billable-help">ต้องมากกว่า 0 และไม่เกิน 744 ชั่วโมง (31 วัน × 24 ชั่วโมง)</span>
+            <span class="field-error" id="billable-error"></span>
+          </div>
+
+          <div class="field">
+            <label for="direct-cost">ค่าใช้จ่ายเฉพาะงานนี้ (บาท)</label>
+            <input id="direct-cost" name="direct-cost" type="number" min="0" step="any" inputmode="decimal" aria-describedby="direct-help direct-error">
+            <span class="help" id="direct-help">เช่น วัสดุหรือค่าจ้างผู้รับเหมาช่วงที่เกิดกับงานนี้โดยตรง ใช้ 0 ได้</span>
+            <span class="field-error" id="direct-error"></span>
+          </div>
+
+          <div class="field">
+            <label for="job-hours">ชั่วโมงทำงานที่ประเมินสำหรับงานนี้</label>
+            <input id="job-hours" name="job-hours" type="number" min="0" step="any" inputmode="decimal" aria-describedby="job-help job-error">
+            <span class="help" id="job-help">ต้องมากกว่า 0 ใช้ชั่วโมงที่ต้องการนำไปจัดสรรค่าใช้จ่ายประจำ</span>
+            <span class="field-error" id="job-error"></span>
+          </div>
+
+          <div class="field">
+            <label for="target-margin">อัตรากำไรขั้นต้นที่ต้องการ (%)</label>
+            <input id="target-margin" name="target-margin" type="number" min="0" max="95" step="any" inputmode="decimal" aria-describedby="margin-help margin-error">
+            <span class="help" id="margin-help">กรอกตั้งแต่ 0 ถึง 95 เปอร์เซ็นต์; เป็นสัดส่วนของราคาขาย ไม่ใช่การบวกเปอร์เซ็นต์บนต้นทุน</span>
+            <span class="field-error" id="margin-error"></span>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button id="calculate-button" type="button">คำนวณราคา</button>
+        <button id="reset-button" class="secondary" type="button">ล้างข้อมูล</button>
+      </div>
+      <div id="form-errors" role="alert" aria-live="assertive" tabindex="-1"></div>
+    </section>
+
+    <section class="panel result-panel" aria-labelledby="results-title">
+      <h2 id="results-title">ผลคำนวณ</h2>
+      <p id="calculation-status" role="status" aria-live="polite" aria-atomic="true">กรอกข้อมูลให้ครบ แล้วเลือก “คำนวณราคา”</p>
+      <dl class="results">
+        <dt>ค่าใช้จ่ายประจำที่จัดสรรต่อชั่วโมง</dt>
+        <dd id="hourly-overhead">—</dd>
+        <dt>ค่าใช้จ่ายประจำที่จัดสรรให้กับงานนี้</dt>
+        <dd id="allocated-overhead">—</dd>
+        <dt>ต้นทุนฐานของงาน</dt>
+        <dd id="base-cost">—</dd>
+        <dt><strong>ราคาแนะนำก่อนภาษีและค่าธรรมเนียม</strong></dt>
+        <dd id="suggested-price" class="price">—</dd>
+      </dl>
+      <p class="formula">
+        <strong>สูตร:</strong>
+        ค่าใช้จ่ายประจำต่อชั่วโมง = ค่าใช้จ่ายประจำต่อเดือน ÷ ชั่วโมงที่เรียกเก็บได้ต่อเดือน<br>
+        ต้นทุนฐาน = ค่าใช้จ่ายเฉพาะงาน + (ค่าใช้จ่ายประจำต่อชั่วโมง × ชั่วโมงของงาน)<br>
+        ราคา = ต้นทุนฐาน ÷ (1 − อัตรากำไรขั้นต้น ÷ 100)
+      </p>
+    </section>
+
+    <p class="notice">
+      <strong>ข้อควรทราบ:</strong> ผลลัพธ์เป็นเพียงตัวช่วยคำนวณเบื้องต้น
+      ไม่ใช่คำแนะนำด้านภาษีหรือกฎหมาย และยังไม่รวมภาษี ค่าธรรมเนียมรับชำระ
+      ส่วนลด งานแก้ไข หรือรายการที่ไม่ได้กรอก โปรดตรวจตัวเลขและเงื่อนไขก่อนใช้เสนอราคา
+      ไฟล์นี้คำนวณในเบราว์เซอร์ ไม่มีโค้ดส่งข้อมูลออกทางเครือข่ายหรือบันทึกค่าลง
+      storage ของเบราว์เซอร์
+    </p>
+  </main>
+
+  <script>
+    const fields = [
+      {
+        input: document.getElementById("monthly-overhead"),
+        error: document.getElementById("overhead-error"),
+        helpId: "overhead-help",
+        label: "ค่าใช้จ่ายประจำต่อเดือน",
+        valid: (value) => value >= 0,
+        invalidMessage: "ต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป"
+      },
+      {
+        input: document.getElementById("billable-hours"),
+        error: document.getElementById("billable-error"),
+        helpId: "billable-help",
+        label: "ชั่วโมงที่เรียกเก็บเงินได้ต่อเดือน",
+        valid: (value) => value > 0 && value <= 744,
+        invalidMessage: "ต้องมากกว่า 0 และไม่เกิน 744 ชั่วโมง"
+      },
+      {
+        input: document.getElementById("direct-cost"),
+        error: document.getElementById("direct-error"),
+        helpId: "direct-help",
+        label: "ค่าใช้จ่ายเฉพาะงาน",
+        valid: (value) => value >= 0,
+        invalidMessage: "ต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป"
+      },
+      {
+        input: document.getElementById("job-hours"),
+        error: document.getElementById("job-error"),
+        helpId: "job-help",
+        label: "ชั่วโมงทำงานของงานนี้",
+        valid: (value) => value > 0,
+        invalidMessage: "ต้องมากกว่า 0 ชั่วโมง"
+      },
+      {
+        input: document.getElementById("target-margin"),
+        error: document.getElementById("margin-error"),
+        helpId: "margin-help",
+        label: "อัตรากำไรขั้นต้น",
+        valid: (value) => value >= 0 && value <= 95,
+        invalidMessage: "ต้องอยู่ระหว่าง 0 ถึง 95 เปอร์เซ็นต์"
+      }
+    ];
+
+    const errorSummary = document.getElementById("form-errors");
+    const status = document.getElementById("calculation-status");
+    const resultIds = ["hourly-overhead", "allocated-overhead", "base-cost", "suggested-price"];
+    const resultElements = resultIds.map((id) => document.getElementById(id));
+    const numberFormat = new Intl.NumberFormat("th-TH-u-nu-latn", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    function calculateQuote(values) {
+      const hourlyOverhead = values.monthlyOverhead / values.billableHours;
+      const allocatedOverhead = hourlyOverhead * values.jobHours;
+      const baseCost = values.directCost + allocatedOverhead;
+      const suggestedPrice = baseCost / (1 - values.margin / 100);
+      return { hourlyOverhead, allocatedOverhead, baseCost, suggestedPrice };
+    }
+
+    function formatBaht(value) {
+      return numberFormat.format(value) + " บาท";
+    }
+
+    function clearResults(message) {
+      resultElements.forEach((element) => { element.textContent = "—"; });
+      status.textContent = message;
+    }
+
+    function showFieldError(field, message) {
+      field.input.setAttribute("aria-invalid", "true");
+      field.input.setAttribute("aria-describedby", field.helpId + " " + field.error.id);
+      field.error.textContent = message;
+    }
+
+    function clearFieldError(field) {
+      field.input.removeAttribute("aria-invalid");
+      field.input.setAttribute("aria-describedby", field.helpId);
+      field.error.textContent = "";
+    }
+
+    function runCalculation() {
+      const values = {};
+      const errors = [];
+      let firstInvalid = null;
+
+      fields.forEach((field) => {
+        const raw = field.input.value.trim();
+        const value = Number(raw);
+        let message = "";
+
+        if (raw === "") {
+          message = "กรุณากรอกข้อมูล";
+        } else if (!Number.isFinite(value)) {
+          message = "กรุณากรอกตัวเลขที่ถูกต้องและมีค่าจำกัด";
+        } else if (!field.valid(value)) {
+          message = field.invalidMessage;
+        }
+
+        if (message) {
+          showFieldError(field, message);
+          errors.push(field.label + ": " + message);
+          if (!firstInvalid) firstInvalid = field.input;
+        } else {
+          clearFieldError(field);
+          values[field.input.name] = value;
+        }
+      });
+
+      if (errors.length > 0) {
+        errorSummary.textContent = "โปรดตรวจสอบข้อมูล: " + errors.join("; ");
+        clearResults("ยังไม่มีผลคำนวณ โปรดแก้ข้อมูลที่แจ้งแล้วคำนวณอีกครั้ง");
+        firstInvalid.focus();
+        return;
+      }
+
+      const quote = calculateQuote({
+        monthlyOverhead: values["monthly-overhead"],
+        billableHours: values["billable-hours"],
+        directCost: values["direct-cost"],
+        jobHours: values["job-hours"],
+        margin: values["target-margin"]
+      });
+
+      if (!Object.values(quote).every(Number.isFinite)) {
+        errorSummary.textContent = "ผลคำนวณเกินช่วงตัวเลขที่เบราว์เซอร์รองรับ โปรดตรวจและลดค่าป้อน";
+        clearResults("ไม่สามารถแสดงผลจากค่าป้อนชุดนี้ได้");
+        errorSummary.focus();
+        return;
+      }
+
+      if (quote.baseCost <= 0) {
+        errorSummary.textContent = "ต้นทุนฐานต้องมากกว่า 0 โปรดกรอกค่าใช้จ่ายประจำหรือค่าใช้จ่ายเฉพาะงาน";
+        clearResults("ยังไม่มีผลคำนวณ โปรดตรวจต้นทุนแล้วลองอีกครั้ง");
+        errorSummary.focus();
+        return;
+      }
+
+      errorSummary.textContent = "";
+      resultElements[0].textContent = formatBaht(quote.hourlyOverhead);
+      resultElements[1].textContent = formatBaht(quote.allocatedOverhead);
+      resultElements[2].textContent = formatBaht(quote.baseCost);
+      resultElements[3].textContent = formatBaht(quote.suggestedPrice);
+      status.textContent = "คำนวณแล้ว: ตรวจสอบสมมติฐานและรายการที่ยังไม่รวมก่อนใช้ราคา";
+    }
+
+    document.getElementById("calculate-button").addEventListener("click", runCalculation);
+
+    document.getElementById("reset-button").addEventListener("click", () => {
+      fields.forEach((field) => {
+        field.input.value = "";
+        clearFieldError(field);
+      });
+      errorSummary.textContent = "";
+      clearResults("กรอกข้อมูลให้ครบ แล้วเลือก “คำนวณราคา”");
+      fields[0].input.focus();
+    });
+
+    fields.forEach((field) => {
+      field.input.addEventListener("input", () => {
+        clearFieldError(field);
+        errorSummary.textContent = "";
+        clearResults("ข้อมูลเปลี่ยนแล้ว เลือก “คำนวณราคา” เพื่ออัปเดตผล");
+      });
+    });
+  </script>
+</body>
+</html>

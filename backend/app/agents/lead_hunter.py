@@ -1,6 +1,7 @@
 import logging
 
 from app.agents.base import BaseAgent
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class LeadHunter(BaseAgent):
             if existing.scalar_one_or_none():
                 return None
             opp = Opportunity(
+                organization_id=settings.AUTOMATION_ORGANIZATION_ID,
                 type="freelance",
                 title=raw.get("title", "Untitled"),
                 description=raw.get("description"),

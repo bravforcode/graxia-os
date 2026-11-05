@@ -1,4 +1,5 @@
 import pytest
+from app.config import Settings
 from app.core.llm import LLMClient
 
 
@@ -7,6 +8,27 @@ async def collect_stream(stream):
     async for chunk in stream:
         chunks.append(chunk)
     return chunks
+
+
+def build_test_client(*, gemini_key: bool = False) -> LLMClient:
+    test_settings = Settings(
+        APP_ENV="testing",
+        LLM_PROVIDER="openclaw",
+        OPENCLAW_API_KEY="unit-test-openclaw-key",
+        OPENCLAW_DEFAULT_MODEL="openclaw-test",
+        OPENCLAW_FAST_MODEL="openclaw-fast-test",
+        GEMINI_API_KEY="unit-test-gemini-key" if gemini_key else "",
+        CHEAP_MODEL="gemini-test",
+        MID_MODEL="gemini-test",
+        HIGH_QUALITY_MODEL="gemini-test",
+        CHEAP_MODEL_INPUT_COST_PER_1M=1.0,
+        CHEAP_MODEL_OUTPUT_COST_PER_1M=1.0,
+        MID_MODEL_INPUT_COST_PER_1M=1.0,
+        MID_MODEL_OUTPUT_COST_PER_1M=1.0,
+        HIGH_QUALITY_MODEL_INPUT_COST_PER_1M=1.0,
+        HIGH_QUALITY_MODEL_OUTPUT_COST_PER_1M=1.0,
+    )
+    return LLMClient(test_settings)
 
 
 def test_openai_stream_payload_parser_extracts_delta_content():
@@ -23,7 +45,7 @@ def test_gemini_stream_payload_parser_extracts_candidate_text():
 
 @pytest.mark.asyncio
 async def test_sse_json_iterator_ignores_comments_and_stops_on_done():
-    client = LLMClient()
+    client = build_test_client()
 
     class FakeResponse:
         async def aiter_lines(self):
@@ -44,7 +66,7 @@ async def test_sse_json_iterator_ignores_comments_and_stops_on_done():
 
 @pytest.mark.asyncio
 async def test_generate_stream_uses_openclaw_streaming_provider(monkeypatch):
-    client = LLMClient()
+    client = build_test_client(gemini_key=True)
     client.openclaw_key = "real-openclaw-key"
     client.api_key = ""
 
@@ -89,7 +111,7 @@ async def test_generate_stream_uses_openclaw_streaming_provider(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_generate_stream_falls_back_to_gemini_stream_when_openclaw_fails(monkeypatch):
-    client = LLMClient()
+    client = build_test_client()
     client.openclaw_key = "real-openclaw-key"
     client.api_key = "real-gemini-key"
 
@@ -101,11 +123,19 @@ async def test_generate_stream_falls_back_to_gemini_stream_when_openclaw_fails(m
         yield "safe "
         yield "fallback"
 
-    async def allow_request():
+    request_providers = []
+
+    async def allow_request(provider=None):
+        request_providers.append(provider)
         return True
 
     async def cache_miss(key):
         return None
+
+    log_writes = []
+
+    async def fake_log_call(*args, **kwargs):
+        log_writes.append(kwargs)
 
     async def noop_async(*args, **kwargs):
         return None
@@ -113,7 +143,7 @@ async def test_generate_stream_falls_back_to_gemini_stream_when_openclaw_fails(m
     monkeypatch.setattr(client, "_track_request", allow_request)
     monkeypatch.setattr(client, "_get_cache", cache_miss)
     monkeypatch.setattr(client, "_set_cache", noop_async)
-    monkeypatch.setattr(client, "_log_call", noop_async)
+    monkeypatch.setattr(client, "_log_call", fake_log_call)
     monkeypatch.setattr(client, "_call_openclaw_stream", broken_openclaw_stream)
     monkeypatch.setattr(client, "_call_gemini_stream", fake_gemini_stream)
 
@@ -122,11 +152,13 @@ async def test_generate_stream_falls_back_to_gemini_stream_when_openclaw_fails(m
     )
 
     assert chunks == ["safe ", "fallback"]
+    assert request_providers == [None, "gemini"]
+    assert log_writes[0]["provider"] == "gemini"
 
 
 @pytest.mark.asyncio
 async def test_generate_stream_falls_back_to_complete_when_streaming_provider_fails(monkeypatch):
-    client = LLMClient()
+    client = build_test_client()
     client.openclaw_key = "real-openclaw-key"
     client.api_key = ""
 

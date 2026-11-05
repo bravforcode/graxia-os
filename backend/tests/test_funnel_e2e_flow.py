@@ -92,6 +92,7 @@ class TestFunnelE2EFlow:
         mock_session = MagicMock()
         mock_session.id = f"cs_e2e_{uuid4().hex[:12]}"
         mock_session.url = "https://checkout.stripe.com/e2e_test"
+        mock_session.expires_at = 1_900_000_000
 
         async def mock_create(**kwargs):
             return mock_session
@@ -307,6 +308,11 @@ class TestFunnelE2EFlow:
         })
         product_id = create_res.json()["id"]
         org_id = create_res.json()["organization_id"]
+        asset_res = await async_client.post(
+            f"/api/v1/funnel/products/{product_id}/assets",
+            json={"asset_type": "text", "title": "Idempotency asset", "content_body": "content"},
+        )
+        assert asset_res.status_code == 201
         await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
 
         # A real completed checkout requires a local checkout session row;
@@ -420,6 +426,15 @@ class TestFunnelE2EFlow:
         })
         product_id = create_res.json()["id"]
         org_id = create_res.json()["organization_id"]
+        asset_res = await async_client.post(
+            f"/api/v1/funnel/products/{product_id}/assets",
+            json={
+                "asset_type": "text",
+                "title": "Free checklist delivery",
+                "content_body": "Checklist content",
+            },
+        )
+        assert asset_res.status_code == 201
         await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
 
         # Create a lead magnet linked to the free product
@@ -428,6 +443,7 @@ class TestFunnelE2EFlow:
             "slug": "free-biz-checklist-e2e",
             "promise": "Get our 50-point business checklist free",
             "target_product_id": product_id,
+            "delivery_asset_id": asset_res.json()["id"],
         })
         assert lm_res.status_code == 201, f"Lead magnet create failed: {lm_res.text}"
         lm = lm_res.json()

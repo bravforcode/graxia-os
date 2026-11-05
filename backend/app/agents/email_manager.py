@@ -125,11 +125,9 @@ class EmailManagerAgent(BaseAgent):
             thread_id = msg_data.get("threadId")
             subject = headers.get("Subject", "(No Subject)")
             from_email = headers.get("From", "")
-            to_email = headers.get("To", "")
-            date_str = headers.get("Date", "")
-            
+
             # Get or create thread
-            thread = await self._get_or_create_thread(thread_id, subject)
+            await self._get_or_create_thread(thread_id, subject)
             
             # Parse email body
             body = self._extract_body(msg_data.get("payload", {}))

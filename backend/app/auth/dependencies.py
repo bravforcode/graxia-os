@@ -21,7 +21,7 @@ from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
-from app.auth.context import AuthContext, LocalDevAuthContext, LOCAL_DEV_ORGANIZATION_ID
+from app.auth.context import AuthContext, LOCAL_DEV_ORGANIZATION_ID
 from app.auth.permissions import auth_context_has_permission, normalize_permissions, permissions_for_role
 from app.config import settings
 
@@ -52,20 +52,53 @@ def _correlation_id(request: Request) -> str:
     )
 
 
-def _role_permissions(request: Request, env: str, actor_type: str) -> list[str]:
-    explicit = _csv_header_values(request.headers.get("X-Graxia-Permissions"))
-    if explicit:
-        return normalize_permissions(explicit)
+def _token_organization_id(request: Request) -> UUID | None:
+    """Tenant carried by the verified access token, if any."""
+    payload = getattr(request.state, "auth_payload", None)
+    if not isinstance(payload, dict):
+        return None
+    try:
+        return UUID(str(payload["organization_id"]))
+    except (KeyError, ValueError, TypeError):
+        return None
 
-    authenticated_role = str(getattr(request.state, "authenticated_role", "") or "").strip().lower()
+
+def _authenticated_role(request: Request) -> str:
+    role = str(getattr(request.state, "authenticated_role", "") or "").strip().lower()
+    if role:
+        return role
+    payload = getattr(request.state, "auth_payload", None)
+    if isinstance(payload, dict):
+        return str(payload.get("role") or "").strip().lower()
+    return ""
+
+
+def _role_permissions(request: Request, env: str, actor_type: str) -> list[str]:
+    authenticated_role = _authenticated_role(request)
     if authenticated_role:
         return permissions_for_role(authenticated_role)
 
     if env in ("local", "development", "test"):
+        explicit = _csv_header_values(request.headers.get("X-Graxia-Permissions"))
+        if explicit:
+            return normalize_permissions(explicit)
         fallback_role = "admin" if actor_type in {"system", "service", "agent", "admin"} else "user"
         return permissions_for_role(fallback_role)
 
     return []
+
+
+def _actor_identity(request: Request, env: str) -> tuple[str, str | None]:
+    """Local/test actor; staging/production resolves the persisted user instead."""
+    actor_type = request.headers.get("X-Graxia-Actor-Type")
+    actor_id = request.headers.get("X-Graxia-Actor-Id")
+    return (
+        actor_type
+        or ("admin" if getattr(request.state, "authenticated_role", "") == "admin" else "")
+        or ("user" if getattr(request.state, "authenticated_user_id", "") else "")
+        or "system",
+        actor_id or getattr(request.state, "authenticated_user_id", None) or "local-dev",
+    )
 
 
 async def get_auth_context(
@@ -78,7 +111,7 @@ async def get_auth_context(
 ) -> AuthContext:
     """Extract AuthContext from request headers.
 
-    - Staging/production: Requires X-Graxia-Org-Id header.
+    - Staging/production: Verified JWT/session plus persisted active User tenant.
     - Local/test: Falls back to LocalDevAuthContext.
 
     Never returns None — always provides a valid context.
@@ -87,50 +120,72 @@ async def get_auth_context(
 
     request_id = _request_id(request, x_graxia_request_id)
     correlation_id = _correlation_id(request)
-    actor_type = (
-        x_graxia_actor_type
-        or ("admin" if getattr(request.state, "authenticated_role", "") == "admin" else "")
-        or ("user" if getattr(request.state, "authenticated_user_id", "") else "")
-        or ("system" if env not in ("staging", "production") else "user")
-    )
-    actor_id = x_graxia_actor_id or getattr(request.state, "authenticated_user_id", None) or None
-    auth_method = "bearer_jwt" if getattr(request.state, "auth_payload", None) else "local_test"
-    scopes = normalize_permissions(_csv_header_values(x_graxia_scopes))
 
     if env in ("staging", "production"):
-        # Require explicit org header
-        if not x_graxia_org_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="X-Graxia-Org-Id header is required.",
-            )
-        try:
-            org_id = UUID(x_graxia_org_id)
-        except (ValueError, AttributeError):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid X-Graxia-Org-Id format.",
-            )
+        # Headers select a tenant; they never authenticate one or grant privileges.
+        from app.database import AsyncSessionLocal
+        from app.middleware.auth import build_auth_context
+        from app.models.user import User
 
-        is_mock = env != "production" and org_id == LOCAL_DEV_ORGANIZATION_ID
+        payload = await build_auth_context(request)
+        try:
+            user_id = UUID(str(payload.get("sub") or ""))
+        except (ValueError, AttributeError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials.",
+            )
+        async with AsyncSessionLocal() as db:
+            user = await db.get(User, user_id)
+            if (
+                user is None
+                or not user.is_active
+                or not isinstance(user.organization_id, UUID)
+                or not user.organization_id.int
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Active authenticated organization required.",
+                )
+            org_id, persisted_actor_id, role = user.organization_id, str(user.id), user.role
+        if x_graxia_org_id:
+            try:
+                selected_org = UUID(x_graxia_org_id)
+            except (ValueError, AttributeError, TypeError):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Organization selection forbidden.",
+                )
+            if selected_org != org_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Organization selection forbidden.",
+                )
+
         return AuthContext(
-            actor_type=actor_type,
-            actor_id=actor_id,
+            actor_type="admin" if role == "admin" else "user",
+            actor_id=persisted_actor_id,
             organization_id=org_id,
-            permissions=_role_permissions(request, env, actor_type),
-            scopes=scopes,
+            permissions=permissions_for_role(role),
+            scopes=[],
             request_id=request_id,
             correlation_id=correlation_id,
             environment=env,
-            auth_method=auth_method if not is_mock else "local_test",
-            is_mock_auth=is_mock,
-            is_authenticated=not is_mock or bool(getattr(request.state, "auth_payload", None)),
-            is_internal=actor_type in {"system", "service", "agent"},
-            is_customer=actor_type == "customer",
+            auth_method="bearer_jwt",
+            is_mock_auth=False,
+            is_authenticated=True,
+            is_internal=False,
+            is_customer=False,
         )
 
-    # Local / test: use local dev default
-    org_id = LOCAL_DEV_ORGANIZATION_ID
+    actor_type, actor_id = _actor_identity(request, env)
+    actor_type = x_graxia_actor_type or actor_type
+    actor_id = x_graxia_actor_id or actor_id
+    scopes = normalize_permissions(_csv_header_values(x_graxia_scopes))
+
+    # Local / test: the verified token's tenant beats the dev default; an
+    # explicit header still wins so cross-org checks stay testable.
+    org_id = _token_organization_id(request) or LOCAL_DEV_ORGANIZATION_ID
     if x_graxia_org_id:
         try:
             org_id = UUID(x_graxia_org_id)

@@ -1,10 +1,10 @@
 """Scheduled platform maintenance tasks."""
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from app.config import settings
+from app.tasks.async_runner import run_async
 from app.tasks.base import execute_managed_async_task, idempotent_task
 from app.tasks.celery_app import celery_app
 from app.tasks.dlq_handler import DeadLetterQueue
@@ -145,7 +145,7 @@ async def run_autopilot_cycle() -> dict[str, object]:
             lines.append("⚠️ Errors:")
             for err in errors[:5]:
                 lines.append(f"• {err}")
-        await send_message("\n".join(lines), parse_mode="HTML")
+        await send_message("\n".join(lines), parse_mode=None)
 
     status = "degraded" if errors else "ok"
     return {
@@ -201,7 +201,7 @@ def obsidian_refresh_task():
 
 @celery_app.task(name="tasks.maintenance.check_dlq_depth", queue=CRITICAL_QUEUE)
 def dlq_depth_task():
-    return asyncio.run(check_dlq_depth())
+    return run_async(check_dlq_depth())
 
 
 @celery_app.task(name="tasks.maintenance.autopilot_cycle", queue=DEFAULT_QUEUE)

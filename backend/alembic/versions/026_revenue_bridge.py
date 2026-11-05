@@ -16,6 +16,13 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    # The enterprise baseline creates this table from the ORM metadata before
+    # Alembic runs in some deployments. Preserve that data and let this
+    # revision act as a compatibility no-op for that already-complete schema.
+    bind = op.get_bind()
+    if sa.inspect(bind).has_table("revenue_bridge_events"):
+        return
+
     op.create_table(
         "revenue_bridge_events",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -94,10 +101,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_revenue_bridge_org_occurred", table_name="revenue_bridge_events")
-    op.drop_index("ix_revenue_bridge_events_event_kind", table_name="revenue_bridge_events")
-    op.drop_index(
-        "ix_revenue_bridge_events_organization_id", table_name="revenue_bridge_events"
-    )
-    op.drop_index("ix_revenue_bridge_events_provider", table_name="revenue_bridge_events")
-    op.drop_table("revenue_bridge_events")
+    # Baseline-owned table: never destroy it during a downgrade.
+    return

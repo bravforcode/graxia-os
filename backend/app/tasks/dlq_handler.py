@@ -1,7 +1,6 @@
 """Redis-backed dead-letter queue helpers."""
 from __future__ import annotations
 
-import asyncio
 import json
 from collections import deque
 from dataclasses import asdict, dataclass, field
@@ -10,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from app.core.monitoring import metrics_collector
+from app.tasks.async_runner import run_async
 from app.telegram_bot.bot import send_message
 
 DLQ_KEY = "celery:dlq"
@@ -155,4 +155,4 @@ def record_dlq_failure(
 
 def replay_dlq_message_sync(message_id: str, operator_id: str, redis_client: Any | None = None) -> bool:
     queue = DeadLetterQueue(redis_client)
-    return asyncio.run(queue.replay_message(message_id, operator_id=operator_id))
+    return run_async(queue.replay_message(message_id, operator_id=operator_id))

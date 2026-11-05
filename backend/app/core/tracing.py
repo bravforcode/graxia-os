@@ -81,7 +81,7 @@ class Tracer:
         trace_id = str(uuid.uuid4())
         trace_id_var.set(trace_id)
         
-        span = self.start_span(name)
+        self.start_span(name)
         return trace_id
     
     def start_span(

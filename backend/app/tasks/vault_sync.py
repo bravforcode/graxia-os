@@ -27,7 +27,7 @@ async def run_vault_sync() -> VaultSyncResult:
     synced = result.get("synced_count", 0)
     failed = result.get("failed_count", 0)
 
-    logger.info("vault_sync_complete", synced_count=synced, failed_count=failed)
+    logger.info("vault_sync_complete synced_count=%s failed_count=%s", synced, failed)
     return {"synced_count": synced, "failed_count": failed}
 
 

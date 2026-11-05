@@ -120,7 +120,9 @@ class DeliveryAsset(Base, TenantMixin):
         "DigitalProduct", back_populates="assets"
     )
     delivery_accesses: Mapped[list["DeliveryAccess"]] = relationship(
-        "DeliveryAccess", back_populates="asset", foreign_keys="DeliveryAccess.asset_id"
+        "DeliveryAccess",
+        back_populates="asset",
+        foreign_keys="DeliveryAccess.asset_id",
     )
 
 
@@ -177,7 +179,7 @@ class FunnelOrder(Base, TenantMixin):
             "stripe_session_id", name="uq_funnel_orders_stripe_session_id"
         ),
         CheckConstraint(
-            "status IN ('pending', 'paid', 'failed', 'refunded', 'cancelled')",
+            "status IN ('pending', 'paid', 'comped', 'failed', 'refunded', 'cancelled')",
             name="ck_order_status",
         ),
     )
@@ -272,6 +274,7 @@ class DeliveryAccess(Base, TenantMixin):
             "access_token_hash",
             unique=True,
             postgresql_where=text("access_token_hash IS NOT NULL"),
+            sqlite_where=text("access_token_hash IS NOT NULL"),
         ),
     )
 
@@ -284,20 +287,31 @@ class DeliveryAccess(Base, TenantMixin):
         nullable=False,
         index=True,
     )
-    order_item_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("funnel_order_items.id"), index=True
-    )
     product_id: Mapped[UUIDType] = mapped_column(
         SQLUUID(as_uuid=True),
         ForeignKey("digital_products.id"),
         nullable=False,
         index=True,
     )
-    delivery_asset_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("delivery_assets.id"), index=True
+    order_item_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True),
+        ForeignKey(
+            "funnel_order_items.id",
+            name="fk_delivery_accesses_order_item_id",
+        ),
+        nullable=True,
+        index=True,
     )
     asset_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True), ForeignKey("delivery_assets.id"), index=True
+    )
+    delivery_asset_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True),
+        ForeignKey(
+            "delivery_assets.id",
+            name="fk_delivery_accesses_delivery_asset_id",
+        ),
+        index=True,
     )
     contact_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True), ForeignKey("contacts.id"), index=True
@@ -305,16 +319,16 @@ class DeliveryAccess(Base, TenantMixin):
     access_token_hash: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     first_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    download_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     open_count: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", nullable=False
     )
-    first_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    download_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     max_downloads: Mapped[int | None] = mapped_column(Integer)
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -327,42 +341,12 @@ class DeliveryAccess(Base, TenantMixin):
         "FunnelOrder", back_populates="delivery_accesses"
     )
     asset: Mapped["DeliveryAsset"] = relationship(
-        "DeliveryAsset", back_populates="delivery_accesses", foreign_keys=[asset_id]
+        "DeliveryAsset",
+        back_populates="delivery_accesses",
+        foreign_keys=[asset_id],
     )
     delivery_asset: Mapped["DeliveryAsset"] = relationship(
         "DeliveryAsset", foreign_keys=[delivery_asset_id]
-    )
-
-
-class DeliveryEmailEvent(Base, TenantMixin):
-    __tablename__ = "delivery_email_events"
-    __table_args__ = (
-        CheckConstraint(
-            "status IN ('pending', 'sent', 'failed', 'skipped')",
-            name="ck_delivery_email_status",
-        ),
-    )
-
-    id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    order_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("funnel_orders.id"), nullable=False, index=True
-    )
-    delivery_access_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("delivery_accesses.id"), index=True
-    )
-    customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
-    provider: Mapped[str] = mapped_column(String(100), default="mock", nullable=False)
-    idempotency_key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    error_code: Mapped[str | None] = mapped_column(String(100))
-    error_message_redacted: Mapped[str | None] = mapped_column(String(500))
-    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
     )
 
 
@@ -496,6 +480,12 @@ class LeadMagnet(Base, TenantMixin):
         nullable=True,
         index=True,
     )
+    delivery_asset_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True),
+        ForeignKey("delivery_assets.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     promise: Mapped[str | None] = mapped_column(Text)
     file_url: Mapped[str | None] = mapped_column(String(500))
     landing_page_url: Mapped[str | None] = mapped_column(String(500))
@@ -546,7 +536,10 @@ class LeadCapture(Base, TenantMixin):
     )
     lead_magnet_id: Mapped[UUIDType] = mapped_column(
         SQLUUID(as_uuid=True),
-        ForeignKey("funnel_lead_magnets.id"),
+        ForeignKey(
+            "funnel_lead_magnets.id",
+            name="fk_lead_captures_funnel_lead_magnet_id",
+        ),
         nullable=False,
         index=True,
     )
@@ -555,8 +548,7 @@ class LeadCapture(Base, TenantMixin):
     utm_source: Mapped[str | None] = mapped_column(String(255))
     utm_medium: Mapped[str | None] = mapped_column(String(255))
     utm_campaign: Mapped[str | None] = mapped_column(String(255))
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
-
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -593,11 +585,11 @@ class FunnelRecommendation(Base, TenantMixin):
     approval_request_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True),
         ForeignKey("approval_requests.id"),
+        nullable=True,
         index=True,
     )
     status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
-
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

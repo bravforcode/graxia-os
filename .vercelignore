@@ -2,6 +2,16 @@
 .worktrees
 .github
 .vercel
+.venv
+.envs
+.mypy_cache
+.hypothesis
+.pytest_cache
+.ruff_cache
+.vscode
+.cache
+.backups
+.worktrees
 
 .env
 .env.*
@@ -21,11 +31,19 @@ backend/.pytest_cache
 backend/.ruff_cache
 
 tests
-.cache
 .hypothesis
 .mypy_cache
 .pytest_cache
 .ruff_cache
+coverage*.json
+catboost_info
+lancedb
+quant_os_dashboard
+repos
+sites
+logs
+reports
+backups
 node_modules
 frontend/node_modules
 

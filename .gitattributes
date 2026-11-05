@@ -1,0 +1,6 @@
+*.sh text eol=lf
+deploy/vps/graxia-backup text eol=lf
+deploy/vps/graxia-vitals text eol=lf
+deploy/vps/*.yml text eol=lf
+deploy/vps/graxia-autopilot-check text eol=lf
+deploy/vps/systemd/* text eol=lf

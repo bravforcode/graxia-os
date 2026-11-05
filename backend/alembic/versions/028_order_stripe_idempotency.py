@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from alembic import op
+import sqlalchemy as sa
 
 
 revision: str = "028_order_stripe_idempotency"
@@ -14,6 +15,16 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("funnel_orders"):
+        raise RuntimeError("funnel_orders table is required before Stripe idempotency")
+    if any(
+        constraint.get("name") == "uq_funnel_orders_stripe_session_id"
+        for constraint in inspector.get_unique_constraints("funnel_orders")
+    ):
+        return
+
     op.create_unique_constraint(
         "uq_funnel_orders_stripe_session_id",
         "funnel_orders",
@@ -22,6 +33,14 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("funnel_orders") or not any(
+        constraint.get("name") == "uq_funnel_orders_stripe_session_id"
+        for constraint in inspector.get_unique_constraints("funnel_orders")
+    ):
+        return
+
     op.drop_constraint(
         "uq_funnel_orders_stripe_session_id",
         "funnel_orders",

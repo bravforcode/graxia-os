@@ -57,7 +57,7 @@ class TelegramNotifier:
 
         # Send startup notification
         startup_msg = f"""
-🚀 **Personal OS Started**
+🚀 Personal OS Started
 
 ⏰ Time: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
 🌐 Environment: {settings.APP_ENV}
@@ -67,7 +67,7 @@ class TelegramNotifier:
 System is ready and monitoring your activities.
         """.strip()
 
-        success = await send_message(startup_msg, parse_mode="Markdown")
+        success = await send_message(startup_msg, parse_mode=None)
         if success:
             self._initialized = True
             logger.info("TelegramNotifier: Initialized successfully")
@@ -110,7 +110,7 @@ System is ready and monitoring your activities.
         message: str,
         priority: NotificationPriority = NotificationPriority.NORMAL,
         notification_type: NotificationType = NotificationType.SYSTEM,
-        parse_mode: str = "Markdown"
+        parse_mode: str | None = None
     ) -> bool:
         """
         Send a notification with rate limiting and priority handling.
@@ -409,8 +409,8 @@ System is ready and monitoring your activities.
             logger.warning("Telegram: No bot token configured")
             return False
 
-        test_msg = "🔔 **Test Notification**\n✅ Telegram integration is working!"
-        success = await send_message(test_msg, parse_mode="Markdown")
+        test_msg = "🔔 Test Notification\n✅ Telegram integration is working!"
+        success = await send_message(test_msg, parse_mode=None)
 
         if success:
             logger.info("Telegram: Connection test successful")

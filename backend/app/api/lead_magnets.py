@@ -1,9 +1,10 @@
+import html
 import logging
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -23,6 +24,11 @@ from app.services.lead_magnet_service import LeadMagnetService
 from app.services.public_funnel_service import (
     PublicFunnelBindingError,
     require_public_funnel_organization,
+)
+from app.services.unsubscribe_tokens import (
+    InvalidUnsubscribeProof,
+    UnsubscribeProofUnavailable,
+    verify_unsubscribe_token,
 )
 
 router = APIRouter()
@@ -156,13 +162,70 @@ async def unsubscribe_from_marketing(
     payload: UnsubscribeRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Suppress future marketing sends; response does not reveal contact existence."""
-    try:
-        organization_id = require_public_funnel_organization(payload.organization_id)
-    except PublicFunnelBindingError as exc:
-        raise HTTPException(
-            status_code=503 if "not configured" in str(exc) else 404,
-            detail=str(exc),
-        ) from exc
-    await LeadMagnetService(db).unsubscribe(organization_id, payload.email, public=True)
+    """Apply an explicitly confirmed, signed and scoped opt-out proof."""
+    organization_id, email = _verified_unsubscribe_scope(payload.token)
+    await LeadMagnetService(db).unsubscribe(organization_id, email)
     return UnsubscribeResponse(ok=True)
+
+
+def _verified_unsubscribe_scope(token: str) -> tuple[UUID, str]:
+    try:
+        return verify_unsubscribe_token(token)
+    except UnsubscribeProofUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unsubscribe confirmation is temporarily unavailable.",
+        ) from exc
+    except InvalidUnsubscribeProof as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired unsubscribe proof.",
+        ) from exc
+
+
+@router.get("/public/funnel/unsubscribe", response_class=HTMLResponse)
+async def confirm_unsubscribe_page(token: str = Query(..., min_length=1, max_length=4096)):
+    """Show a read-only confirmation form; link scanners must not mutate consent."""
+    _verified_unsubscribe_scope(token)
+    safe_token = html.escape(token, quote=True)
+    content = f"""<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Confirm unsubscribe</title></head>
+<body>
+  <main>
+    <h1>Confirm unsubscribe</h1>
+    <p>Confirm that you want to stop receiving marketing emails.</p>
+    <form method="post" action="/api/v1/public/funnel/unsubscribe/confirm">
+      <input type="hidden" name="token" value="{safe_token}">
+      <button type="submit">Unsubscribe</button>
+    </form>
+  </main>
+</body>
+</html>"""
+    return HTMLResponse(
+        content=content,
+        headers={
+            "Cache-Control": "no-store, max-age=0",
+            "Referrer-Policy": "no-referrer",
+        },
+    )
+
+
+@router.post("/public/funnel/unsubscribe/confirm", response_class=HTMLResponse)
+async def confirm_unsubscribe(
+    token: str = Form(..., min_length=1, max_length=4096),
+    db: AsyncSession = Depends(get_db),
+):
+    organization_id, email = _verified_unsubscribe_scope(token)
+    await LeadMagnetService(db).unsubscribe(organization_id, email)
+    return HTMLResponse(
+        content=(
+            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
+            "<meta name=\"referrer\" content=\"no-referrer\"><title>Unsubscribed</title>"
+            "</head><body><p>You have been unsubscribed.</p></body></html>"
+        ),
+        headers={
+            "Cache-Control": "no-store, max-age=0",
+            "Referrer-Policy": "no-referrer",
+        },
+    )

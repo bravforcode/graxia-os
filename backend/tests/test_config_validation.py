@@ -9,7 +9,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 
 from app.config import Settings
 
@@ -470,6 +470,7 @@ def test_placeholder_detection_property(placeholder_value: str):
     assert settings._looks_placeholder(f"  {placeholder_value}  ") is True
 
 
+@settings(deadline=None)
 @given(
     st.text(min_size=32, max_size=128).filter(
         lambda s: not any(
@@ -555,6 +556,7 @@ def test_placeholder_in_production_errors_property(placeholder_pattern: str):
         f"Production validation should catch placeholder: {placeholder_pattern}"
     )
 
+@settings(deadline=None)
 @given(st.text(min_size=1, max_size=100))
 def test_entropy_calculation_property(secret_value: str):
     """

@@ -129,6 +129,8 @@ class Settings(BaseSettings):
     COOKIE_DOMAIN: str = ""
     COOKIE_SECURE: bool = False
     SESSION_MAX_CONCURRENT: int = 5
+    SESSION_ABSOLUTE_TIMEOUT_DAYS: int = 7
+    SESSION_IDLE_TIMEOUT_HOURS: int = 24
     CSRF_SECRET: str = ""
     ALLOWED_CORS_ORIGINS: str = (
         "http://localhost:5173,http://127.0.0.1:5173,http://frontend:5173"
@@ -136,6 +138,10 @@ class Settings(BaseSettings):
     APP_HOST: str = ""
     APP_BASE_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:5173"
+    # Explicit core-only production mode for a self-hosted rollout while
+    # external control-plane/backup credentials are still unavailable. The
+    # readiness endpoint continues to report those missing integrations.
+    PRODUCTION_CORE_ONLY: bool = False
     CADDY_EMAIL: str = ""
     FLOWER_BASIC_AUTH: str = ""
     GRAFANA_ADMIN_PASSWORD: str = ""
@@ -151,6 +157,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
     DATABASE_MIGRATION_URL: str = ""
     REQUIRE_SUPABASE: bool = False
+    LEGACY_ORGANIZATION_ID: UUID = UUID("00000000-0000-0000-0000-000000000001")
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_TIMEOUT_SECONDS: int = 30
@@ -177,6 +184,7 @@ class Settings(BaseSettings):
     RESTORE_DRILL_POSTGRES_IMAGE: str = "postgres:16.3-alpine"
 
     # AI â€” OpenClaw (Claude via OpenClaw proxy)
+    LLM_PROVIDER: str = ""
     OPENCLAW_API_KEY: str = ""
     OPENCLAW_BASE_URL: str = "https://api.openclaw.ai/v1"
     OPENCLAW_DEFAULT_MODEL: str = "claude-sonnet-4-5"
@@ -229,6 +237,19 @@ class Settings(BaseSettings):
     DEFAULT_EMBEDDING_MODEL: str = "nomic-embed-text"
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OPENAI_TIMEOUT_SECONDS: int = 60
+    OPENAI_CHAT_MODEL: str = ""
+    OPENAI_INPUT_PRICE_USD_PER_1M: float = 0.0
+    OPENAI_OUTPUT_PRICE_USD_PER_1M: float = 0.0
+
+    # Scraper & Proxy Configuration
+    RESIDENTIAL_PROXY_URL: str = ""
+    SCRAPER_PROXY_URL: str = ""
+    UPWORK_COOKIES: str = ""
+    LINKEDIN_COOKIES: str = ""
+    FIVERR_COOKIES: str = ""
+    DEVPOST_COOKIES: str = ""
+    SCRAPER_SESSION_COOKIES: str = ""
 
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
@@ -313,6 +334,7 @@ class Settings(BaseSettings):
     OUTREACH_CAMPAIGN_NAME: str = "revenue-first"
 
     EMAIL_TRACKING_ENABLED: bool = True
+    EMAIL_RECIPIENT_ALLOWLIST: str = ""
     TRACKING_BASE_URL: str = ""
     TRACKING_SIGNING_SECRET: str = ""
 
@@ -368,6 +390,7 @@ class Settings(BaseSettings):
     BETA_WORKFLOWS_ENABLED: bool = False
     BETA_PUBLIC_FUNNEL_ENABLED: bool = False
     PUBLIC_FUNNEL_ORGANIZATION_ID: str = ""
+    AUTOMATION_ORGANIZATION_ID: str = ""
     BETA_OPERATOR_UI_ENABLED: bool = False
     KILL_SWITCH_ALL_EXTERNAL_BETA: bool = (
         True  # Locked by default until explicitly opened
@@ -384,6 +407,9 @@ class Settings(BaseSettings):
     # Enterprise Security - Rate Limiting
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
     RATE_LIMIT_BURST: int = 10
+    # Immediate proxy peer IPs/CIDRs, verified for the active deployment.
+    # Empty keeps rate limiting keyed to the socket peer and ignores XFF.
+    RATE_LIMIT_TRUSTED_PROXIES: str = ""
 
     @model_validator(mode="after")
     def normalize_local_service_hosts(self):
@@ -562,6 +588,19 @@ class Settings(BaseSettings):
     @property
     def HAS_REAL_OPENCLAW_KEY(self) -> bool:
         return not self._looks_placeholder(self.OPENCLAW_API_KEY)
+
+    @property
+    def HAS_REAL_OPENAI_KEY(self) -> bool:
+        return not self._looks_placeholder(self.OPENAI_API_KEY)
+
+    @property
+    def HAS_RESIDENTIAL_PROXY(self) -> bool:
+        return bool((self.RESIDENTIAL_PROXY_URL or "").strip())
+
+    @property
+    def ACTIVE_SCRAPER_PROXY(self) -> str | None:
+        p = (self.RESIDENTIAL_PROXY_URL or self.SCRAPER_PROXY_URL or "").strip()
+        return p if p else None
 
     @property
     def HAS_REAL_GEMINI_KEY(self) -> bool:
@@ -892,6 +931,33 @@ class Settings(BaseSettings):
 
     def validate_production_configuration(self) -> None:
         errors = self.get_production_configuration_errors()
+        if self.PRODUCTION_CORE_ONLY:
+            optional_prefixes = (
+                "Telegram control-plane credentials",
+                "ALERTMANAGER_WEBHOOK_TOKEN",
+                "CADDY_EMAIL",
+                "SUPABASE_URL",
+                "SUPABASE_ANON_KEY",
+                "SUPABASE_SERVICE_ROLE_KEY",
+                "BACKUP_BUCKET",
+                "BACKUP_REGION",
+                "BACKUP_ENCRYPTION_PUBLIC_KEY",
+                "BACKUP_ENCRYPTION_PRIVATE_KEY_FILE",
+                "FLOWER_BASIC_AUTH",
+            )
+            errors = [
+                error
+                for error in errors
+                if not error.startswith(optional_prefixes)
+            ]
+            if self.ALLOW_LIVE_STRIPE:
+                errors.append(
+                    "ALLOW_LIVE_STRIPE must be false in PRODUCTION_CORE_ONLY mode"
+                )
+            if self.ALLOW_REAL_EMAIL_SEND:
+                errors.append(
+                    "ALLOW_REAL_EMAIL_SEND must be false in PRODUCTION_CORE_ONLY mode"
+                )
         if errors:
             raise RuntimeError(
                 "Production security configuration is invalid: " + "; ".join(errors)

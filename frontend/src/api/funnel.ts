@@ -297,7 +297,7 @@ export const funnelApi = {
     return data;
   },
 
-  unsubscribe: async (payload: { organization_id: string; email: string }): Promise<void> => {
+  unsubscribe: async (payload: { token: string }): Promise<void> => {
     await publicClient.post("/public/funnel/unsubscribe", payload);
   },
 

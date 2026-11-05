@@ -11,8 +11,6 @@ services:
     image: redis:7-alpine
     container_name: graxia_redis
     entrypoint: ["/docker-entrypoint-scripts/redis-entrypoint.sh"]
-    ports:
-      - "6379:6379"
     environment:
       - "REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
     healthcheck:
@@ -24,12 +22,12 @@ services:
     volumes:
       - redis_data:/data
       - ./docker/redis-entrypoint.sh:/docker-entrypoint-scripts/redis-entrypoint.sh:ro
-    # Note: ./redis.conf was removed — not present in repo. Redis uses internal defaults.
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
 
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     image: graxia-backend:${TAG:-latest}
     container_name: graxia_backend
     env_file: .env.production
@@ -37,15 +35,14 @@ services:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
       TELEGRAM_POLLING_ENABLED: "true"
+      PORT: "8080"
     ports:
-      - "8000:8000"
+      - "8000:8080"
     depends_on:
       redis:
         condition: service_healthy
-    volumes:
-      - ./scripts/ops:/app/scripts:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -54,8 +51,8 @@ services:
 
   celery:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     image: graxia-backend:${TAG:-latest}
     container_name: graxia_celery
     env_file: .env.production
@@ -65,6 +62,12 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
 
   beat:
@@ -93,11 +96,11 @@ services:
     image: n8nio/n8n:latest
     container_name: graxia_n8n
     ports:
-      - "5678:5678"
+      - "127.0.0.1:5678:5678"
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
       - "N8N_BASIC_AUTH_USER=${N8N_USER:-operator}"
-      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}"
+      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?N8N_PASSWORD must be set}"
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http

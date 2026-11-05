@@ -312,7 +312,7 @@ class TestCSRFTokenExpiryIntegration:
             
             # Should be rejected
             assert response.status_code == 403
-            assert "CSRF" in response.json().get("detail", "")
+            assert response.json()["error"]["code"] == "PERMISSION_DENIED"
         finally:
             if original_csrf:
                 async_client.headers["X-CSRF-Token"] = original_csrf

@@ -19,8 +19,31 @@ down_revision: str | None = "019_content_engine"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+_FUNNEL_TABLES = (
+    "digital_products",
+    "delivery_assets",
+    "funnel_checkout_sessions",
+    "funnel_orders",
+    "funnel_order_items",
+    "delivery_accesses",
+    "conversion_events",
+)
+
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing = {table for table in _FUNNEL_TABLES if inspector.has_table(table)}
+    if existing:
+        missing = set(_FUNNEL_TABLES) - existing
+        if missing:
+            raise RuntimeError(
+                "funnel baseline is partial; refusing duplicate/partial 020 migration: "
+                + ", ".join(sorted(missing))
+            )
+        # 001_enterprise_baseline already owns the complete funnel schema.
+        return
+
     # ── 1. Create digital_products ──────────────────────────────────────────
     op.create_table(
         "digital_products",
@@ -229,10 +252,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table("conversion_events")
-    op.drop_table("delivery_accesses")
-    op.drop_table("funnel_order_items")
-    op.drop_table("funnel_orders")
-    op.drop_table("funnel_checkout_sessions")
-    op.drop_table("delivery_assets")
-    op.drop_table("digital_products")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if any(inspector.has_table(table) for table in _FUNNEL_TABLES):
+        # The baseline may own these tables; never drop funnel data implicitly.
+        return

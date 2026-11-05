@@ -24,53 +24,65 @@ def upgrade() -> None:
     if not _is_postgres():
         return  # GIN is Postgres-only; SQLite test DB skips this migration
 
-    # opportunities — title + description full-text (CONCURRENTLY to avoid lock)
-    op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS
-        ix_opportunities_fts
-        ON opportunities
-        USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')))
-    """)
+    # CREATE INDEX CONCURRENTLY cannot run inside Alembic's transaction.
+    with op.get_context().autocommit_block():
+        # opportunities — title + description full-text (CONCURRENTLY to avoid lock)
+        op.execute("""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS
+            ix_opportunities_fts
+            ON opportunities
+            USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')))
+        """)
 
-    # contacts — name + company full-text
-    op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS
-        ix_contacts_fts
-        ON contacts
-        USING GIN (to_tsvector('english', coalesce(name, '') || ' ' || coalesce(company, '')))
-    """)
+        # contacts — name + company full-text
+        op.execute("""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS
+            ix_contacts_fts
+            ON contacts
+            USING GIN (to_tsvector('english', coalesce(name, '') || ' ' || coalesce(company, '')))
+        """)
 
-    # knowledge_documents — title + content full-text
-    op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS
-        ix_knowledge_documents_fts
-        ON knowledge_documents
-        USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(content, '')))
-    """)
+        # knowledge_documents — title full-text
+        op.execute("""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS
+            ix_knowledge_documents_fts
+            ON knowledge_documents
+            USING GIN (to_tsvector('english', coalesce(title, '')))
+        """)
 
-    # email_threads — subject full-text
-    op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS
-        ix_email_threads_subject_fts
-        ON email_threads
-        USING GIN (to_tsvector('english', coalesce(subject, '')))
-    """)
+        # knowledge_chunks — content full-text
+        op.execute("""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS
+            ix_knowledge_chunks_content_fts
+            ON knowledge_chunks
+            USING GIN (to_tsvector('english', coalesce(content, '')))
+        """)
 
-    # job_postings — title + description full-text
-    op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS
-        ix_job_postings_fts
-        ON job_postings
-        USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')))
-    """)
+        # email_threads — subject full-text
+        op.execute("""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS
+            ix_email_threads_subject_fts
+            ON email_threads
+            USING GIN (to_tsvector('english', coalesce(subject, '')))
+        """)
+
+        # job_postings — title + description full-text
+        op.execute("""
+            CREATE INDEX CONCURRENTLY IF NOT EXISTS
+            ix_job_postings_fts
+            ON job_postings
+            USING GIN (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '')))
+        """)
 
 
 def downgrade() -> None:
     if not _is_postgres():
         return
 
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_job_postings_fts")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_email_threads_subject_fts")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_knowledge_documents_fts")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_contacts_fts")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_opportunities_fts")
+    with op.get_context().autocommit_block():
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_job_postings_fts")
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_email_threads_subject_fts")
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_knowledge_chunks_content_fts")
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_knowledge_documents_fts")
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_contacts_fts")
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_opportunities_fts")

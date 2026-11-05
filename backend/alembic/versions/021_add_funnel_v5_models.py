@@ -19,8 +19,47 @@ down_revision: str | None = "1e9db9a3b0ba"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+_V5_TABLES = (
+    "delivery_email_events",
+    "lead_magnets",
+    "lead_captures",
+    "funnel_recommendations",
+)
+_V5_DELIVERY_COLUMNS = {
+    "order_item_id",
+    "delivery_asset_id",
+    "first_opened_at",
+    "last_opened_at",
+    "open_count",
+    "metadata_json",
+}
+
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = {table for table in _V5_TABLES if inspector.has_table(table)}
+    delivery_columns = (
+        {column["name"] for column in inspector.get_columns("delivery_accesses")}
+        if inspector.has_table("delivery_accesses")
+        else set()
+    )
+    if (
+        inspector.has_table("funnel_lead_magnets")
+        and existing_tables == {"delivery_email_events", "lead_captures", "funnel_recommendations"}
+        and _V5_DELIVERY_COLUMNS.issubset(delivery_columns)
+    ):
+        # Baseline uses the legacy funnel_lead_magnets name and already owns
+        # the dependent lead_captures foreign key.
+        return
+    if existing_tables or _V5_DELIVERY_COLUMNS & delivery_columns:
+        if existing_tables == set(_V5_TABLES) and _V5_DELIVERY_COLUMNS.issubset(
+            delivery_columns
+        ):
+            # 001_enterprise_baseline already owns the complete V5 schema.
+            return
+        raise RuntimeError("funnel V5 baseline is partial; refusing duplicate migration")
+
     # ── 1. Add V5 columns to delivery_accesses ──────────────────────────────
     op.add_column(
         "delivery_accesses",
@@ -234,6 +273,12 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if any(inspector.has_table(table) for table in _V5_TABLES):
+        # The baseline may own these tables and columns; preserve funnel data.
+        return
+
     # Drop funnel_recommendations
     op.drop_table("funnel_recommendations")
     # Drop lead_captures

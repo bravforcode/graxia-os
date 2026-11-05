@@ -29,9 +29,16 @@ class TestOpenAPIRouteContract:
                 if alt and alt.exists():
                     path = alt
                     break
-        assert path.exists(), (
-            f"OpenAPI spec not found at {self.OPENAPI_PATH.resolve()}. "
-            f"Generate with: cd backend && python scripts/ops/export_openapi.py"
+        if path.exists():
+            return
+        # openapi.json is a gitignored export; without it, the app must still
+        # produce the schema that scripts/export_openapi.py would write.
+        from app.main import app
+
+        spec = app.openapi()
+        assert "openapi" in spec and spec.get("paths"), (
+            "App did not produce an OpenAPI schema. "
+            "Generate with: cd backend && python scripts/export_openapi.py --output openapi.json"
         )
 
     def test_openapi_is_valid_json(self):
@@ -78,7 +85,7 @@ class TestOpenAPIRouteContract:
             # Readiness routes may be in a different format or not yet exported
             pytest.skip(
                 f"Readiness route {self.READINESS_BASE} not found in OpenAPI spec. "
-                "Run: cd backend && python scripts/ops/export_openapi.py"
+                "Run: cd backend && python scripts/export_openapi.py --output openapi.json"
             )
 
     def test_api_prefix_routes_documented(self):

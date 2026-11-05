@@ -48,6 +48,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 describe('auth pages when the backend is unavailable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.setItem('ai-factory-lang', 'en')
     authState = {
       user: null,
       token: null,

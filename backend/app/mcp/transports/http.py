@@ -6,13 +6,11 @@ and returns safe JSON-RPC responses.
 """
 from __future__ import annotations
 
-import json
 import logging
 from uuid import UUID
 from uuid import uuid4
 
 from app.mcp.errors import (
-    ERR_INVALID_REQUEST,
     safe_error_response,
 )
 from app.mcp.registry import mcp_registry

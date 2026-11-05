@@ -12,6 +12,7 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from app.agents.base import BaseAgent
+from app.config import settings
 from app.database import AsyncSessionLocal
 from app.models.job_posting import JobPosting
 from app.scrapers.devpost import DevpostScraper
@@ -157,6 +158,7 @@ class JobHunterAgent(BaseAgent):
             async with AsyncSessionLocal() as db:
                 job = JobPosting(
                     id=uuid4(),
+                    organization_id=settings.AUTOMATION_ORGANIZATION_ID,
                     title=job_data.get("title"),
                     company=job_data.get("company"),
                     source_platform=job_data.get("source_platform"),

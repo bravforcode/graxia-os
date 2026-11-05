@@ -6,14 +6,14 @@ applies honesty gate, and calculates confidence scores.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 from .evidence import make_evidence, SyntheticEvidence
 from .honesty_gate import run_honesty_gate, HonestyGateResult
 from .scoring import calculate_confidence, ConfidenceScores
 from .personas import get_persona, list_personas
-from .tasks import get_task, list_tasks
+from .tasks import get_task
 
 
 @dataclass

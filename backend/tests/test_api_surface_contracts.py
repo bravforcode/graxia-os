@@ -1,12 +1,15 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 from app.models.approval_request import ApprovalRequest
 from app.models.automation_run import AutomationRun
 from app.models.skill_profile import SkillProfile
+from app.models.user import User
 
 
 @pytest_asyncio.fixture()
@@ -110,7 +113,15 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
     async_client, db_session, monkeypatch, api_surface_session_factory
 ):
     now = datetime.now(UTC)
+    me_response = await async_client.get("/api/v1/auth/me")
+    user_id = UUID(me_response.json()["id"])
+    organization_id = (
+        await db_session.execute(select(User.organization_id).where(User.id == user_id))
+    ).scalar_one()
+    # Test env resolves tenant from this header; default is the local dev org.
+    async_client.headers["X-Graxia-Org-Id"] = str(organization_id)
     approval = ApprovalRequest(
+        organization_id=organization_id,
         title="Approve application",
         action_type="job_apply_submit",
         subject_type="job_posting",
@@ -122,6 +133,7 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
         batch_key="job_apply_submit:job_posting:jobs",
     )
     run = AutomationRun(
+        organization_id=organization_id,
         name="Daily scan",
         task_type="daily_scan",
         trigger_source="scheduler",
@@ -174,14 +186,14 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
         params={"note": "Double click"},
     )
     assert duplicate_approve_response.status_code == 409
-    assert duplicate_approve_response.json()["detail"] == "Approval already processed"
+    assert duplicate_approve_response.json()["error"]["message"] == "Approval already processed"
 
     reject_after_approve_response = await async_client.patch(
         f"/api/v1/approvals/{approval.id}/reject",
         params={"note": "Changed mind"},
     )
     assert reject_after_approve_response.status_code == 409
-    assert reject_after_approve_response.json()["detail"] == "Approval already processed"
+    assert reject_after_approve_response.json()["error"]["message"] == "Approval already processed"
 
     runs_response = await async_client.get("/api/v1/runs")
     assert runs_response.status_code == 200

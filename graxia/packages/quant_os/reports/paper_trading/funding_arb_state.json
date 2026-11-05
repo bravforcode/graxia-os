@@ -4,19 +4,19 @@
       "notional_usd": 1000.0,
       "entry_price": 64853.3,
       "opened_at": "2026-07-27T21:21:18.381515+00:00",
-      "last_checked_at": "2026-08-06T17:03:06.961573+00:00",
+      "last_checked_at": "2026-10-27T10:39:43.291460+00:00",
       "entry_cost_usd": 1.6,
-      "cumulative_funding_usd": 1.72918,
-      "n_funding_events_recorded": 30
+      "cumulative_funding_usd": 14.599959999999992,
+      "n_funding_events_recorded": 275
     },
     "ETH/USDT": {
       "notional_usd": 1000.0,
       "entry_price": 1946.13,
       "opened_at": "2026-07-27T21:21:18.381515+00:00",
-      "last_checked_at": "2026-08-06T17:03:06.961573+00:00",
+      "last_checked_at": "2026-10-27T10:39:43.291460+00:00",
       "entry_cost_usd": 1.6,
-      "cumulative_funding_usd": 0.95752,
-      "n_funding_events_recorded": 30
+      "cumulative_funding_usd": 11.81771,
+      "n_funding_events_recorded": 275
     }
   },
   "funding_log": [
@@ -379,6 +379,2946 @@
       "timestamp": "2026-08-06T16:00:00.000Z",
       "funding_rate": 9.87e-06,
       "payment_usd": 0.0099
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-07T00:00:00.000Z",
+      "funding_rate": 7.99e-06,
+      "payment_usd": 0.008
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-07T08:00:00.000Z",
+      "funding_rate": 4.574e-05,
+      "payment_usd": 0.0457
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-07T16:00:00.000Z",
+      "funding_rate": 6.308e-05,
+      "payment_usd": 0.0631
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-08T00:00:00.001Z",
+      "funding_rate": 5.557e-05,
+      "payment_usd": 0.0556
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-08T08:00:00.000Z",
+      "funding_rate": 5.417e-05,
+      "payment_usd": 0.0542
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-08T16:00:00.002Z",
+      "funding_rate": 5.801e-05,
+      "payment_usd": 0.058
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-09T00:00:00.000Z",
+      "funding_rate": 4.423e-05,
+      "payment_usd": 0.0442
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-09T08:00:00.005Z",
+      "funding_rate": 6.667e-05,
+      "payment_usd": 0.0667
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-09T16:00:00.000Z",
+      "funding_rate": 7.054e-05,
+      "payment_usd": 0.0705
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-10T00:00:00.001Z",
+      "funding_rate": 7.497e-05,
+      "payment_usd": 0.075
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-10T08:00:00.005Z",
+      "funding_rate": 7.908e-05,
+      "payment_usd": 0.0791
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-10T16:00:00.000Z",
+      "funding_rate": 5.057e-05,
+      "payment_usd": 0.0506
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-11T00:00:00.000Z",
+      "funding_rate": 2.301e-05,
+      "payment_usd": 0.023
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-11T08:00:00.006Z",
+      "funding_rate": 1.962e-05,
+      "payment_usd": 0.0196
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-11T16:00:00.000Z",
+      "funding_rate": 8.282e-05,
+      "payment_usd": 0.0828
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-12T00:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-12T08:00:00.000Z",
+      "funding_rate": 8.568e-05,
+      "payment_usd": 0.0857
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-12T16:00:00.000Z",
+      "funding_rate": 6.601e-05,
+      "payment_usd": 0.066
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-13T00:00:00.000Z",
+      "funding_rate": 6.576e-05,
+      "payment_usd": 0.0658
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-13T08:00:00.000Z",
+      "funding_rate": 7.218e-05,
+      "payment_usd": 0.0722
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-13T16:00:00.000Z",
+      "funding_rate": 7.841e-05,
+      "payment_usd": 0.0784
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-14T00:00:00.000Z",
+      "funding_rate": 8.545e-05,
+      "payment_usd": 0.0854
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-14T08:00:00.001Z",
+      "funding_rate": 5.999e-05,
+      "payment_usd": 0.06
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-14T16:00:00.001Z",
+      "funding_rate": 6.29e-06,
+      "payment_usd": 0.0063
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-15T00:00:00.003Z",
+      "funding_rate": 6.801e-05,
+      "payment_usd": 0.068
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-15T08:00:00.002Z",
+      "funding_rate": 6.523e-05,
+      "payment_usd": 0.0652
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-15T16:00:00.000Z",
+      "funding_rate": 5.311e-05,
+      "payment_usd": 0.0531
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-16T00:00:00.000Z",
+      "funding_rate": 9.66e-06,
+      "payment_usd": 0.0097
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-16T08:00:00.002Z",
+      "funding_rate": 1.839e-05,
+      "payment_usd": 0.0184
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-16T16:00:00.000Z",
+      "funding_rate": 5e-05,
+      "payment_usd": 0.05
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-17T00:00:00.001Z",
+      "funding_rate": 3.818e-05,
+      "payment_usd": 0.0382
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-17T08:00:00.003Z",
+      "funding_rate": 7.131e-05,
+      "payment_usd": 0.0713
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-17T16:00:00.005Z",
+      "funding_rate": 9.202e-05,
+      "payment_usd": 0.092
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-18T00:00:00.006Z",
+      "funding_rate": 5.164e-05,
+      "payment_usd": 0.0516
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-18T08:00:00.001Z",
+      "funding_rate": 5.02e-05,
+      "payment_usd": 0.0502
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-18T16:00:00.003Z",
+      "funding_rate": 3.65e-05,
+      "payment_usd": 0.0365
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "funding_rate": 1.617e-05,
+      "payment_usd": 0.0162
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-19T08:00:00.000Z",
+      "funding_rate": 3.815e-05,
+      "payment_usd": 0.0381
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-19T16:00:00.004Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-20T00:00:00.001Z",
+      "funding_rate": 9.655e-05,
+      "payment_usd": 0.0965
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-20T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-20T16:00:00.005Z",
+      "funding_rate": 9.422e-05,
+      "payment_usd": 0.0942
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-21T00:00:00.004Z",
+      "funding_rate": 4.964e-05,
+      "payment_usd": 0.0496
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-21T08:00:00.000Z",
+      "funding_rate": 5.814e-05,
+      "payment_usd": 0.0581
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-21T16:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-22T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-07T00:00:00.000Z",
+      "funding_rate": -5.62e-06,
+      "payment_usd": -0.0056
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-07T08:00:00.000Z",
+      "funding_rate": 5.102e-05,
+      "payment_usd": 0.051
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-07T16:00:00.000Z",
+      "funding_rate": 3.625e-05,
+      "payment_usd": 0.0362
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-08T00:00:00.001Z",
+      "funding_rate": 3.4e-07,
+      "payment_usd": 0.0003
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-08T08:00:00.000Z",
+      "funding_rate": 2.738e-05,
+      "payment_usd": 0.0274
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-08T16:00:00.002Z",
+      "funding_rate": 7.172e-05,
+      "payment_usd": 0.0717
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-09T00:00:00.000Z",
+      "funding_rate": 3.196e-05,
+      "payment_usd": 0.032
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-09T08:00:00.005Z",
+      "funding_rate": 4.185e-05,
+      "payment_usd": 0.0418
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-09T16:00:00.000Z",
+      "funding_rate": 7.977e-05,
+      "payment_usd": 0.0798
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-10T00:00:00.001Z",
+      "funding_rate": 4.828e-05,
+      "payment_usd": 0.0483
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-10T08:00:00.005Z",
+      "funding_rate": 3.426e-05,
+      "payment_usd": 0.0343
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-10T16:00:00.000Z",
+      "funding_rate": 1.434e-05,
+      "payment_usd": 0.0143
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-11T00:00:00.000Z",
+      "funding_rate": 1.104e-05,
+      "payment_usd": 0.011
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-11T08:00:00.006Z",
+      "funding_rate": 6.272e-05,
+      "payment_usd": 0.0627
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-11T16:00:00.000Z",
+      "funding_rate": 5.425e-05,
+      "payment_usd": 0.0542
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-12T00:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-12T08:00:00.000Z",
+      "funding_rate": 7.29e-05,
+      "payment_usd": 0.0729
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-12T16:00:00.000Z",
+      "funding_rate": 5.726e-05,
+      "payment_usd": 0.0573
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-13T00:00:00.000Z",
+      "funding_rate": 5.218e-05,
+      "payment_usd": 0.0522
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-13T08:00:00.000Z",
+      "funding_rate": 8.523e-05,
+      "payment_usd": 0.0852
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-13T16:00:00.000Z",
+      "funding_rate": 5.923e-05,
+      "payment_usd": 0.0592
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-14T00:00:00.000Z",
+      "funding_rate": 2.697e-05,
+      "payment_usd": 0.027
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-14T08:00:00.001Z",
+      "funding_rate": -6.75e-06,
+      "payment_usd": -0.0067
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-14T16:00:00.001Z",
+      "funding_rate": 6.86e-06,
+      "payment_usd": 0.0069
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-15T00:00:00.003Z",
+      "funding_rate": 5.131e-05,
+      "payment_usd": 0.0513
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-15T08:00:00.002Z",
+      "funding_rate": 4.368e-05,
+      "payment_usd": 0.0437
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-15T16:00:00.000Z",
+      "funding_rate": 5.945e-05,
+      "payment_usd": 0.0595
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-16T00:00:00.000Z",
+      "funding_rate": -4.23e-06,
+      "payment_usd": -0.0042
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-16T08:00:00.002Z",
+      "funding_rate": 1.949e-05,
+      "payment_usd": 0.0195
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-16T16:00:00.000Z",
+      "funding_rate": 3.97e-05,
+      "payment_usd": 0.0397
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-17T00:00:00.001Z",
+      "funding_rate": 2.723e-05,
+      "payment_usd": 0.0272
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-17T08:00:00.003Z",
+      "funding_rate": 6.731e-05,
+      "payment_usd": 0.0673
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-17T16:00:00.005Z",
+      "funding_rate": 6.471e-05,
+      "payment_usd": 0.0647
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-18T00:00:00.006Z",
+      "funding_rate": 4.633e-05,
+      "payment_usd": 0.0463
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-18T08:00:00.001Z",
+      "funding_rate": 2.206e-05,
+      "payment_usd": 0.0221
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-18T16:00:00.003Z",
+      "funding_rate": 4.443e-05,
+      "payment_usd": 0.0444
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-19T00:00:00.000Z",
+      "funding_rate": 3.595e-05,
+      "payment_usd": 0.036
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-19T08:00:00.000Z",
+      "funding_rate": 2.64e-05,
+      "payment_usd": 0.0264
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-19T16:00:00.004Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-20T00:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-20T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-20T16:00:00.005Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-21T00:00:00.004Z",
+      "funding_rate": 9.031e-05,
+      "payment_usd": 0.0903
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-21T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-21T16:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-22T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-22T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-22T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-22T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-22T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-23T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-23T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-23T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-23T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-23T16:00:00.006Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-23T16:00:00.006Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-24T00:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-24T00:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-24T08:00:00.002Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-24T08:00:00.002Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-24T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-25T00:00:00.001Z",
+      "funding_rate": 5.818e-05,
+      "payment_usd": 0.0582
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-24T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-25T00:00:00.001Z",
+      "funding_rate": 9.302e-05,
+      "payment_usd": 0.093
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-25T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-25T08:00:00.000Z",
+      "funding_rate": 6.736e-05,
+      "payment_usd": 0.0674
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-25T16:00:00.005Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-25T16:00:00.005Z",
+      "funding_rate": 7.398e-05,
+      "payment_usd": 0.074
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-26T00:00:00.000Z",
+      "funding_rate": 7.734e-05,
+      "payment_usd": 0.0773
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-26T00:00:00.000Z",
+      "funding_rate": 3.144e-05,
+      "payment_usd": 0.0314
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-26T08:00:00.005Z",
+      "funding_rate": 5.927e-05,
+      "payment_usd": 0.0593
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-26T08:00:00.005Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-26T16:00:00.000Z",
+      "funding_rate": 7.091e-05,
+      "payment_usd": 0.0709
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-26T16:00:00.000Z",
+      "funding_rate": 7.451e-05,
+      "payment_usd": 0.0745
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-27T00:00:00.000Z",
+      "funding_rate": 4.595e-05,
+      "payment_usd": 0.0459
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-27T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-27T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-27T08:00:00.000Z",
+      "funding_rate": 6.226e-05,
+      "payment_usd": 0.0623
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-27T16:00:00.013Z",
+      "funding_rate": 6.331e-05,
+      "payment_usd": 0.0633
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-27T16:00:00.013Z",
+      "funding_rate": 1.082e-05,
+      "payment_usd": 0.0108
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-28T00:00:00.026Z",
+      "funding_rate": 6.578e-05,
+      "payment_usd": 0.0658
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-28T00:00:00.026Z",
+      "funding_rate": 2.071e-05,
+      "payment_usd": 0.0207
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-28T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-28T08:00:00.000Z",
+      "funding_rate": -1.33e-06,
+      "payment_usd": -0.0013
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-28T16:00:00.001Z",
+      "funding_rate": 5.913e-05,
+      "payment_usd": 0.0591
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-28T16:00:00.001Z",
+      "funding_rate": 5.622e-05,
+      "payment_usd": 0.0562
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-29T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-29T00:00:00.000Z",
+      "funding_rate": 1.591e-05,
+      "payment_usd": 0.0159
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-29T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-29T08:00:00.000Z",
+      "funding_rate": 2.808e-05,
+      "payment_usd": 0.0281
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-29T16:00:00.002Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-29T16:00:00.002Z",
+      "funding_rate": 6.071e-05,
+      "payment_usd": 0.0607
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-30T00:00:00.000Z",
+      "funding_rate": 8.283e-05,
+      "payment_usd": 0.0828
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-30T00:00:00.000Z",
+      "funding_rate": 3.166e-05,
+      "payment_usd": 0.0317
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-30T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-30T08:00:00.000Z",
+      "funding_rate": 2.817e-05,
+      "payment_usd": 0.0282
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-30T16:00:00.001Z",
+      "funding_rate": 7.058e-05,
+      "payment_usd": 0.0706
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-30T16:00:00.001Z",
+      "funding_rate": 4.116e-05,
+      "payment_usd": 0.0412
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-31T00:00:00.002Z",
+      "funding_rate": 7.271e-05,
+      "payment_usd": 0.0727
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-31T00:00:00.002Z",
+      "funding_rate": 2.364e-05,
+      "payment_usd": 0.0236
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-31T08:00:00.002Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-31T08:00:00.002Z",
+      "funding_rate": 3.522e-05,
+      "payment_usd": 0.0352
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-08-31T16:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-08-31T16:00:00.001Z",
+      "funding_rate": 7.702e-05,
+      "payment_usd": 0.077
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-01T00:00:00.005Z",
+      "funding_rate": 8.482e-05,
+      "payment_usd": 0.0848
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-01T00:00:00.005Z",
+      "funding_rate": 5.716e-05,
+      "payment_usd": 0.0572
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-01T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-01T08:00:00.000Z",
+      "funding_rate": 8.569e-05,
+      "payment_usd": 0.0857
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-01T16:00:00.000Z",
+      "funding_rate": 3.844e-05,
+      "payment_usd": 0.0384
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-01T16:00:00.000Z",
+      "funding_rate": 1.1e-05,
+      "payment_usd": 0.011
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-02T00:00:00.000Z",
+      "funding_rate": 7.995e-05,
+      "payment_usd": 0.08
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-02T00:00:00.000Z",
+      "funding_rate": 9.2e-07,
+      "payment_usd": 0.0009
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-02T08:00:00.001Z",
+      "funding_rate": 7.998e-05,
+      "payment_usd": 0.08
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-02T08:00:00.001Z",
+      "funding_rate": 5.096e-05,
+      "payment_usd": 0.051
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-02T16:00:00.005Z",
+      "funding_rate": 3.819e-05,
+      "payment_usd": 0.0382
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-02T16:00:00.005Z",
+      "funding_rate": 5.184e-05,
+      "payment_usd": 0.0518
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-03T00:00:00.000Z",
+      "funding_rate": 7.287e-05,
+      "payment_usd": 0.0729
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-03T00:00:00.000Z",
+      "funding_rate": 8.972e-05,
+      "payment_usd": 0.0897
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-03T08:00:00.000Z",
+      "funding_rate": 5.866e-05,
+      "payment_usd": 0.0587
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-03T08:00:00.000Z",
+      "funding_rate": 8.397e-05,
+      "payment_usd": 0.084
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-03T16:00:00.000Z",
+      "funding_rate": 8.893e-05,
+      "payment_usd": 0.0889
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-03T16:00:00.000Z",
+      "funding_rate": 8.789e-05,
+      "payment_usd": 0.0879
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-04T00:00:00.000Z",
+      "funding_rate": 8.558e-05,
+      "payment_usd": 0.0856
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-04T00:00:00.000Z",
+      "funding_rate": 9.533e-05,
+      "payment_usd": 0.0953
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-04T08:00:00.000Z",
+      "funding_rate": 6.498e-05,
+      "payment_usd": 0.065
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-04T16:00:00.009Z",
+      "funding_rate": 4.455e-05,
+      "payment_usd": 0.0445
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-04T08:00:00.000Z",
+      "funding_rate": 6.004e-05,
+      "payment_usd": 0.06
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-04T16:00:00.009Z",
+      "funding_rate": 5.94e-06,
+      "payment_usd": 0.0059
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-05T00:00:00.000Z",
+      "funding_rate": 1.014e-05,
+      "payment_usd": 0.0101
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-05T00:00:00.000Z",
+      "funding_rate": 2.001e-05,
+      "payment_usd": 0.02
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-05T08:00:00.000Z",
+      "funding_rate": -1.5e-06,
+      "payment_usd": -0.0015
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-05T08:00:00.000Z",
+      "funding_rate": 6.104e-05,
+      "payment_usd": 0.061
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-05T16:00:00.001Z",
+      "funding_rate": 1.923e-05,
+      "payment_usd": 0.0192
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-05T16:00:00.001Z",
+      "funding_rate": 1.86e-05,
+      "payment_usd": 0.0186
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-06T00:00:00.000Z",
+      "funding_rate": 3.589e-05,
+      "payment_usd": 0.0359
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-06T08:00:00.000Z",
+      "funding_rate": 2.295e-05,
+      "payment_usd": 0.0229
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-06T00:00:00.000Z",
+      "funding_rate": 7.02e-05,
+      "payment_usd": 0.0702
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-06T08:00:00.000Z",
+      "funding_rate": 7.14e-05,
+      "payment_usd": 0.0714
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-06T16:00:00.004Z",
+      "funding_rate": 2.813e-05,
+      "payment_usd": 0.0281
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-06T16:00:00.004Z",
+      "funding_rate": 1.85e-05,
+      "payment_usd": 0.0185
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-07T00:00:00.004Z",
+      "funding_rate": 2.792e-05,
+      "payment_usd": 0.0279
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-07T00:00:00.004Z",
+      "funding_rate": 6.753e-05,
+      "payment_usd": 0.0675
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-07T08:00:00.000Z",
+      "funding_rate": 3.113e-05,
+      "payment_usd": 0.0311
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-07T08:00:00.000Z",
+      "funding_rate": 9.65e-06,
+      "payment_usd": 0.0097
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-07T16:00:00.003Z",
+      "funding_rate": 2.185e-05,
+      "payment_usd": 0.0218
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-07T16:00:00.003Z",
+      "funding_rate": 2.859e-05,
+      "payment_usd": 0.0286
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-08T00:00:00.004Z",
+      "funding_rate": 4.542e-05,
+      "payment_usd": 0.0454
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-08T00:00:00.004Z",
+      "funding_rate": 4.234e-05,
+      "payment_usd": 0.0423
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-08T08:00:00.002Z",
+      "funding_rate": 8.18e-05,
+      "payment_usd": 0.0818
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-08T08:00:00.002Z",
+      "funding_rate": -4.89e-06,
+      "payment_usd": -0.0049
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-08T16:00:00.001Z",
+      "funding_rate": 9.029e-05,
+      "payment_usd": 0.0903
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-08T16:00:00.001Z",
+      "funding_rate": 5.222e-05,
+      "payment_usd": 0.0522
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-09T00:00:00.005Z",
+      "funding_rate": 4.876e-05,
+      "payment_usd": 0.0488
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-09T00:00:00.005Z",
+      "funding_rate": 5.214e-05,
+      "payment_usd": 0.0521
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-09T08:00:00.004Z",
+      "funding_rate": 9.012e-05,
+      "payment_usd": 0.0901
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-09T08:00:00.004Z",
+      "funding_rate": 8.538e-05,
+      "payment_usd": 0.0854
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-09T16:00:00.002Z",
+      "funding_rate": 4.815e-05,
+      "payment_usd": 0.0481
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-09T16:00:00.002Z",
+      "funding_rate": 3.07e-05,
+      "payment_usd": 0.0307
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-10T00:00:00.000Z",
+      "funding_rate": 3.562e-05,
+      "payment_usd": 0.0356
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-10T00:00:00.000Z",
+      "funding_rate": -1.168e-05,
+      "payment_usd": -0.0117
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-10T08:00:00.007Z",
+      "funding_rate": 7.869e-05,
+      "payment_usd": 0.0787
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-10T08:00:00.007Z",
+      "funding_rate": 5.093e-05,
+      "payment_usd": 0.0509
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-10T16:00:00.002Z",
+      "funding_rate": 7.199e-05,
+      "payment_usd": 0.072
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-10T16:00:00.002Z",
+      "funding_rate": -0.0001081,
+      "payment_usd": -0.1081
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-11T00:00:00.008Z",
+      "funding_rate": 3.006e-05,
+      "payment_usd": 0.0301
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-11T00:00:00.008Z",
+      "funding_rate": 6.31e-06,
+      "payment_usd": 0.0063
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-11T08:00:00.000Z",
+      "funding_rate": 6.122e-05,
+      "payment_usd": 0.0612
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-11T08:00:00.000Z",
+      "funding_rate": 6.11e-05,
+      "payment_usd": 0.0611
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-11T16:00:00.000Z",
+      "funding_rate": 3.593e-05,
+      "payment_usd": 0.0359
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-11T16:00:00.000Z",
+      "funding_rate": 4.999e-05,
+      "payment_usd": 0.05
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-12T00:00:00.001Z",
+      "funding_rate": 6.093e-05,
+      "payment_usd": 0.0609
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-12T00:00:00.001Z",
+      "funding_rate": 5.5e-07,
+      "payment_usd": 0.0006
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-12T08:00:00.003Z",
+      "funding_rate": 4.334e-05,
+      "payment_usd": 0.0433
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-12T08:00:00.003Z",
+      "funding_rate": 6.37e-06,
+      "payment_usd": 0.0064
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-12T16:00:00.000Z",
+      "funding_rate": 5.169e-05,
+      "payment_usd": 0.0517
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-12T16:00:00.000Z",
+      "funding_rate": 5.163e-05,
+      "payment_usd": 0.0516
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-13T00:00:00.002Z",
+      "funding_rate": 4.788e-05,
+      "payment_usd": 0.0479
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-13T00:00:00.002Z",
+      "funding_rate": 4.541e-05,
+      "payment_usd": 0.0454
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-13T08:00:00.000Z",
+      "funding_rate": 5.39e-05,
+      "payment_usd": 0.0539
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-13T08:00:00.000Z",
+      "funding_rate": 5.809e-05,
+      "payment_usd": 0.0581
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-13T16:00:00.000Z",
+      "funding_rate": 6.45e-05,
+      "payment_usd": 0.0645
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-13T16:00:00.000Z",
+      "funding_rate": -4.585e-05,
+      "payment_usd": -0.0459
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-14T00:00:00.000Z",
+      "funding_rate": 7.157e-05,
+      "payment_usd": 0.0716
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-14T00:00:00.000Z",
+      "funding_rate": 5.268e-05,
+      "payment_usd": 0.0527
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-14T08:00:00.000Z",
+      "funding_rate": 8.037e-05,
+      "payment_usd": 0.0804
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-14T08:00:00.000Z",
+      "funding_rate": 7.7e-05,
+      "payment_usd": 0.077
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-14T16:00:00.000Z",
+      "funding_rate": 4.22e-05,
+      "payment_usd": 0.0422
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-14T16:00:00.000Z",
+      "funding_rate": 3.649e-05,
+      "payment_usd": 0.0365
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-15T00:00:00.000Z",
+      "funding_rate": 3.563e-05,
+      "payment_usd": 0.0356
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-15T00:00:00.000Z",
+      "funding_rate": 1.285e-05,
+      "payment_usd": 0.0129
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-15T08:00:00.005Z",
+      "funding_rate": 6.188e-05,
+      "payment_usd": 0.0619
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-15T08:00:00.005Z",
+      "funding_rate": -8.189e-05,
+      "payment_usd": -0.0819
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-15T16:00:00.001Z",
+      "funding_rate": 9.812e-05,
+      "payment_usd": 0.0981
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-15T16:00:00.001Z",
+      "funding_rate": -4.838e-05,
+      "payment_usd": -0.0484
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-16T00:00:00.001Z",
+      "funding_rate": 3.951e-05,
+      "payment_usd": 0.0395
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-16T00:00:00.001Z",
+      "funding_rate": -3.27e-06,
+      "payment_usd": -0.0033
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-16T08:00:00.002Z",
+      "funding_rate": 2.788e-05,
+      "payment_usd": 0.0279
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-16T08:00:00.002Z",
+      "funding_rate": -4.012e-05,
+      "payment_usd": -0.0401
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-16T16:00:00.001Z",
+      "funding_rate": 5.258e-05,
+      "payment_usd": 0.0526
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-16T16:00:00.001Z",
+      "funding_rate": 2.126e-05,
+      "payment_usd": 0.0213
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-17T00:00:00.000Z",
+      "funding_rate": 9.351e-05,
+      "payment_usd": 0.0935
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-17T00:00:00.000Z",
+      "funding_rate": 3.297e-05,
+      "payment_usd": 0.033
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-17T08:00:00.003Z",
+      "funding_rate": 3.159e-05,
+      "payment_usd": 0.0316
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-17T08:00:00.003Z",
+      "funding_rate": 3.31e-05,
+      "payment_usd": 0.0331
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-17T16:00:00.000Z",
+      "funding_rate": 8.505e-05,
+      "payment_usd": 0.0851
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-17T16:00:00.000Z",
+      "funding_rate": 5.107e-05,
+      "payment_usd": 0.0511
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-18T00:00:00.003Z",
+      "funding_rate": 7.769e-05,
+      "payment_usd": 0.0777
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-18T00:00:00.003Z",
+      "funding_rate": 3.705e-05,
+      "payment_usd": 0.037
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-18T08:00:00.006Z",
+      "funding_rate": 7.903e-05,
+      "payment_usd": 0.079
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-18T08:00:00.006Z",
+      "funding_rate": 7.752e-05,
+      "payment_usd": 0.0775
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-18T16:00:00.000Z",
+      "funding_rate": 6.853e-05,
+      "payment_usd": 0.0685
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-18T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-19T00:00:00.000Z",
+      "funding_rate": 6.643e-05,
+      "payment_usd": 0.0664
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-19T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-19T08:00:00.002Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-19T08:00:00.002Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-19T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-19T16:00:00.000Z",
+      "funding_rate": 5.416e-05,
+      "payment_usd": 0.0542
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-20T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-20T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-20T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-20T08:00:00.000Z",
+      "funding_rate": 4.128e-05,
+      "payment_usd": 0.0413
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-20T16:00:00.000Z",
+      "funding_rate": 7.524e-05,
+      "payment_usd": 0.0752
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-20T16:00:00.000Z",
+      "funding_rate": 3.468e-05,
+      "payment_usd": 0.0347
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-21T00:00:00.007Z",
+      "funding_rate": 4.2e-05,
+      "payment_usd": 0.042
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-21T00:00:00.007Z",
+      "funding_rate": 8.166e-05,
+      "payment_usd": 0.0817
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-21T08:00:00.004Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-21T08:00:00.004Z",
+      "funding_rate": 8.66e-05,
+      "payment_usd": 0.0866
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-21T16:00:00.002Z",
+      "funding_rate": 5.485e-05,
+      "payment_usd": 0.0548
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-21T16:00:00.002Z",
+      "funding_rate": 8.935e-05,
+      "payment_usd": 0.0893
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-22T00:00:00.000Z",
+      "funding_rate": 7.663e-05,
+      "payment_usd": 0.0766
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-22T00:00:00.000Z",
+      "funding_rate": 5.727e-05,
+      "payment_usd": 0.0573
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-22T08:00:00.004Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-22T08:00:00.004Z",
+      "funding_rate": 9.361e-05,
+      "payment_usd": 0.0936
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-22T16:00:00.000Z",
+      "funding_rate": 2.784e-05,
+      "payment_usd": 0.0278
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-22T16:00:00.000Z",
+      "funding_rate": 5.735e-05,
+      "payment_usd": 0.0573
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-23T00:00:00.000Z",
+      "funding_rate": 1.021e-05,
+      "payment_usd": 0.0102
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-23T00:00:00.000Z",
+      "funding_rate": 9.373e-05,
+      "payment_usd": 0.0937
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-23T08:00:00.004Z",
+      "funding_rate": 3.34e-06,
+      "payment_usd": 0.0033
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-23T08:00:00.004Z",
+      "funding_rate": 4.462e-05,
+      "payment_usd": 0.0446
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-23T16:00:00.004Z",
+      "funding_rate": 1.286e-05,
+      "payment_usd": 0.0129
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-23T16:00:00.004Z",
+      "funding_rate": 4.502e-05,
+      "payment_usd": 0.045
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-24T00:00:00.002Z",
+      "funding_rate": 1.32e-06,
+      "payment_usd": 0.0013
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-24T00:00:00.002Z",
+      "funding_rate": 5.263e-05,
+      "payment_usd": 0.0526
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-24T08:00:00.000Z",
+      "funding_rate": 4.796e-05,
+      "payment_usd": 0.048
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-24T08:00:00.000Z",
+      "funding_rate": 5.176e-05,
+      "payment_usd": 0.0518
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-24T16:00:00.005Z",
+      "funding_rate": 1.422e-05,
+      "payment_usd": 0.0142
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-24T16:00:00.005Z",
+      "funding_rate": 6.466e-05,
+      "payment_usd": 0.0647
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-25T00:00:00.002Z",
+      "funding_rate": 2.14e-06,
+      "payment_usd": 0.0021
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-25T00:00:00.002Z",
+      "funding_rate": 2.767e-05,
+      "payment_usd": 0.0277
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-25T08:00:00.000Z",
+      "funding_rate": 3.512e-05,
+      "payment_usd": 0.0351
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-25T08:00:00.000Z",
+      "funding_rate": 3.742e-05,
+      "payment_usd": 0.0374
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-25T16:00:00.002Z",
+      "funding_rate": -5.74e-06,
+      "payment_usd": -0.0057
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-25T16:00:00.002Z",
+      "funding_rate": 4.924e-05,
+      "payment_usd": 0.0492
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-26T00:00:00.000Z",
+      "funding_rate": 7.69e-06,
+      "payment_usd": 0.0077
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-26T00:00:00.000Z",
+      "funding_rate": 6.606e-05,
+      "payment_usd": 0.0661
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-26T08:00:00.001Z",
+      "funding_rate": 4.93e-05,
+      "payment_usd": 0.0493
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-26T08:00:00.001Z",
+      "funding_rate": 6.744e-05,
+      "payment_usd": 0.0674
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-26T16:00:00.001Z",
+      "funding_rate": -5.45e-06,
+      "payment_usd": -0.0054
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-26T16:00:00.001Z",
+      "funding_rate": 5.798e-05,
+      "payment_usd": 0.058
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-27T00:00:00.000Z",
+      "funding_rate": 4.703e-05,
+      "payment_usd": 0.047
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-27T00:00:00.000Z",
+      "funding_rate": 5.712e-05,
+      "payment_usd": 0.0571
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-27T08:00:00.001Z",
+      "funding_rate": 1.449e-05,
+      "payment_usd": 0.0145
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-27T08:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-27T16:00:00.000Z",
+      "funding_rate": 1.051e-05,
+      "payment_usd": 0.0105
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-27T16:00:00.000Z",
+      "funding_rate": 5.39e-05,
+      "payment_usd": 0.0539
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-28T00:00:00.000Z",
+      "funding_rate": 1.987e-05,
+      "payment_usd": 0.0199
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-28T00:00:00.000Z",
+      "funding_rate": 3.121e-05,
+      "payment_usd": 0.0312
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-28T08:00:00.001Z",
+      "funding_rate": -2.585e-05,
+      "payment_usd": -0.0259
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-28T08:00:00.001Z",
+      "funding_rate": -3.065e-05,
+      "payment_usd": -0.0307
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-28T16:00:00.001Z",
+      "funding_rate": 6.501e-05,
+      "payment_usd": 0.065
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-28T16:00:00.001Z",
+      "funding_rate": 5.929e-05,
+      "payment_usd": 0.0593
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-29T00:00:00.000Z",
+      "funding_rate": 3.836e-05,
+      "payment_usd": 0.0384
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-29T00:00:00.000Z",
+      "funding_rate": 6.984e-05,
+      "payment_usd": 0.0698
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-29T08:00:00.000Z",
+      "funding_rate": 6.798e-05,
+      "payment_usd": 0.068
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-29T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-29T16:00:00.000Z",
+      "funding_rate": 1.399e-05,
+      "payment_usd": 0.014
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-29T16:00:00.000Z",
+      "funding_rate": 4.202e-05,
+      "payment_usd": 0.042
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-30T00:00:00.000Z",
+      "funding_rate": 6.622e-05,
+      "payment_usd": 0.0662
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-30T00:00:00.000Z",
+      "funding_rate": 7.697e-05,
+      "payment_usd": 0.077
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-30T08:00:00.000Z",
+      "funding_rate": -2.44e-06,
+      "payment_usd": -0.0024
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-30T08:00:00.000Z",
+      "funding_rate": 5.437e-05,
+      "payment_usd": 0.0544
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-09-30T16:00:00.002Z",
+      "funding_rate": 6.606e-05,
+      "payment_usd": 0.0661
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-09-30T16:00:00.002Z",
+      "funding_rate": 3.478e-05,
+      "payment_usd": 0.0348
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-01T00:00:00.001Z",
+      "funding_rate": 7.981e-05,
+      "payment_usd": 0.0798
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-01T00:00:00.001Z",
+      "funding_rate": 5.694e-05,
+      "payment_usd": 0.0569
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-01T08:00:00.005Z",
+      "funding_rate": 4.568e-05,
+      "payment_usd": 0.0457
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-01T08:00:00.005Z",
+      "funding_rate": 7.243e-05,
+      "payment_usd": 0.0724
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-01T16:00:00.003Z",
+      "funding_rate": 6.98e-05,
+      "payment_usd": 0.0698
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-01T16:00:00.003Z",
+      "funding_rate": 3.406e-05,
+      "payment_usd": 0.0341
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-02T00:00:00.002Z",
+      "funding_rate": 2.693e-05,
+      "payment_usd": 0.0269
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-02T00:00:00.002Z",
+      "funding_rate": 4.786e-05,
+      "payment_usd": 0.0479
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-02T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-02T08:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-02T16:00:00.000Z",
+      "funding_rate": 1.214e-05,
+      "payment_usd": 0.0121
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-02T16:00:00.000Z",
+      "funding_rate": 1.715e-05,
+      "payment_usd": 0.0171
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-03T00:00:00.001Z",
+      "funding_rate": 4.574e-05,
+      "payment_usd": 0.0457
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-03T00:00:00.001Z",
+      "funding_rate": 1.496e-05,
+      "payment_usd": 0.015
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-03T08:00:00.000Z",
+      "funding_rate": 3.61e-06,
+      "payment_usd": 0.0036
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-03T08:00:00.000Z",
+      "funding_rate": 9.3e-07,
+      "payment_usd": 0.0009
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-03T16:00:00.001Z",
+      "funding_rate": 4.528e-05,
+      "payment_usd": 0.0453
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-03T16:00:00.001Z",
+      "funding_rate": 1.833e-05,
+      "payment_usd": 0.0183
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-04T00:00:00.000Z",
+      "funding_rate": -1.346e-05,
+      "payment_usd": -0.0135
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-04T00:00:00.000Z",
+      "funding_rate": 3.8e-05,
+      "payment_usd": 0.038
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-04T08:00:00.001Z",
+      "funding_rate": 3.451e-05,
+      "payment_usd": 0.0345
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-04T08:00:00.001Z",
+      "funding_rate": 5.456e-05,
+      "payment_usd": 0.0546
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-04T16:00:00.002Z",
+      "funding_rate": 3.785e-05,
+      "payment_usd": 0.0379
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-04T16:00:00.002Z",
+      "funding_rate": 3.073e-05,
+      "payment_usd": 0.0307
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-05T00:00:00.002Z",
+      "funding_rate": 7.492e-05,
+      "payment_usd": 0.0749
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-05T00:00:00.002Z",
+      "funding_rate": 9.815e-05,
+      "payment_usd": 0.0982
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-05T08:00:00.001Z",
+      "funding_rate": 4.186e-05,
+      "payment_usd": 0.0419
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-05T08:00:00.001Z",
+      "funding_rate": 6.919e-05,
+      "payment_usd": 0.0692
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-05T16:00:00.000Z",
+      "funding_rate": -1.541e-05,
+      "payment_usd": -0.0154
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-05T16:00:00.000Z",
+      "funding_rate": 2.986e-05,
+      "payment_usd": 0.0299
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-06T00:00:00.003Z",
+      "funding_rate": -2.485e-05,
+      "payment_usd": -0.0249
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-06T00:00:00.003Z",
+      "funding_rate": 1.605e-05,
+      "payment_usd": 0.0161
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-06T08:00:00.001Z",
+      "funding_rate": -1.592e-05,
+      "payment_usd": -0.0159
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-06T08:00:00.001Z",
+      "funding_rate": -2.085e-05,
+      "payment_usd": -0.0208
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-06T16:00:00.000Z",
+      "funding_rate": 2.245e-05,
+      "payment_usd": 0.0225
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-06T16:00:00.000Z",
+      "funding_rate": 5.651e-05,
+      "payment_usd": 0.0565
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-07T00:00:00.002Z",
+      "funding_rate": -7.43e-06,
+      "payment_usd": -0.0074
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-07T00:00:00.002Z",
+      "funding_rate": 9.228e-05,
+      "payment_usd": 0.0923
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-07T08:00:00.002Z",
+      "funding_rate": -3.657e-05,
+      "payment_usd": -0.0366
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-07T08:00:00.002Z",
+      "funding_rate": -3.226e-05,
+      "payment_usd": -0.0323
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-07T16:00:00.000Z",
+      "funding_rate": 1.152e-05,
+      "payment_usd": 0.0115
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-07T16:00:00.000Z",
+      "funding_rate": -3.411e-05,
+      "payment_usd": -0.0341
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-08T00:00:00.000Z",
+      "funding_rate": -9.92e-06,
+      "payment_usd": -0.0099
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-08T00:00:00.000Z",
+      "funding_rate": -3.319e-05,
+      "payment_usd": -0.0332
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-08T08:00:00.000Z",
+      "funding_rate": 5.09e-06,
+      "payment_usd": 0.0051
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-08T08:00:00.000Z",
+      "funding_rate": -1.185e-05,
+      "payment_usd": -0.0118
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-08T16:00:00.000Z",
+      "funding_rate": 3.445e-05,
+      "payment_usd": 0.0344
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-08T16:00:00.000Z",
+      "funding_rate": 2.629e-05,
+      "payment_usd": 0.0263
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-09T00:00:00.000Z",
+      "funding_rate": 1.767e-05,
+      "payment_usd": 0.0177
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-09T00:00:00.000Z",
+      "funding_rate": -1.441e-05,
+      "payment_usd": -0.0144
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-09T08:00:00.000Z",
+      "funding_rate": 5.156e-05,
+      "payment_usd": 0.0516
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-09T16:00:00.000Z",
+      "funding_rate": 1.286e-05,
+      "payment_usd": 0.0129
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-09T08:00:00.000Z",
+      "funding_rate": -1.161e-05,
+      "payment_usd": -0.0116
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-09T16:00:00.000Z",
+      "funding_rate": 1.537e-05,
+      "payment_usd": 0.0154
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-10T00:00:00.002Z",
+      "funding_rate": 5.232e-05,
+      "payment_usd": 0.0523
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-10T00:00:00.002Z",
+      "funding_rate": 5.576e-05,
+      "payment_usd": 0.0558
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-10T08:00:00.001Z",
+      "funding_rate": -4.31e-06,
+      "payment_usd": -0.0043
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-10T08:00:00.001Z",
+      "funding_rate": 4.99e-06,
+      "payment_usd": 0.005
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-10T16:00:00.002Z",
+      "funding_rate": 4.57e-06,
+      "payment_usd": 0.0046
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-10T16:00:00.002Z",
+      "funding_rate": 2.995e-05,
+      "payment_usd": 0.03
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-11T00:00:00.007Z",
+      "funding_rate": -2.718e-05,
+      "payment_usd": -0.0272
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-11T00:00:00.007Z",
+      "funding_rate": -0.00011754,
+      "payment_usd": -0.1175
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-11T08:00:00.000Z",
+      "funding_rate": -9.93e-06,
+      "payment_usd": -0.0099
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-11T08:00:00.000Z",
+      "funding_rate": -0.00011662,
+      "payment_usd": -0.1166
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-11T16:00:00.002Z",
+      "funding_rate": 1.347e-05,
+      "payment_usd": 0.0135
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-11T16:00:00.002Z",
+      "funding_rate": 1.163e-05,
+      "payment_usd": 0.0116
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-12T00:00:00.006Z",
+      "funding_rate": 5.56e-06,
+      "payment_usd": 0.0056
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-12T00:00:00.006Z",
+      "funding_rate": 1.479e-05,
+      "payment_usd": 0.0148
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-12T08:00:00.002Z",
+      "funding_rate": 1.866e-05,
+      "payment_usd": 0.0187
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-12T08:00:00.002Z",
+      "funding_rate": -1.797e-05,
+      "payment_usd": -0.018
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-12T16:00:00.006Z",
+      "funding_rate": 1.944e-05,
+      "payment_usd": 0.0194
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-12T16:00:00.006Z",
+      "funding_rate": 1.695e-05,
+      "payment_usd": 0.0169
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-13T00:00:00.002Z",
+      "funding_rate": 6.741e-05,
+      "payment_usd": 0.0674
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-13T00:00:00.002Z",
+      "funding_rate": 6.35e-06,
+      "payment_usd": 0.0064
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-13T08:00:00.005Z",
+      "funding_rate": 8.349e-05,
+      "payment_usd": 0.0835
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-13T08:00:00.005Z",
+      "funding_rate": 8.377e-05,
+      "payment_usd": 0.0838
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "funding_rate": 3.455e-05,
+      "payment_usd": 0.0345
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "funding_rate": 3.153e-05,
+      "payment_usd": 0.0315
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-14T00:00:00.001Z",
+      "funding_rate": -1.022e-05,
+      "payment_usd": -0.0102
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-14T00:00:00.001Z",
+      "funding_rate": 3.179e-05,
+      "payment_usd": 0.0318
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-14T08:00:00.001Z",
+      "funding_rate": 1.528e-05,
+      "payment_usd": 0.0153
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-14T08:00:00.001Z",
+      "funding_rate": 1.783e-05,
+      "payment_usd": 0.0178
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-14T16:00:00.002Z",
+      "funding_rate": -1.788e-05,
+      "payment_usd": -0.0179
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-14T16:00:00.002Z",
+      "funding_rate": -1.064e-05,
+      "payment_usd": -0.0106
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "funding_rate": -4.135e-05,
+      "payment_usd": -0.0414
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "funding_rate": 8.159e-05,
+      "payment_usd": 0.0816
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "funding_rate": 6.617e-05,
+      "payment_usd": 0.0662
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "funding_rate": 1.9e-06,
+      "payment_usd": 0.0019
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "funding_rate": 1.828e-05,
+      "payment_usd": 0.0183
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "funding_rate": 5.355e-05,
+      "payment_usd": 0.0536
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-16T00:00:00.001Z",
+      "funding_rate": 5.429e-05,
+      "payment_usd": 0.0543
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-16T00:00:00.001Z",
+      "funding_rate": 7.466e-05,
+      "payment_usd": 0.0747
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-16T08:00:00.001Z",
+      "funding_rate": 6.803e-05,
+      "payment_usd": 0.068
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-16T08:00:00.001Z",
+      "funding_rate": 4.648e-05,
+      "payment_usd": 0.0465
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "funding_rate": 4.313e-05,
+      "payment_usd": 0.0431
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "funding_rate": 3.67e-05,
+      "payment_usd": 0.0367
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "funding_rate": 5.251e-05,
+      "payment_usd": 0.0525
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "funding_rate": 3.71e-05,
+      "payment_usd": 0.0371
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "funding_rate": -1.797e-05,
+      "payment_usd": -0.018
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-17T16:00:00.003Z",
+      "funding_rate": 3.726e-05,
+      "payment_usd": 0.0373
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-17T16:00:00.003Z",
+      "funding_rate": 6.616e-05,
+      "payment_usd": 0.0662
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "funding_rate": 6.412e-05,
+      "payment_usd": 0.0641
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "funding_rate": 4.77e-05,
+      "payment_usd": 0.0477
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-18T08:00:00.002Z",
+      "funding_rate": 6.03e-05,
+      "payment_usd": 0.0603
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-18T08:00:00.002Z",
+      "funding_rate": 4.045e-05,
+      "payment_usd": 0.0404
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "funding_rate": 5.841e-05,
+      "payment_usd": 0.0584
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "funding_rate": 3.561e-05,
+      "payment_usd": 0.0356
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-19T00:00:00.000Z",
+      "funding_rate": 4.958e-05,
+      "payment_usd": 0.0496
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-19T00:00:00.000Z",
+      "funding_rate": 3.916e-05,
+      "payment_usd": 0.0392
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-19T08:00:00.004Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-19T08:00:00.004Z",
+      "funding_rate": 9.885e-05,
+      "payment_usd": 0.0989
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-19T16:00:00.003Z",
+      "funding_rate": 7.964e-05,
+      "payment_usd": 0.0796
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-19T16:00:00.003Z",
+      "funding_rate": 4.646e-05,
+      "payment_usd": 0.0465
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-20T00:00:00.006Z",
+      "funding_rate": 9.208e-05,
+      "payment_usd": 0.0921
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-20T08:00:00.005Z",
+      "funding_rate": 7.102e-05,
+      "payment_usd": 0.071
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-20T00:00:00.006Z",
+      "funding_rate": 5.32e-05,
+      "payment_usd": 0.0532
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-20T08:00:00.005Z",
+      "funding_rate": 3.039e-05,
+      "payment_usd": 0.0304
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-20T16:00:00.006Z",
+      "funding_rate": 7.856e-05,
+      "payment_usd": 0.0786
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-20T16:00:00.006Z",
+      "funding_rate": 7.381e-05,
+      "payment_usd": 0.0738
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-21T00:00:00.000Z",
+      "funding_rate": 6.542e-05,
+      "payment_usd": 0.0654
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-21T00:00:00.000Z",
+      "funding_rate": 4.599e-05,
+      "payment_usd": 0.046
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-21T08:00:00.000Z",
+      "funding_rate": 8.54e-05,
+      "payment_usd": 0.0854
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-21T08:00:00.000Z",
+      "funding_rate": 5.314e-05,
+      "payment_usd": 0.0531
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-21T16:00:00.001Z",
+      "funding_rate": 4.896e-05,
+      "payment_usd": 0.049
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-21T16:00:00.001Z",
+      "funding_rate": 8.498e-05,
+      "payment_usd": 0.085
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-22T00:00:00.007Z",
+      "funding_rate": 5.07e-06,
+      "payment_usd": 0.0051
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-22T00:00:00.007Z",
+      "funding_rate": 1.426e-05,
+      "payment_usd": 0.0143
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-22T08:00:00.003Z",
+      "funding_rate": -1.401e-05,
+      "payment_usd": -0.014
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-22T08:00:00.003Z",
+      "funding_rate": 2.21e-05,
+      "payment_usd": 0.0221
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-22T16:00:00.001Z",
+      "funding_rate": 1.265e-05,
+      "payment_usd": 0.0126
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-22T16:00:00.001Z",
+      "funding_rate": 5.238e-05,
+      "payment_usd": 0.0524
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-23T00:00:00.006Z",
+      "funding_rate": 5.369e-05,
+      "payment_usd": 0.0537
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-23T00:00:00.006Z",
+      "funding_rate": 5.563e-05,
+      "payment_usd": 0.0556
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-23T08:00:00.004Z",
+      "funding_rate": 7.075e-05,
+      "payment_usd": 0.0707
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-23T08:00:00.004Z",
+      "funding_rate": 5.847e-05,
+      "payment_usd": 0.0585
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-23T16:00:00.005Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-23T16:00:00.005Z",
+      "funding_rate": 7.399e-05,
+      "payment_usd": 0.074
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-24T00:00:00.003Z",
+      "funding_rate": 3.939e-05,
+      "payment_usd": 0.0394
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-24T00:00:00.003Z",
+      "funding_rate": 1.569e-05,
+      "payment_usd": 0.0157
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-24T08:00:00.000Z",
+      "funding_rate": 3.431e-05,
+      "payment_usd": 0.0343
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-24T08:00:00.000Z",
+      "funding_rate": 3.433e-05,
+      "payment_usd": 0.0343
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-24T16:00:00.000Z",
+      "funding_rate": 9.6e-06,
+      "payment_usd": 0.0096
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-24T16:00:00.000Z",
+      "funding_rate": -3.39e-06,
+      "payment_usd": -0.0034
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-25T00:00:00.000Z",
+      "funding_rate": 9.409e-05,
+      "payment_usd": 0.0941
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-25T00:00:00.000Z",
+      "funding_rate": 3.746e-05,
+      "payment_usd": 0.0375
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-25T08:00:00.000Z",
+      "funding_rate": 6.005e-05,
+      "payment_usd": 0.0601
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-25T08:00:00.000Z",
+      "funding_rate": 7.8e-05,
+      "payment_usd": 0.078
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-25T16:00:00.000Z",
+      "funding_rate": 8.027e-05,
+      "payment_usd": 0.0803
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-25T16:00:00.000Z",
+      "funding_rate": 5.601e-05,
+      "payment_usd": 0.056
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-26T00:00:00.000Z",
+      "funding_rate": 1.713e-05,
+      "payment_usd": 0.0171
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-26T00:00:00.000Z",
+      "funding_rate": 7.28e-05,
+      "payment_usd": 0.0728
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-26T08:00:00.000Z",
+      "funding_rate": 7.945e-05,
+      "payment_usd": 0.0795
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-26T08:00:00.000Z",
+      "funding_rate": 4.911e-05,
+      "payment_usd": 0.0491
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-26T16:00:00.000Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-26T16:00:00.000Z",
+      "funding_rate": 6.24e-05,
+      "payment_usd": 0.0624
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-27T00:00:00.001Z",
+      "funding_rate": 0.0001,
+      "payment_usd": 0.1
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-27T00:00:00.001Z",
+      "funding_rate": 8.957e-05,
+      "payment_usd": 0.0896
+    },
+    {
+      "symbol": "BTC/USDT",
+      "timestamp": "2026-10-27T08:00:00.001Z",
+      "funding_rate": 8.696e-05,
+      "payment_usd": 0.087
+    },
+    {
+      "symbol": "ETH/USDT",
+      "timestamp": "2026-10-27T08:00:00.001Z",
+      "funding_rate": 5.932e-05,
+      "payment_usd": 0.0593
     }
   ],
   "created_at": "2026-07-27T21:21:18.381515+00:00",

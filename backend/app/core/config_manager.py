@@ -3,6 +3,7 @@ Configuration Management
 
 Provides hot reload, validation, and configuration UI.
 """
+import asyncio
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -258,9 +259,6 @@ config_manager = ConfigManager()
 
 
 # Auto-reload configuration every 5 minutes
-import asyncio
-
-
 async def auto_reload_config():
     """Background task to auto-reload configuration."""
     while True:

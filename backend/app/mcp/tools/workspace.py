@@ -21,13 +21,10 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from uuid import UUID
 
-from app.database import AsyncSessionLocal
 from app.integrations.google_workspace import mock_workspace_provider
 from app.mcp.registry import mcp_registry
 from app.mcp.schemas import MCPResponse, MCPAuthContext
-from app.mcp.auth import validate_org_context, safe_org_not_found
 from app.mcp.audit import log_mcp_tool_call
 from app.mcp.tools.write import (
     _validate_org,
@@ -279,7 +276,7 @@ async def handle_append_funnel_report_to_doc(
             organization_id=organization_id,
             estimated_tokens=30,
         )
-    except Exception as exc:
+    except Exception:
         return MCPResponse.error_response(
             code="HANDLER_ERROR",
             message="Failed to append content to document.",

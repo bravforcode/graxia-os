@@ -131,7 +131,7 @@ async def run_lead_hunter(
                 await send_notification(
                     f"⚠️ Lead Hunter failed: {str(e)[:200]}"
                 )
-            except:
+            except Exception:
                 pass
 
         raise HTTPException(

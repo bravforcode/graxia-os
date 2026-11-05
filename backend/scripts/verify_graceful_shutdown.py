@@ -72,9 +72,9 @@ async def main():
     timeout_occurred = False
     
     async def very_slow_handler(payload: dict):
-        print(f"  Very slow handler started (will take 10s)")
+        print("  Very slow handler started (will take 10s)")
         await asyncio.sleep(10)
-        print(f"  Very slow handler completed")
+        print("  Very slow handler completed")
     
     bus2.subscribe("slow_event", very_slow_handler)
     

@@ -11,7 +11,6 @@ from app.mcp.schemas import MCPAuthContext
 from app.runtime.adapters.workflow_adapter import workflow_run_to_ref
 from app.runtime.contracts import WorkflowRunRef, WorkflowRunStatus
 from app.runtime.orchestration.dispatcher import (
-    QueueDispatchReceipt,
     QueueDispatchRequest,
     RuntimeWorkflowDispatcher,
 )

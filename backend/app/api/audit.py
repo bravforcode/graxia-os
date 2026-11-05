@@ -3,21 +3,32 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.context import AuthContext
 from app.auth.dependencies import require_organization
+from app.auth.org_boundary import assert_same_org
 from app.database import get_db
-from app.models.audit_log import AuditLog
+from app.models.audit import AuditLog
 from app.models.approval_request import ApprovalRequest
+from app.models.user import User
+from app.middleware.auth import get_current_user_from_token, require_role
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
+
+
+async def _require_organization_admin(
+    auth: AuthContext = Depends(require_organization),
+    user: User = Depends(get_current_user_from_token),
+) -> AuthContext:
+    await require_role("admin", user)
+    assert_same_org(auth, user.organization_id)
+    return auth
 
 
 def _redact_safe(obj: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -42,7 +53,7 @@ def _redact_safe(obj: dict[str, Any] | None) -> dict[str, Any] | None:
 
 @router.get("/events")
 async def list_audit_events(
-    auth: AuthContext = Depends(require_organization),
+    auth: AuthContext = Depends(_require_organization_admin),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -69,7 +80,7 @@ async def list_audit_events(
             "event_type": row.event_type,
             "severity": row.severity,
             "outcome": row.outcome,
-            "metadata": _redact_safe(row.metadata_),
+            "metadata": _redact_safe(row.metadata_json),
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
@@ -78,7 +89,7 @@ async def list_audit_events(
 
 @router.get("/mcp")
 async def list_mcp_audit(
-    auth: AuthContext = Depends(require_organization),
+    auth: AuthContext = Depends(_require_organization_admin),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -101,10 +112,10 @@ async def list_mcp_audit(
         items.append({
             "id": str(row.id),
             "action": row.action,
-            "tool_name": (row.metadata_ or {}).get("tool_name", ""),
+            "tool_name": (row.metadata_json or {}).get("tool_name", ""),
             "outcome": row.outcome,
             "success": row.success,
-            "metadata": _redact_safe(row.metadata_),
+            "metadata": _redact_safe(row.metadata_json),
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
@@ -113,7 +124,7 @@ async def list_mcp_audit(
 
 @router.get("/workflows")
 async def list_workflow_audit(
-    auth: AuthContext = Depends(require_organization),
+    auth: AuthContext = Depends(_require_organization_admin),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -136,10 +147,10 @@ async def list_workflow_audit(
         items.append({
             "id": str(row.id),
             "action": row.action,
-            "workflow_type": (row.metadata_ or {}).get("workflow_type", ""),
-            "workflow_run_id": (row.metadata_ or {}).get("workflow_run_id", ""),
+            "workflow_type": (row.metadata_json or {}).get("workflow_type", ""),
+            "workflow_run_id": (row.metadata_json or {}).get("workflow_run_id", ""),
             "outcome": row.outcome,
-            "metadata": _redact_safe(row.metadata_),
+            "metadata": _redact_safe(row.metadata_json),
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
@@ -148,7 +159,7 @@ async def list_workflow_audit(
 
 @router.get("/approvals")
 async def list_approval_audit(
-    auth: AuthContext = Depends(require_organization),
+    auth: AuthContext = Depends(_require_organization_admin),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),

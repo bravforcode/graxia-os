@@ -3,13 +3,11 @@ API Dependencies
 Common dependencies for API endpoints
 """
 from fastapi import Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from app.database import AsyncSessionLocal, get_db
 from app.middleware.auth import get_current_user_from_token
 from app.middleware.tenant import get_org
-from app.models.organization import Organization
 from app.models.user import User
 
 
@@ -28,7 +26,7 @@ async def require_admin(
     current_user: "User" = Depends(get_current_user_from_token),
 ) -> "User":
     """FastAPI dependency — rejects non-admin callers with HTTP 403."""
-    from app.middleware.auth import role_satisfies, AuthLevel, ROLE_ORDER
+    from app.middleware.auth import ROLE_ORDER
     user_role = getattr(current_user, "role", "user") or "user"
     if ROLE_ORDER.get(user_role, -1) < ROLE_ORDER.get("admin", 3):
         raise HTTPException(

@@ -76,3 +76,23 @@ async def test_all_live_providers_blocked_simultaneously(async_client):
         checks.get("production_db_blocked"),
     ]
     assert all(blocked), f"Not all live providers blocked: {blocked}"
+
+
+def test_disabled_stripe_consent_blocks_even_with_live_mode_key(monkeypatch):
+    from app.api import health
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "ALLOW_LIVE_STRIPE", False)
+    monkeypatch.setattr(health, "_stripe_live_mode_blocked", lambda: False)
+
+    assert health._live_stripe_blocked() is True
+
+
+def test_disabled_email_consent_blocks_even_with_configured_key(monkeypatch):
+    from app.api import health
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "ALLOW_REAL_EMAIL_SEND", False)
+    monkeypatch.setattr(health, "_real_email_send_blocked", lambda: False)
+
+    assert health._real_email_provider_blocked() is True

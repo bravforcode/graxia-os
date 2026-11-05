@@ -92,7 +92,25 @@ class SessionService:
 
     async def is_session_active(self, session_id: str | None) -> bool:
         session = await self.get_session(session_id)
-        return bool(session and not session.revoked)
+        if session is None or session.revoked:
+            return False
+        now = time.time()
+        absolute_expired = now - session.created_at > settings.SESSION_ABSOLUTE_TIMEOUT_DAYS * 86400
+        idle_expired = now - session.last_seen > settings.SESSION_IDLE_TIMEOUT_HOURS * 3600
+        if absolute_expired or idle_expired:
+            await self.invalidate_session(session.session_id, reason="session_expired")
+            return False
+        await self._touch_session(session.session_id, now)
+        return True
+
+    async def _touch_session(self, session_id: str, now: float) -> None:
+        if self.redis:
+            await self.redis.hset(f"session:{session_id}", mapping={"last_seen": str(now)})
+            return
+        async with _memory_lock:
+            session = _memory_sessions.get(session_id)
+            if session:
+                session.last_seen = now
 
     async def bind_refresh_jti(self, session_id: str, refresh_jti: str) -> None:
         if self.redis:

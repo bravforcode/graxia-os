@@ -204,7 +204,7 @@ class KnowledgeService:
         stmt = select(
             KnowledgeItem,
             KnowledgeItem.embedding.cosine_distance(query_vec).label("distance"),
-        ).where(KnowledgeItem.is_active == True)
+        ).where(KnowledgeItem.is_active.is_(True))
         if category:
             stmt = stmt.filter(KnowledgeItem.category == category)
         if project_id:

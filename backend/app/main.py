@@ -4,10 +4,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
+from app.audit.security_events import safe_request_path
 from app.api.router import api_router
 from app.api.internal import router as internal_router
 from app.config import settings
+from app.database import AsyncSessionLocal
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_config import setup_logging
 from app.core.monitoring import metrics_collector
@@ -20,11 +24,8 @@ from app.auth.middleware import AuthContextMiddleware
 from app.middleware.auth import AuthMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware, get_redis_client
 from app.core.security_hardening import (
-    APIKeyRotationTracker,
     IPFilterMiddleware,
     RequestSanitizationMiddleware,
-    SecureHeaders,
-    api_key_tracker,
 )
 from app.middleware.security import (
     CSRFMiddleware,
@@ -62,13 +63,19 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialization bypassed. Ensure `alembic upgrade head` is run before deployment.")
 
         wire_event_handlers()
-        await seed_admin_user()
+        await seed_admin_user(redis_client=app.state.redis)
 
         if not settings.TESTING:
             await initialize_telegram_notifier()
 
         # Initialize Graxia AI Components (Swarm, Pipeline, etc.)
         await initialize_graxia_components()
+
+        if not settings.TESTING:
+            # Verify the selected LLM provider in this process before the readiness check reads it.
+            from app.core.llm import llm_client
+
+            await llm_client.verify_provider()
 
         is_ready, mode, issues = await check_system_ready()
         set_runtime_state(is_ready, mode, issues)
@@ -97,14 +104,13 @@ app = FastAPI(
 register_exception_handlers(app)
 
 
-@app.middleware("http")
 async def add_metrics_middleware(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time
     metrics_collector.record_http_request(
         method=request.method,
-        endpoint=request.url.path,
+        endpoint=safe_request_path(request),
         status=response.status_code,
         duration=duration,
     )
@@ -282,6 +288,9 @@ app.add_middleware(RequestSizeLimitMiddleware)
 # Request / correlation IDs for all downstream security and error handling
 app.add_middleware(RequestContextMiddleware)
 
+# Capture short-circuit responses from security middleware too.
+app.middleware("http")(add_metrics_middleware)
+
 # CORS (Outermost - added last) - Must handle preflight OPTIONS requests
 app.add_middleware(
     CORSMiddleware,
@@ -305,6 +314,38 @@ async def root_health():
         "service": "Graxia OS API",
         "readiness": readiness,
     }
+
+
+@app.get("/health/live")
+async def health_live():
+    """Liveness: the process is serving requests. No dependency checks."""
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def health_ready(request: Request):
+    """Readiness: database reachable, and Redis reachable when configured."""
+    checks = {"database": False, "redis": not settings.REDIS_URL}
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
+        checks["database"] = True
+    except Exception:
+        logger.warning("readiness: database check failed", exc_info=True)
+
+    redis_client = getattr(request.app.state, "redis", None)
+    if settings.REDIS_URL and redis_client is not None:
+        try:
+            await redis_client.ping()
+            checks["redis"] = True
+        except Exception:
+            logger.warning("readiness: redis check failed", exc_info=True)
+
+    ready = all(checks.values())
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={"status": "ready" if ready else "not_ready", "checks": checks},
+    )
 
 
 @app.get("/")

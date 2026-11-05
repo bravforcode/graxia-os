@@ -104,7 +104,7 @@ async def unmute_all_scrapers(notify: bool = True) -> int:
         if notify and unmuted_count > 0:
             try:
                 await send_message(msg, parse_mode=None)
-            except:
+            except Exception:
                 pass
 
         return unmuted_count

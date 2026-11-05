@@ -52,6 +52,8 @@ def _test_endpoint(
     expect_auth_error: bool = False,
 ) -> ApiSmokeEvidence:
     """Test an API endpoint and record evidence."""
+    if not BACKEND_RUNNING:
+        pytest.skip(f"Backend not running at {BACKEND_URL}")
     url = f"{BACKEND_URL}{path}"
     try:
         if method == "GET":

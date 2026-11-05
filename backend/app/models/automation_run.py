@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID as UUIDType
 
 from sqlalchemy import UUID as SQLUUID
-from sqlalchemy import CheckConstraint, DateTime, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +22,16 @@ class AutomationRun(Base):
 
     id: Mapped[UUIDType] = mapped_column(
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    organization_id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True),
+        ForeignKey(
+            "organizations.id",
+            ondelete="CASCADE",
+            name="fk_automation_runs_organization_id_organizations",
+        ),
+        nullable=False,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     task_type: Mapped[str] = mapped_column(String(100), nullable=False)

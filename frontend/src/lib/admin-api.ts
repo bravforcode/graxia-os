@@ -457,7 +457,6 @@ export async function getFunnelAnalytics(orgId?: string): Promise<FunnelAnalytic
 
 export async function getApprovals(
   params?: { status?: string; limit?: number; offset?: number },
-  _orgId?: string,
 ): Promise<ApprovalRequestSummary[]> {
   void _orgId;
   try {

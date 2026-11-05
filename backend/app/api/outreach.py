@@ -2,23 +2,37 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.context import AuthContext
+from app.auth.dependencies import require_permission
 from app.database import get_db
 from app.models.audit import AuditLog
+from app.models.contact import Contact
 from app.models.network_interaction import NetworkInteraction
 
 router = APIRouter(prefix="/api/v1/outreach", tags=["outreach"])
 
 
 @router.get("/stats")
-async def outreach_stats(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+async def outreach_stats(
+    db: AsyncSession = Depends(get_db),
+    auth: AuthContext = Depends(require_permission("analytics:read")),
+) -> dict[str, Any]:
+    organization_id = auth.organization_id
+    if not isinstance(organization_id, UUID) or organization_id.int == 0:
+        raise HTTPException(status_code=401, detail="Organization context required.")
+
     today = datetime.now(UTC).date()
     sent_today = await db.scalar(
-        select(func.count(NetworkInteraction.id)).where(
+        select(func.count(NetworkInteraction.id))
+        .join(Contact, NetworkInteraction.contact_id == Contact.id)
+        .where(
+            Contact.organization_id == organization_id,
             NetworkInteraction.interaction_type.in_(
                 ["email_outreach_initial", "email_outreach_followup_1", "email_outreach_followup_2"]
             ),
@@ -27,7 +41,11 @@ async def outreach_stats(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     )
 
     def _count(action: str) -> Any:
-        return select(func.count(AuditLog.id)).where(
+        return select(func.count(AuditLog.id)).join(
+            Contact,
+            (AuditLog.entity_type == "contact") & (AuditLog.entity_id == Contact.id),
+        ).where(
+            Contact.organization_id == organization_id,
             AuditLog.action == action,
             func.date(AuditLog.created_at) == today,
         )

@@ -32,9 +32,10 @@ class AgentOrchestrator(BaseAgent):
         task_id_str = payload.get("task_id")
         assigned_to = payload.get("assigned_to")
         
-        if not task_id_str: return
+        if not task_id_str:
+            return
         task_id = UUID(task_id_str)
-        
+
         async with AsyncSessionLocal() as db:
             stmt = select(AgentTask).where(AgentTask.id == task_id)
             res = await db.execute(stmt)
@@ -70,7 +71,8 @@ class AgentOrchestrator(BaseAgent):
             stmt = select(AgentTask).where(AgentTask.id == task_id)
             res = await db.execute(stmt)
             task = res.scalar_one_or_none()
-            if not task: return
+            if not task:
+                return
 
             task.status = "in_progress"
             await db.commit()
@@ -94,8 +96,9 @@ class AgentOrchestrator(BaseAgent):
 
     async def on_task_completed(self, payload: dict[str, Any]):
         task_id_str = payload.get("task_id")
-        if not task_id_str: return
-        
+        if not task_id_str:
+            return
+
         # Check for blocked sibling tasks
         async with AsyncSessionLocal() as db:
             stmt = select(AgentTask).where(AgentTask.status == "waiting")

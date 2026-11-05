@@ -68,7 +68,7 @@ class GoogleWorkspaceClient:
                             "https://www.googleapis.com/auth/gmail.modify",
                             "https://www.googleapis.com/auth/calendar.events",
                         ]
-                        if settings.GOOGLE_ENABLE_WRITE_SCOPES
+                        if settings.GOOGLE_ENABLE_WRITE_SCOPES and settings.ALLOW_REAL_GOOGLE_MUTATION
                         else []
                     )
                 ),
@@ -178,6 +178,8 @@ class GoogleWorkspaceClient:
         Returns:
             Sent message ID or None
         """
+        if not (settings.GOOGLE_ENABLE_WRITE_SCOPES and settings.ALLOW_REAL_GOOGLE_MUTATION):
+            return None
         if not self.gmail_service and not self._ensure_initialized():
             return None
         
@@ -211,6 +213,8 @@ class GoogleWorkspaceClient:
     
     async def mark_as_read(self, message_id: str) -> bool:
         """Mark Gmail message as read."""
+        if not (settings.GOOGLE_ENABLE_WRITE_SCOPES and settings.ALLOW_REAL_GOOGLE_MUTATION):
+            return False
         if not self.gmail_service and not self._ensure_initialized():
             return False
         
@@ -287,6 +291,8 @@ class GoogleWorkspaceClient:
         Returns:
             Event ID or None
         """
+        if not (settings.GOOGLE_ENABLE_WRITE_SCOPES and settings.ALLOW_REAL_GOOGLE_MUTATION):
+            return None
         if not self.calendar_service and not self._ensure_initialized():
             return None
         

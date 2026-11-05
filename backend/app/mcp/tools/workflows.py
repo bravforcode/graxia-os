@@ -7,7 +7,7 @@ from typing import Any
 from app.agent_workflows.errors import WorkflowNotFoundError
 from app.mcp.auth import MCPAuthContext, safe_org_not_found, validate_org_context
 from app.mcp.registry import mcp_registry
-from app.mcp.schemas import MCPResponse, MCPError, MCPResponseMeta
+from app.mcp.schemas import MCPResponse
 
 
 def _new_id(prefix: str = "req") -> str:

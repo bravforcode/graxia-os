@@ -3,15 +3,13 @@ Review collection service — manages customer reviews.
 Supports automatic collection after purchase, moderation, and aggregation.
 """
 import logging
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, and_, func, update
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.funnel import ProductReview, FunnelOrder, DigitalProduct
-from app.models.contact import Contact
+from app.models.funnel import ProductReview, FunnelOrder
 from app.schemas.funnel import ReviewCreate, ReviewUpdate
 
 logger = logging.getLogger(__name__)

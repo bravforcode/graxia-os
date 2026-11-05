@@ -538,7 +538,9 @@ class FunnelAnalyticsService:
         for row in referral_totals.values():
             row["revenue"] = round(row["revenue"], 2)
 
-        attributed = sum(1 for event in event_rows if event.source or event.referral_code)
+        attributed = sum(
+            1 for event, _ in event_rows if event.source or event.referral_code
+        )
         return {
             "period": {"start": effective_start, "end": effective_end, "max_days": 90},
             "funnel": funnel,

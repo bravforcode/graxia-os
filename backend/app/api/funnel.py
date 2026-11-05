@@ -10,44 +10,30 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.context import AuthContext, LocalDevAuthContext
+from app.auth.context import AuthContext
 from app.auth.dependencies import get_auth_context
 from app.database import get_db
 from app.models.funnel import (
     ConversionEvent,
-    DeliveryAccess,
     DeliveryAsset,
     DigitalProduct,
     FunnelOrder,
     FunnelOrderItem,
-    FunnelRecommendation,
-    LeadCapture,
-    LeadMagnet,
 )
 from app.schemas.funnel import (
-    ConversionEventCreate,
-    ConversionEventRead,
     DeliveryAccessPublic,
     DeliveryAccessRead,
-    DeliveryEmailEventCreate,
-    DeliveryEmailEventRead,
     FunnelAnalyticsSummary,
-    FunnelOrderRead,
-    FunnelOrderItemRead,
     FunnelRecommendationCreate,
     FunnelRecommendationRead,
-    LeadCaptureCreate,
-    LeadCaptureRead,
-    LeadMagnetCreate,
     LeadMagnetPublic,
-    LeadMagnetRead,
-    LeadMagnetUpdate,
 )
 from app.models.approval_request import ApprovalRequest
 from app.services.funnel_service import (
     delivery_access_service,
     funnel_analytics_service,
     funnel_recommendation_service,
+    funnel_checkout_simulation_enabled,
     funnel_webhook_handler,
     lead_magnet_service,
     mock_email_provider,
@@ -186,8 +172,9 @@ async def open_delivery(
     # Safe public response
     product = await db.get(DigitalProduct, access.product_id)
     asset = None
-    if access.delivery_asset_id:
-        asset = await db.get(DeliveryAsset, access.delivery_asset_id)
+    asset_id = access.delivery_asset_id or access.asset_id
+    if asset_id:
+        asset = await db.get(DeliveryAsset, asset_id)
 
     return DeliveryAccessPublic(
         product_name=product.name if product else "Digital Product",
@@ -206,6 +193,7 @@ async def open_delivery(
 async def simulate_checkout_webhook(
     checkout_session_id: UUID,
     customer_email: str,
+    stripe_session_id: str | None = None,
     auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
@@ -213,14 +201,21 @@ async def simulate_checkout_webhook(
     """Simulate a Stripe checkout.completed webhook.
 
     Creates order, order items, delivery access, and mock email.
-    Idempotent — re-running with same checkout_session_id returns existing order.
+    Idempotent - re-running with same checkout_session_id returns existing order.
     """
-    org_id = organization_id or auth.organization_id
+    if not funnel_checkout_simulation_enabled():
+        raise HTTPException(status_code=404, detail="Not found")
+    if auth.organization_id is None:
+        raise HTTPException(status_code=403, detail="Authenticated organization is required")
+    if organization_id is not None and organization_id != auth.organization_id:
+        raise HTTPException(status_code=403, detail="Organization does not match authenticated organization")
+    org_id = auth.organization_id
     try:
         result = await funnel_webhook_handler.handle_checkout_completed(
             organization_id=org_id,
             checkout_session_id=checkout_session_id,
             customer_email=customer_email,
+            stripe_session_id=stripe_session_id,
             db=db,
         )
         return result
@@ -360,7 +355,11 @@ async def get_lead_magnet_public(
     magnet = await lead_magnet_service.get_by_slug(slug, org_id, db=db)
     if magnet is None:
         raise HTTPException(status_code=404, detail="Lead magnet not found")
-    return LeadMagnetPublic(slug=magnet.slug, title=magnet.title, description=magnet.description)
+    return LeadMagnetPublic(
+        slug=magnet.slug,
+        title=magnet.name,
+        description=magnet.promise,
+    )
 
 
 @router.post("/lead-magnets/{slug}/capture", response_model=dict)
@@ -432,8 +431,8 @@ async def deliver_lead_magnet_asset(
     # Get asset info if linked
     asset_title = None
     delivery_url = None
-    if magnet.asset_id:
-        asset = await db.get(DeliveryAsset, magnet.asset_id)
+    if magnet.delivery_asset_id:
+        asset = await db.get(DeliveryAsset, magnet.delivery_asset_id)
         if asset:
             asset_title = asset.title
             delivery_url = asset.external_url or f"/assets/{asset.id}"
@@ -441,7 +440,7 @@ async def deliver_lead_magnet_asset(
     return {
         "status": "delivered",
         "email": email,
-        "asset_title": asset_title or magnet.title,
+        "asset_title": asset_title or magnet.name,
         "delivery_url": delivery_url or "/delivery/free-asset",
         "simulated": True,
     }
@@ -589,7 +588,6 @@ async def submit_recommendation_for_approval(
         raise HTTPException(status_code=404, detail="Recommendation not found")
 
     # Create approval request
-    from app.auth.context import LOCAL_DEV_ORGANIZATION_ID
     approval = ApprovalRequest(
         id=uuid4(),
         organization_id=org_id,

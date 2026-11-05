@@ -10,8 +10,8 @@ from app.core.control_plane import (
     mark_run_started as default_mark_run_started,
     queue_approval_request as default_queue_approval_request,
 )
-from app.runtime.contracts import ActorType, AuditEvent, RiskLevel, TaskEnvelope, TaskStatus
-from app.runtime.gateway.dispatcher import DispatchResult, GatewayDispatcher
+from app.runtime.contracts import ActorType, AuditEvent, TaskEnvelope, TaskStatus
+from app.runtime.gateway.dispatcher import GatewayDispatcher
 from app.runtime.gateway.errors import ApprovalRequiredError, DangerousTaskBlockedError
 from app.runtime.gateway.policy import GatewayPolicyDecision, evaluate_task_policy
 from app.runtime.gateway.repository import (
@@ -340,6 +340,7 @@ class GatewayService:
                 "payload": _sanitize_payload(task.payload),
             },
             requested_by="runtime_gateway",
+            organization_id=task.organization_id,
         )
         approval_id = _coerce_uuid(getattr(approval, "id", None) or getattr(approval, "approval_request_id", None))
         return approval_id or UUID(int=0)
@@ -357,6 +358,7 @@ class GatewayService:
                 "target": task.target,
             },
             idempotency_key=_extract_idempotency_key(task),
+            organization_id=task.organization_id,
         )
         run_id = _coerce_uuid(getattr(run, "id", None))
         if run_id and self.run_started:
