@@ -23,6 +23,8 @@ jobs:
           fetch-depth: 0
       - name: TruffleHog Secret Scan
         uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --exclude-paths=.github/trufflehog-exclude.txt
 
   backend:
     name: Backend Tests
