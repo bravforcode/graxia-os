@@ -197,7 +197,10 @@ jobs:
       - name: Validate production Docker Compose
         if: ${{ hashFiles('config/docker-compose.production.yml') != '' }}
         run: |
-          cp .env.production.template .env.production
+          : > .env.production
+          for v in ENCRYPTION_KEY RESEND_API_KEY SECRET_KEY SENTRY_DSN STRIPE_PRICE_PRO STRIPE_PRICE_STARTER STRIPE_PUBLISHABLE_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET; do
+            echo "$v=placeholder" >> .env.production
+          done
           mkdir -p secrets
           printf '%s' 'AGE-SECRET-KEY-placeholder' > secrets/backup_private_key.txt
           TAG=${{ github.sha }} docker compose -f config/docker-compose.production.yml --env-file .env.production config > /dev/null
