@@ -1,0 +1,109 @@
+name: Required tests and scans
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: required-tests-and-scans-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-suites:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: Unit Tests
+            suite: tests/unit
+          - check: Integration Tests
+            suite: tests/integration
+          - check: Security Tests
+            suite: tests/security
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+      REDIS_ENABLED: "false"
+      TRADING_MODE: PAPER
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install test dependencies
+        run: python -m pip install -r requirements.txt pytest-asyncio
+      - name: Run backend suite
+        env:
+          TEST_SUITE: ${{ matrix.suite }}
+        run: python -m pytest "$TEST_SUITE" -q
+
+  quant-tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: testing
+      DATABASE_URL: "sqlite:///:memory:"
+      TRADING_MODE: PAPER
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: graxia/packages/quant_os/pyproject.toml
+      - name: Install Quant OS and test dependencies
+        run: python -m pip install ./graxia/packages/quant_os pytest pytest-asyncio
+      - name: Run Quant OS unit and safety tests
+        run: >-
+          python -m pytest -q
+          graxia/packages/quant_os/tests/unit
+          graxia/packages/quant_os/tests/test_safety_guards.py
+
+  scans:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: Code Quality & Linting
+            scanner: ruff
+            package: ruff==0.4.0
+            paths: |
+              backend/app
+              automation
+          - check: Security Scan
+            scanner: bandit
+            package: bandit==1.9.4
+            paths: graxia/packages/quant_os
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out comparison source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+          path: .ci-base
+          sparse-checkout: ${{ matrix.paths }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install scanner
+        env:
+          SCANNER_PACKAGE: ${{ matrix.package }}
+        run: python -m pip install "$SCANNER_PACKAGE"
+      - name: Reject new findings compared with the base revision
+        env:
+          SCANNER: ${{ matrix.scanner }}
+        run: python .github/scripts/check_python_regressions.py "$SCANNER" .ci-base
