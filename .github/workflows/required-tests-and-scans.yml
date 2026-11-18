@@ -37,8 +37,6 @@ jobs:
       TRADING_MODE: PAPER
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -60,8 +58,6 @@ jobs:
       TRADING_MODE: PAPER
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -94,14 +90,11 @@ jobs:
             paths: graxia/packages/quant_os
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - name: Check out comparison source
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha || github.event.before }}
           path: .ci-base
-          persist-credentials: false
           sparse-checkout: ${{ matrix.paths }}
       - uses: actions/setup-python@v5
         with:
